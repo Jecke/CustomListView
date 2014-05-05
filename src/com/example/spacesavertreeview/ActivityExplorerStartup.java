@@ -70,6 +70,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 public class ActivityExplorerStartup extends ListActivity {
+	
+	// This is startup activity. First activity the user sees
 
 	// keys to share between activities via Intents
 	public static final String DESCRIPTION = "com.example.spacesavertreeview.description";
