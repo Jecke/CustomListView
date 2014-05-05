@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.spacesavertreeview"
+    android:versionCode="1"
+    android:versionName="0.18" >
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <uses-sdk
+        android:minSdkVersion="16"
+        android:targetSdkVersion="19" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher_app_icon"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme"
+        android:windowSoftInputMode="stateAlwaysVisible" >
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityExplorerStartup"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/explorer_activity_name"
+            android:uiOptions="splitActionBarWhenNarrow" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityNoteAddNew"
+            android:label="@string/title_activity_add_new_or_edit" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.imageannotation.ActivityAnnotateImage"
+            android:label="@string/title_activity_annotate_image" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.imageannotation.ActivityEditAnnotationText"
+            android:label="@string/title_activity_edit_text_annotation" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.imageannotation.ActivityEditAnnotationImage"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/title_activity_edit_image_annotation" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityNoteStartup"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:icon="@drawable/icon_green"
+            android:label="@string/note_startup_activity_name"
+            android:uiOptions="splitActionBarWhenNarrow" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityExplorerSettings"
+            android:label="@string/settings_activity" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityFileChooser"
+            android:label="Choose File"
+            android:theme="@android:style/Theme.Holo" >
+            <action android:name="com.example.spacesavertreeview.FileChooser" />
+
+            <category android:name="android.intent.category.DEFAULT" />
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityNoteSettings"
+            android:label="@string/title_activity_note_settings" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityRegister"
+            android:label="@string/title_activity_main"
+            android:windowSoftInputMode="adjustResize|stateVisible" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.sharing.ActivityGetUserForGroups"
+            android:label="@string/title_activity_activity_search_users_for_groups"
+            android:parentActivityName="android.app.ListActivity" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.sharing.ActivityGroupMembers"
+            android:label="@string/title_activity_group_members"
+            android:launchMode="singleTop"
+            android:parentActivityName="android.app.ListActivity"
+            android:uiOptions="splitActionBarWhenNarrow" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+            <meta-data
+                android:name="android.app.default_searchable"
+                android:value=".sharing.ActivityGroupMembers" />
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.sharing.ActivityAllMembers"
+            android:label="@string/title_activity_activity_all_members" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.Annotator.ActivityAnnotator"
+            android:label="@string/title_activity_activity_annotator" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions"
+            android:label="@string/title_activity_activity_subscriptions" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptionSearch"
+            android:label="@string/title_activity_activity_subscription_search"
+            android:parentActivityName="com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions" />
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.sharing.subscriptions.ActivityPublications"
+            android:label="@string/title_activity_activity_publications" >
+        </activity>
+        <activity
+            android:name="com.example.spacesavertreeview.ActivityViewImage"
+            android:label="@string/title_activity_activity_view_image" >
+        </activity>
+    </application>
+
+</manifest>
