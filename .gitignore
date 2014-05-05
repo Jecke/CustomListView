@@ -6,7 +6,12 @@
 *.dex
 
 # Java class files
-*.class
+# *.class
+
+.settings
+.classpath
+.project
+project.properties
 
 # Generated files
 bin/
