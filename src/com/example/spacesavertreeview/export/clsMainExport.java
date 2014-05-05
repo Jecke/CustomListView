@@ -10,6 +10,7 @@ package com.example.spacesavertreeview.export;
 //import com.facebook.SessionState;
 //import com.facebook.Settings;
 
+// The entry point to the export functionality
 public class clsMainExport {
 
 	//Facebook facebook = new Facebook(FACEBOOK_APP_ID);
