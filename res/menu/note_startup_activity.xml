@@ -1,0 +1,178 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+   
+    <item
+        android:id="@+id/actionAddAtSameLevel"
+        android:title="@string/menu_add_samelevel"
+        android:icon="@drawable/ic_action_new_samelevel"
+        android:showAsAction="ifRoom"
+    />
+ 
+    <item
+        android:id="@+id/actionButtonAddAtNextLevel"
+        android:title="@string/menu_add_nextlevel"
+        android:icon="@drawable/ic_action_new_lowerlevel"
+        android:showAsAction="ifRoom"
+    />
+ 
+    <item
+        android:id="@+id/actionEdit"
+        android:title="@string/menu_edit"
+        android:icon="@drawable/ic_action_edit"
+        android:showAsAction="ifRoom"
+    />
+    
+    <item
+        android:id="@+id/actionDelete"
+        android:title="@string/menu_delete"
+        android:icon="@drawable/ic_action_delete_small"
+        android:showAsAction="ifRoom"
+    />
+    
+    <item
+        android:id="@+id/actionCheckList"
+        android:title="@string/menu_checklist"
+        android:icon="@drawable/ic_action_check"
+        android:showAsAction="ifRoom">
+        <menu>
+            <item android:id="@+id/actionCheckListHideCheckedItems"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Hide checked items"/>
+            <item android:id="@+id/actionCheckListUnHideCheckedItems"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Unhide checked items"/>
+            <item android:id="@+id/actionCheckListUnCheckAll"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Uncheck all items"/>
+            <item android:id="@+id/actionCheckListDeleteAllChecked"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Remove all checked"/>
+        </menu>
+    </item>
+    
+    
+ 
+    <item
+        android:id="@+id/actionMoveUp"
+        android:title="@string/menu_move_up"
+        android:icon="@drawable/ic_action_up"
+        android:showAsAction="ifRoom"
+    />
+ 
+    <item
+        android:id="@+id/actionMoveDown"
+        android:title="@string/menu_move_down"
+        android:icon="@drawable/ic_action_down"
+        android:showAsAction="ifRoom"
+    />
+    
+    <item
+        android:id="@+id/actionCut"
+        android:title="@string/menu_cut"
+        android:icon="@drawable/ic_action_cut"
+        android:showAsAction="ifRoom"
+    />
+    
+    <item
+        android:id="@+id/actionCopy"
+        android:title="@string/menu_copy"
+        android:icon="@drawable/ic_action_copy"
+        android:showAsAction="ifRoom"
+    />
+ 
+    <item
+        android:id="@+id/actionPaste"
+        android:title="@string/menu_paste"
+        android:icon="@drawable/ic_action_paste"
+        android:showAsAction="ifRoom">
+        <menu>
+            <item android:id="@+id/actionPasteAtSameLevel"
+                  android:icon="@drawable/ic_action_paste"
+                  android:title="Paste at same level"/>
+            <item android:id="@+id/actionPasteAtNextLevel"
+                  android:icon="@drawable/ic_action_paste"
+                  android:title="Paste at next level"/>
+        </menu>
+    </item>
+    
+    <item
+        android:id="@+id/actionSave"
+        android:title="@string/menu_save"
+        android:icon="@drawable/ic_action_save"
+        android:showAsAction="never|withText"
+    />
+    
+    <item
+        android:id="@+id/actionHidden"
+        android:title="@string/menu_hide_unhide"
+        android:icon="@drawable/ic_action_check"
+        android:showAsAction="never|withText">
+        <menu>
+            <item android:id="@+id/actionHiddenSelectionStart"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Selection"/>
+            <item android:id="@+id/actionHiddenSelectionEnd"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Stop selection"/>
+            <item android:id="@+id/actionHiddenActivate"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Hide"/>
+            <item android:id="@+id/actionHiddenInactivate"
+                  android:icon="@drawable/ic_action_check"
+                  android:title="Stop hide"/>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/actionSendTo"
+        android:title="@string/title_send_to"
+        android:icon="@drawable/ic_action_check"
+        android:showAsAction="never|withText">
+        <menu>
+            <item android:id="@+id/actionSendToFacebook"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="@string/action_send_to_facebook"/>
+            </menu>
+    </item>
+    
+    <item
+        android:id="@+id/actionShare"
+        android:title="Sharing ..."
+        android:icon="@drawable/ic_action_check"
+        android:showAsAction="never|withText">
+        <menu>
+            <item android:id="@+id/actionShareSync"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="Sync note"/>
+            <item android:id="@+id/actionShareRestoreFromServer"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="Restore from server"/>
+            </menu>
+    </item>
+    
+    <item
+        android:id="@+id/actionComments"
+        android:title="Comments ..."
+        android:icon="@drawable/ic_action_check"
+        android:showAsAction="never|withText">
+        <menu>
+            <item android:id="@+id/actionCommentsChangeOwnerToMainUser"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="Change comment owner"/>
+        </menu>
+    </item>
+        
+    <item
+        android:id="@+id/actionClearAll"
+        android:title="@string/menu_clear_all"
+        android:icon="@drawable/ic_action_remove"
+        android:showAsAction="never|withText"
+    />
+    
+    <item
+        android:id="@+id/actionSettings"
+        android:title="@string/action_settings"
+        android:icon="@drawable/ic_action_settings"
+        android:showAsAction="never|withText"
+    />
+
+</menu>

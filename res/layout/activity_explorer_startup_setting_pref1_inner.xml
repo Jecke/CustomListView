@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+            android:title="InnerCat 1">
+
+        <CheckBoxPreference
+                android:key="checkbox_preference"
+                android:title="Check 1"
+                android:summary="Check 1 Summary" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+            android:title="InnerCat 2">
+
+        <EditTextPreference
+                android:key="edittext_preference"
+                android:title="Edit 21"
+                android:summary="Edit 21 summary"
+                android:dialogTitle="Edit 21 dialog title" />
+
+        <ListPreference
+                android:key="list_preference"
+                android:title="List21"
+                android:summary="List21 summary"
+                android:entries="@array/types"
+                android:entryValues="@array/types_values"
+                android:dialogTitle="List21 title" />
+
+    </PreferenceCategory>
+
+    
+
+</PreferenceScreen>

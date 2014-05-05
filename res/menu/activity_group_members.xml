@@ -1,0 +1,119 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/actionSearchNewMember" 
+        android:title="Search for new members" 
+        android:icon="@drawable/ic_action_search" 
+        android:showAsAction="always" />
+    
+    <item
+        android:id="@+id/actionAddAtSameLevel"
+        android:title="@string/menu_add_samelevel"
+        android:icon="@drawable/ic_action_new_samelevel"
+        android:showAsAction="ifRoom">
+        <menu>
+            <item android:id="@+id/actionAddAtSameLevelFolder"
+                  android:icon="@drawable/ic_action_new_samelevel"
+                  android:title="Add folder"/>
+            <item android:id="@+id/actionAddAtSameLevelMember"
+                  android:icon="@drawable/ic_action_new_samelevel"
+                  android:title="Add member"/>
+        </menu>
+    </item>
+ 
+    <item
+        android:id="@+id/actionAddAtNextLevel"
+        android:title="@string/menu_add_nextlevel"
+        android:icon="@drawable/ic_action_new_lowerlevel"
+        android:showAsAction="ifRoom">
+        <menu>
+            <item android:id="@+id/actionAddAtNextLevelFolder"
+                  android:icon="@drawable/ic_action_new_lowerlevel"
+                  android:title="Add folder"/>
+            <item android:id="@+id/actionAddAtNextLevelMember"
+                  android:icon="@drawable/ic_action_new_lowerlevel"
+                  android:title="Add member"/>
+        </menu>
+    </item>
+
+ 
+    <item
+        android:id="@+id/actionEdit"
+        android:title="@string/menu_edit"
+        android:icon="@drawable/ic_action_edit"
+        android:showAsAction="ifRoom"
+    />
+    
+    <item
+        android:id="@+id/actionDelete"
+        android:title="@string/menu_delete"
+        android:icon="@drawable/ic_action_remove"
+        android:showAsAction="ifRoom"
+    />
+ 	
+    <item
+        android:id="@+id/actionMoveUp"
+        android:title="@string/menu_move_up"
+        android:icon="@drawable/ic_action_up"
+        android:showAsAction="ifRoom"
+    />
+ 
+    <item
+        android:id="@+id/actionMoveDown"
+        android:title="@string/menu_move_down"
+        android:icon="@drawable/ic_action_down"
+        android:showAsAction="ifRoom"
+    />
+    
+    <item
+        android:id="@+id/actionCut"
+        android:title="@string/menu_cut"
+        android:icon="@drawable/ic_action_cut"
+        android:showAsAction="never|withText"
+    />
+    
+    <item
+        android:id="@+id/actionCopy"
+        android:title="@string/menu_copy"
+        android:icon="@drawable/ic_action_copy"
+        android:showAsAction="never|withText"
+    />
+ 
+    <item
+        android:id="@+id/actionPaste"
+        android:title="@string/menu_paste"
+        android:icon="@drawable/ic_action_paste"
+        android:showAsAction="never|withText">
+        <menu>
+            <item android:id="@+id/actionPasteAtSameLevel"
+                  android:icon="@drawable/ic_action_paste"
+                  android:title="Paste at same level"/>
+            <item android:id="@+id/actionPasteAtNextLevel"
+                  android:icon="@drawable/ic_action_paste"
+                  android:title="Paste at next level"/>
+        </menu>
+    </item>
+    
+    
+    
+    <item
+        android:id="@+id/actionClearAll"
+        android:title="@string/menu_clear_all"
+        android:icon="@drawable/ic_action_remove"
+        android:showAsAction="never|withText"
+    />
+    
+    <item
+        android:id="@+id/actionSettings"
+        android:title="@string/action_settings"
+        android:icon="@drawable/ic_action_settings"
+        android:showAsAction="never|withText"
+    />
+    
+    <item
+        android:id="@+id/actionTest"
+        android:title="Test"
+        android:icon="@drawable/ic_action_settings"
+        android:showAsAction="never|withText"
+    />
+
+</menu>

@@ -1,0 +1,100 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions"
+    tools:ignore="MergeRootFrame" >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+        
+        <TextView
+            android:id="@+id/label_subscriptions_search"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:layout_alignParentLeft="true"
+            android:paddingBottom="@dimen/label_default_top_bottom_padding"
+            android:paddingLeft="5dp"
+            android:paddingTop="@dimen/label_default_top_bottom_padding"
+            android:text="Search:"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <TextView
+            android:id="@+id/lblImageAnotationStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="30dp"
+            android:layout_below="@+id/label_subscriptions_search"
+            android:text="Author:"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+       <EditText
+           android:id="@+id/subscriptions_search_author"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:layout_below="@+id/lblImageAnotationStatus"
+           android:layout_marginLeft="30dp"
+           android:ems="10" >
+
+        </EditText>
+        
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+			android:layout_marginLeft="30dp"
+            android:layout_below="@+id/subscriptions_search_author"
+            android:text="Note name:"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <EditText
+            android:id="@+id/subscriptions_search_notename"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textView2"
+            android:layout_marginLeft="30dp"
+            android:ems="10" />
+
+        <Button
+            android:id="@+id/subscriptions_search"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/subscriptions_search_author"
+            android:layout_toRightOf="@+id/subscriptions_search_author"
+            android:onClick="onButtonSearchClick"
+            android:background="@drawable/ic_action_search_light" />
+
+
+
+        <ListView
+            android:id="@+id/android:list"
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            android:layout_below="@+id/label_subscriptions"
+            android:padding="5dp"
+            android:layout_alignParentLeft="true" >
+        </ListView>
+
+        <TextView
+            android:id="@+id/label_subscriptions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/subscriptions_search_notename"
+            android:paddingBottom="@dimen/label_default_top_bottom_padding"
+            android:paddingLeft="5dp"
+            android:paddingTop="@dimen/label_default_top_bottom_padding"
+            android:text="Subscriptions:"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+    </RelativeLayout>
+
+</FrameLayout>
+

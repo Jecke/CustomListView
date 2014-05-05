@@ -1,0 +1,24 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    
+    <item
+        android:id="@+id/actionDeleteSelected"
+        android:title="@string/menu_selected_delete"
+    />
+ 
+    <item
+        android:id="@+id/actionAttributesSelected"
+        android:title="@string/menu_selected_attributes"
+    />
+ 
+    <item
+        android:id="@+id/actionAnnotateSelected"
+        android:title="@string/menu_selected_annotate"
+    />
+    <!-- <item
+        android:id="@+id/separator1"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/action_settings"/>-->
+
+</menu>

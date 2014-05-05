@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+            android:title="Cat 1">
+
+        <CheckBoxPreference
+                android:key="checkbox_preference"
+                android:id="@+id/prefCheckBox"
+                android:title="Not used"
+                android:defaultValue="true"
+                android:summary="Check 1 Summary" />
+        
+        <EditTextPreference
+	        android:capitalize="words"
+	        android:defaultValue="@string/pref_default_display_name"
+	        android:inputType="textCapWords"
+	        android:key="registered_user"
+	        android:maxLines="1"
+	        android:selectAllOnFocus="true"
+	        android:singleLine="true"
+	        android:title="@string/pref_title_display_name" />
+
+    	<EditTextPreference
+	        android:capitalize="words"
+	        android:defaultValue="@string/pref_default_display_name"
+	        android:inputType="textCapWords"
+	        android:key="note_selecteditem_owner"
+	        android:maxLines="1"
+	        android:selectAllOnFocus="true"
+	        android:singleLine="true"
+	        android:title="@string/pref_title_note_subitem_owner_name" />
+        
+        <EditTextPreference
+                android:key="treenotes_root_folder_name"
+                android:title="@string/pref_treenotes_root_folder_name"
+                android:summary="Root folder name to be displayed here"
+                android:defaultValue="@string/pref_default_root_folder_name"
+                android:dialogTitle="@string/pref_treenotes_root_folder_name" />
+        
+        <EditTextPreference
+                android:key="treenotes_about"
+                android:title="@string/pref_treenotes_about"
+                android:summary="@string/pref_treenotes_version"
+                android:defaultValue="@string/pref_treenotes_about"
+                android:dialogTitle="@string/pref_treenotes_about" />
+        
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

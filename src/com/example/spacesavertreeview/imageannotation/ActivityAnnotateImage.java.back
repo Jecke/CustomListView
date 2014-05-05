@@ -1,0 +1,378 @@
+/**
+ * 
+ */
+package com.example.spacesavertreeview.imageannotation;
+
+import java.io.File;
+import java.util.ArrayList;
+
+import com.example.spacesavertreeview.R;
+import com.example.spacesavertreeview.clsUtils;
+import com.example.spacesavertreeview.imageannotation.clsAnnotationData.clsAnnotationItem;
+import com.google.gson.reflect.TypeToken;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ListActivity;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.ListView;
+
+/**
+ * @author Ultraventris
+ *
+ * @version
+ * 
+ * This Activity handles the annotation of images with graphical shapes and texts.
+ */
+public class ActivityAnnotateImage extends ListActivity {
+
+	public static final String DATA        = "com.example.spacesavertreeview.imageannotation.data";
+	public static final String CHANGED     = "com.example.spacesavertreeview.imageannotation.changed";
+	
+	// the list holding the image as well as the annotation texts
+	ArrayList<clsAnnotationItem> objAnnotationItems;
+	ArrayList<clsAnnotationItem> objTempAnnotationItems;
+	// the list item selected for editing
+	clsAnnotationItem objSelectedAnnotationItem;
+	
+	Intent objIntent;
+	
+	// access to the list view of this object
+	ListView objListView;
+
+	// draws list and handles item interaction
+	clsAnnotateListItemAdapter objListItemAdapter;
+	
+	// The data which is currently handled by the activity
+	private clsAnnotationData objAnnotationData;
+	
+	// indicates if something changed compared to the original item list
+	// and is used if the annotation gets cancelled by the user
+	private boolean boolChanged;
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+
+		setContentView(R.layout.activity_annotate);
+		
+		objIntent = getIntent();
+
+		// retrieve information from Intent which got used to create the activity
+		Bundle objBundle = objIntent.getExtras();    		
+		
+		String data = objBundle.getString(DATA);
+		objAnnotationData = clsUtils.DeSerializeFromString(data, clsAnnotationData.class);
+		
+		objAnnotationItems = new ArrayList<clsAnnotationItem>();
+		
+		// We have to translate the parent's data to an object of class clsAnnotationData.clsAnnotationItem
+		// because that is the type which is required to draw the list
+		clsAnnotationData.clsAnnotationItem objParentAnnotationItem = objAnnotationData.new clsAnnotationItem();
+		
+		objParentAnnotationItem.setAnnotationText(objAnnotationData.strDescription);
+		objParentAnnotationItem.setResourceId(objAnnotationData.resourceId);
+		objParentAnnotationItem.setResourcePath(objAnnotationData.strResourcePath);
+		objParentAnnotationItem.setTreeNodeGuid(objAnnotationData.strNodeUuid);
+		
+		objAnnotationItems.add(objParentAnnotationItem);
+		
+		// set directory for annotation image and thumbnails
+		File fileImageDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
+		if (!fileImageDir.exists()) {
+			 fileImageDir.mkdirs();				 
+		}
+		String strImageDir = fileImageDir.toString(); 
+		
+		// add the annotation elements to the list
+		for(clsAnnotationData.clsAnnotationItem item : objAnnotationData.items)
+		{
+			objAnnotationItems.add(item);
+		}
+		objTempAnnotationItems = (ArrayList<clsAnnotationItem>) objAnnotationItems.clone();
+
+		// show list
+ 		String localThumbnail = strImageDir + "/" + objParentAnnotationItem.getTreeNodeGuid() + "_annotate.jpg";
+ 		Bitmap thumbnailBitmap = BitmapFactory.decodeFile(localThumbnail);
+ 		
+		objListItemAdapter = new clsAnnotateListItemAdapter(this, R.layout.list_item_annotate, objTempAnnotationItems,
+														thumbnailBitmap, objAnnotationData);
+		setListAdapter(objListItemAdapter);
+		objListItemAdapter.getFilter().filter("");
+		
+		// retrieve list view object for later use
+		objListView = getListView();
+		
+		// initialise change indicator
+		boolChanged = false;
+		
+		
+
+		// Only saves file if activity started from parent activity
+		if(savedInstanceState == null) {
+			SaveFile();
+		} else {
+			LoadFile();
+		}
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.annotate_image, menu);
+		
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	// option menu entry has been selected
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) 
+	{
+		switch(item.getItemId())
+		{
+			// all changes accepted
+			case R.id.actionAccept:
+				
+				objIntent.putExtra(ActivityAnnotateImage.DATA, clsUtils.SerializeToString(objAnnotationData));
+				objIntent.putExtra(ActivityAnnotateImage.CHANGED, boolChanged);
+				
+	        	// return to caller
+            	setResult(RESULT_OK, objIntent);
+				finish();
+				return true;
+				
+			case R.id.actionCancel:
+				// popup user confirmation dialog if there are changes 
+				if(boolChanged)
+				{
+					AlertDialog.Builder builder;
+					AlertDialog dialog;
+					 
+ 		        	builder = new AlertDialog.Builder(this);
+			 		builder.setMessage(R.string.dlg_unsafed_changes);
+			 		builder.setCancelable(true);
+			 		builder.setPositiveButton("YES", new DialogInterface.OnClickListener() 
+			 		{
+			 	        public void onClick(DialogInterface dialog, int id) 
+			 	        {
+			 	        	finish(); // end activity
+			 	        }
+			 	    });
+			 		
+			 		builder.setNegativeButton("NO", new DialogInterface.OnClickListener() 
+			 		{
+			 			public void onClick(DialogInterface dialog, int id) 
+			 			{
+			 				return;
+			 	        }
+			 	    });
+			 		dialog = builder.create();
+			 		dialog.show();
+			 		    
+			 		// activity will not be closed because user selected NO button
+			 		return false;
+				}
+				else
+				{
+	        		setResult(RESULT_CANCELED);
+					finish();
+					return true;
+				}
+				
+			default:
+				return super.onOptionsItemSelected(item);	
+		}
+	}
+	
+	// applies action based on the type of the selected item
+	// see comments on clsAnnotateTextActivity::MyTextOnClickListener for future changes
+	// in: selected item
+	public void handleItemSelected(clsAnnotationItem item)
+	{
+		// keep selected item in mind for later
+		objSelectedAnnotationItem = item;
+		
+		switch(item.getResourceId())
+		{
+			// In case that the image gets selected for annotation the whole annotation structure
+			// needs to be send to the image annotator because it draws the graphics and lets the 
+			// user change the annotation texts.
+			case clsAnnotationData.EDIT_ANNOTATION_IMAGE:
+				
+				Intent editImageIntent = new Intent(this, ActivityEditAnnotationImage.class);
+				
+				editImageIntent.putExtra(ActivityAnnotateImage.DATA, 
+										 clsUtils.SerializeToString(objAnnotationData));
+				
+				startActivityForResult(editImageIntent, clsAnnotationData.EDIT_ANNOTATION_IMAGE);
+				break;
+				
+			// In case that a annotation text gets selected only that specific item needs to get 
+			// sent to the annotator.
+			case clsAnnotationData.EDIT_ANNOTATION_TEXT:
+				
+				// start activity
+				Intent editTextIntent = new Intent(this, ActivityEditAnnotationText.class);
+				
+				editTextIntent.putExtra(ActivityAnnotateImage.DATA, clsUtils.SerializeToString(item));
+				
+				startActivityForResult(editTextIntent, clsAnnotationData.EDIT_ANNOTATION_TEXT);
+				break;
+				
+			default:
+				assert(false);
+				break;
+		}
+		
+		// ToDo: implement an Undo/Redo function (initially one step)
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data)
+	{
+		if(resultCode == Activity.RESULT_OK)
+		{	
+			Bundle objBundle = data.getExtras();
+
+			// indicate that an entry of the list has changed
+			// if the user tries to stop the activity then a warning dialog will pop up
+			boolChanged = true;
+
+			switch(requestCode)
+			{
+				case clsAnnotationData.EDIT_ANNOTATION_TEXT:
+					
+					clsAnnotationData.clsAnnotationItem item = 
+						clsUtils.DeSerializeFromString(objBundle.getString(DATA), 
+													   clsAnnotationData.clsAnnotationItem.class);
+					
+					// replace text
+					objSelectedAnnotationItem.setAnnotationText(item.getAnnotationText());
+
+					// redraw list
+					objListView.invalidateViews();
+					SaveFile();
+					
+					break;
+					
+				case clsAnnotationData.EDIT_ANNOTATION_IMAGE:
+					
+					clsAnnotationData annotation = 
+						clsUtils.DeSerializeFromString(objBundle.getString(DATA), 
+												   clsAnnotationData.class);
+					
+					objAnnotationData = annotation;
+					
+					objListItemAdapter.clear();
+					
+					// remove all list items except the first which is the parent image
+					objAnnotationItems.subList(1,  objAnnotationItems.size()).clear();
+					
+					// add new elements from overlay
+					for(clsAnnotationData.clsAnnotationItem elem : annotation.items)
+					{
+						objAnnotationItems.add(elem);
+					}
+					objTempAnnotationItems = (ArrayList<clsAnnotationItem>) objAnnotationItems.clone();
+					
+					// force list to redraw
+					objListItemAdapter.addAll(objTempAnnotationItems);
+					objListItemAdapter.getFilter().filter("");
+					
+					SaveFile();
+					
+					break;
+					
+				default:
+					assert(false);
+			}
+		}
+		else
+		{
+			boolChanged = false;
+		}
+	}
+
+		@Override
+	    protected void onStart() {
+	    	// TODO Auto-generated method stub
+	    	LoadFile();
+	    	super.onStart();
+	    }
+	    
+	    @Override
+	    protected void onStop() {
+	    	SaveFile();
+	    	super.onStop();
+	    }
+	    
+	    @Override
+	    protected void onPause() {
+	    	// TODO Auto-generated method stub
+	    	SaveFile();
+	    	super.onPause();
+	    }
+	    
+	    @Override
+	    protected void onDestroy() {
+	    	// TODO Auto-generated method stub
+	    	SaveFile();
+	    	super.onDestroy();
+	    }
+	    
+	    @Override
+	    protected void onRestart() {
+	    	LoadFile();
+	    	super.onRestart();
+	    }
+	    
+	    @Override
+	    protected void onResume() {
+	    	LoadFile();
+	    	super.onResume();
+	    }
+	 
+	    private void SaveFile() {
+			SharedPreferences sharedPref = this.getSharedPreferences("ActivityAnnotateImage",Context.MODE_PRIVATE);
+			SharedPreferences.Editor editor = sharedPref.edit();
+			
+			String strAnnotationData = clsUtils.SerializeToString(objAnnotationData);
+			editor.putString("objAnnotationData",strAnnotationData);
+			String strAnnotationItems = clsUtils.SerializeToString(objAnnotationItems);
+			editor.putString("objAnnotationItems",strAnnotationItems);
+			String strSelectedAnnotationItem = clsUtils.SerializeToString(objSelectedAnnotationItem);
+			editor.putString("objSelectedAnnotationItem",strSelectedAnnotationItem);
+			editor.putBoolean("boolChanged",boolChanged);
+	    	editor.commit();
+	    	sharedPref = null;
+		}
+	    
+		private void LoadFile() {
+		
+			objIntent = getIntent();
+			objListView = getListView();
+			
+			SharedPreferences sharedPref = this.getSharedPreferences("ActivityAnnotateImage",Context.MODE_PRIVATE);
+			String strAnnotationData = sharedPref.getString("objAnnotationData","");
+			objAnnotationData = clsUtils.DeSerializeFromString(strAnnotationData, clsAnnotationData.class);
+			String strAnnotationItems = sharedPref.getString("objAnnotationItems","");
+			java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsAnnotationItem>>(){}.getType();
+			objAnnotationItems = clsUtils.DeSerializeFromString(strAnnotationItems, collectionType);
+			String strSelectedAnnotationItem = sharedPref.getString("objSelectedAnnotationItem","");
+			objSelectedAnnotationItem = clsUtils.DeSerializeFromString(strSelectedAnnotationItem, clsAnnotationItem.class);
+			boolChanged = sharedPref.getBoolean("boolChanged",false);
+		}
+	
+}

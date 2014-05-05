@@ -1,0 +1,675 @@
+package com.example.spacesavertreeview;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import com.example.spacesavertreeview.ActivityNoteAddNew.clsArrowsListViewState;
+import com.example.spacesavertreeview.ActivityNoteStartup.clsNoteItemStatus;
+import com.example.spacesavertreeview.ActivityViewImage.clsListViewState;
+import com.example.spacesavertreeview.clsTreeview.clsRepository;
+import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
+import com.example.spacesavertreeview.clsTreeview.enumItemType;
+import com.example.spacesavertreeview.imageannotation.clsAnnotationData;
+import com.example.spacesavertreeview.imageannotation.clsCombineAnnotateImage;
+import com.example.spacesavertreeview.imageannotation.clsCombineAnnotateImage.TaskCompletedInterface;
+import com.example.spacesavertreeview.imageannotation.clsShapeFactory.Shape;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ListActivity;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.ViewGroup.MarginLayoutParams;
+import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.net.Uri;
+
+public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
+
+	// Environment variables
+	public clsTreeview objTreeview;
+
+	// Temporary local variables
+	int resource;
+	Context context;
+	List<clsListItem> objListItems;
+	RelativeLayout todoView;
+	private ImageView myMediaPreviewView;
+	private LayerDrawable myMediaPreviewLayerDrawable;
+	clsListItemArrayAdapter objThisArrayAdapter;
+	ViewGroup.MarginLayoutParams  objMarginLayoutParamsNarrow;
+	int int2Dp;
+
+	public clsListItemArrayAdapter(Context context, int _resource, List<clsListItem> objects, clsTreeview objTreeview) {
+		super(context, _resource, objects);
+		// TODO Auto-generated constructor stub
+		this.context = context;
+		this.resource = _resource;
+		this.objListItems = objects;
+		this.objTreeview = objTreeview;
+		this.objThisArrayAdapter = this;
+		
+		int2Dp = clsUtils.dpToPx(getContext(), 2);
+		
+	}
+
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+
+		// TODO Auto-generated method stub
+
+		clsListItem objListItem = getItem(position);
+		if (convertView == null) {
+			todoView = new RelativeLayout(getContext());
+			String inflater = Context.LAYOUT_INFLATER_SERVICE;
+			LayoutInflater li;
+			li = (LayoutInflater) getContext().getSystemService(inflater);
+			li.inflate(resource, todoView, true);
+		} else {
+			todoView = (RelativeLayout) convertView;
+		}
+		// todoView.setBackgroundColor(Color.WHITE);
+		todoView.setTag(objListItem);
+		// Draw background of the parent list item
+		if (objListItem.getSelected()) {
+			// Note: There is another one in custom view that does that view
+			// only because it has higher z-order and overwrites part of this
+			// background
+			todoView.setBackgroundResource(GetBackgroundResource(true));
+		} else {
+			todoView.setBackgroundResource(GetBackgroundResource(false));
+		}
+		
+		clsIndentableTextView myTextView = (clsIndentableTextView) todoView.findViewById(R.id.row);
+		myTextView.setListItem(objListItem);
+		myTextView.setRawTextSizeDp(todoView.getResources().getInteger(R.integer.text_size));
+		myTextView.setTag(objListItem);
+		myTextView.setSelectColour(GetSelectColour());
+		myTextView.setOnLongClickListener(MakeOnLongClickListener());
+		myTextView.setOnClickListener(MakeOnClickListener());
+		// Draw background of the parent list item
+		if (objListItem.getSelected()) {
+			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
+			
+			objMarginLayoutParamsNarrow.setMargins(0, int2Dp, int2Dp, int2Dp);
+		} else {
+			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
+			objMarginLayoutParamsNarrow.setMargins(0, 0, 0, 0);
+		}
+		myTextView.requestLayout();
+
+		ImageView myImageView = (ImageView) todoView.findViewById(R.id.icon);
+		myImageView.setTag(objListItem);
+		myImageView.setOnClickListener(new MyImageOnClickListener());
+		SelectItemTypeFolder(objListItem, myImageView);
+
+		myMediaPreviewView = (ImageView) todoView.findViewById(R.id.media_preview);
+		myMediaPreviewView.setTag(objListItem);
+		myMediaPreviewView.setOnClickListener(new MyPreviewOnClickListener());
+
+		myMediaPreviewLayerDrawable = (LayerDrawable) context.getResources()
+				.getDrawable(R.drawable.media_preview_layer);
+		myMediaPreviewView.setImageDrawable(myMediaPreviewLayerDrawable);
+
+		// draw content of preview ImageView if resource is image or video
+		switch (objListItem.getResourceId()) {
+		case clsTreeview.TEXT_RESOURCE:
+			myMediaPreviewView.setVisibility(View.GONE);
+			break;
+
+		case clsTreeview.IMAGE_RESOURCE:
+			myMediaPreviewView.setVisibility(View.VISIBLE);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
+			break;
+
+		case clsTreeview.VIDEO_RESOURCE:
+			myMediaPreviewView.setVisibility(View.VISIBLE);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
+			break;
+
+		default:
+			myMediaPreviewView.setVisibility(View.GONE);
+			break;
+		}
+
+		ProvideThumbnailSizeToCustomView(myTextView);
+
+
+
+		// Checklist or Hide activities
+		CheckBox objCheckBox = (CheckBox) todoView.findViewById(R.id.checkBox_checklist);
+		clsRepository objRepository = objTreeview.getRepository();
+		SetCheckBoxVisibilityBasedOnSettings(objRepository.boolHiddenSelectionIsActive, objRepository.IsCheckList(),
+				objCheckBox);
+		if (objRepository.boolHiddenSelectionIsActive == false) {
+			// Hide selection is inactive
+			if (objRepository.IsCheckList() == true) {
+				// Checklist activities
+				// Set items depending on checklist type note
+
+				UUID objUuid = objListItem.getTreeNodeGuid();
+				final clsListItem objDialogListItem = objListItem;
+				final clsTreeNode objDialogTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
+				objCheckBox.setOnClickListener(new OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						if (((CheckBox) v).isChecked()) {
+							if (objDialogListItem.getItemType() != enumItemType.FOLDER_EMPTY) {
+								if (objTreeview.IsAnyChildrenChecked(objDialogTreeNode) == false) {
+									// If checkbox is on a parent, ask user if
+									// he wants all children checked
+									AlertDialog.Builder builder = new AlertDialog.Builder(context);
+									builder.setTitle("All items below will be checked also. Do you want to proceed?");
+									builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											// TODO Auto-generated method stub
+											objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, true);
+											RefreshListView();
+										}
+									});
+									builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											// TODO Auto-generated method stub
+											objDialogTreeNode.setChecked(false);
+											dialog.cancel();
+											RefreshListView();
+										}
+									});
+									builder.show();
+								}
+							}
+							// If checkbox is on a child, just carry on checking
+							// it
+							objDialogTreeNode.setChecked(true);
+							RefreshListView();
+						} else {
+							if (objDialogListItem.getItemType() != enumItemType.FOLDER_EMPTY) {
+
+								// If checkbox is on a parent, ask user if he
+								// wants all children unchecked
+								AlertDialog.Builder builder = new AlertDialog.Builder(context);
+								builder.setTitle("All items below will be unchecked also. Do you want to proceed?");
+								builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										// TODO Auto-generated method stub
+										objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, false);
+										RefreshListView();
+									}
+								});
+								builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										// TODO Auto-generated method stub
+										objDialogTreeNode.setChecked(true);
+										dialog.cancel();
+										RefreshListView();
+									}
+								});
+								builder.show();
+							}
+
+							// If checkbox is on a child, just carry on
+							// unchecking it
+							objDialogTreeNode.setChecked(false);
+							// Uncheck all parents because if any child
+							// inchecked, no parent can be set
+							objTreeview.RecursiveSetParentChecked(objDialogTreeNode, false);
+
+							RefreshListView();
+						}
+					}
+				});
+				if (objDialogTreeNode.getChecked()) {
+					objCheckBox.setChecked(true);
+				} else {
+					objCheckBox.setChecked(false);
+				}
+				ProvideCheckBoxSizeToCustomView(myTextView, objCheckBox);
+
+				// End of checklist activities
+			}
+
+		} else {
+			// Hide selection is active
+			UUID objUuid = objListItem.getTreeNodeGuid();
+			final clsListItem objDialogHideListItem = objListItem;
+			final clsTreeNode objDialogHideTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
+			objCheckBox.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					if (((CheckBox) v).isChecked()) {
+						objTreeview.RecursiveSetChildrenHidden(objDialogHideTreeNode, true);
+						RefreshListView();
+					} else {
+						objTreeview.RecursiveSetChildrenHidden(objDialogHideTreeNode, false);
+						RefreshListView();
+					}
+				}
+			});
+			if (objDialogHideTreeNode.getHidden()) {
+				objCheckBox.setChecked(true);
+			} else {
+				objCheckBox.setChecked(false);
+			}
+			ProvideCheckBoxSizeToCustomView(myTextView, objCheckBox);
+		}
+		
+
+		return todoView;
+	}
+
+	public void SetCheckBoxVisibilityBasedOnSettings(boolean boolIsHideSelectionStarted, boolean boolIsCheckList,
+			CheckBox objCheckBox) {
+		// Override by other activities
+		objCheckBox.setVisibility(View.GONE);
+		if (boolIsHideSelectionStarted) {
+			objCheckBox.setVisibility(View.VISIBLE);
+			objCheckBox.setButtonDrawable(R.drawable.custom_check_box_red);
+			return;
+		}
+		if (boolIsCheckList) {
+			objCheckBox.setVisibility(View.VISIBLE);
+			objCheckBox.setButtonDrawable(R.drawable.custom_check_box_black);
+		}
+	}
+
+	public void ProvideThumbnailSizeToCustomView(clsIndentableTextView myTextView) {
+		// Sizing of the custom list item
+		if (myMediaPreviewView.getVisibility() == View.VISIBLE) {
+			ViewGroup.MarginLayoutParams vlp = (ViewGroup.MarginLayoutParams) myMediaPreviewView.getLayoutParams();
+			int intThumbnailWidth = myMediaPreviewView.getLayoutParams().width;
+			myTextView.SetThumbnailWidthInPx(intThumbnailWidth);
+			int intThumbnailHeight = myMediaPreviewView.getLayoutParams().height + vlp.leftMargin + vlp.rightMargin;
+			myTextView.SetThumbnailHeightInPx(intThumbnailHeight);
+		} else {
+			myTextView.SetThumbnailWidthInPx(0);
+			myTextView.SetThumbnailHeightInPx(0);
+		}
+
+	}
+
+	public void ProvideCheckBoxSizeToCustomView(clsIndentableTextView myTextView, CheckBox objCheckBox) {
+		// Sizing of the custom list item
+		if (objCheckBox.getVisibility() == View.VISIBLE) {
+			int intCheckBoxWidth = objCheckBox.getLayoutParams().width;
+			myTextView.SetCheckBoxWidthInPx(intCheckBoxWidth);
+		} else {
+			myTextView.SetCheckBoxWidthInPx(0);
+		}
+	}
+
+	public void SelectItemTypeFolder(clsListItem objListItem, ImageView myImageView) {
+		// This is NOTE specific, override by other activities using treeviews
+		clsTreeNode objTreenode = ActivityNoteStartup.objNoteTreeview
+				.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
+		if (ActivityNoteStartup.objNoteTreeview.getRepository().boolHiddenSelectionIsActive == false) {
+			if (!((objListItem.getFolderHasHiddenItems() == true) && objTreeview.getRepository().boolIsHiddenActive)) {
+				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode,
+						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
+						false,objTreenode.boolIsNew);
+			} else {
+				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
+						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
+						true,objTreenode.boolIsNew);
+			}
+		} else {
+			DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
+					((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
+					false,objTreenode.boolIsNew);
+		}
+	}
+	
+	public void DrawIcon (ImageView myImageView, int intBackgroundIconRid, boolean boolIsHidden, boolean boolIsNew  ) {
+		int intLayerCount = 1;
+		if (boolIsHidden) intLayerCount +=1;
+		if (boolIsNew) intLayerCount +=1;
+			
+		if (intLayerCount == 1) {
+			myImageView.setImageResource(intBackgroundIconRid);
+			return;
+		}
+		
+		Resources r = context.getResources();
+		Drawable[] layers = new Drawable[intLayerCount];
+		layers[0] = r.getDrawable(intBackgroundIconRid);
+		if (intLayerCount ==  2) {
+			if (boolIsHidden) layers[1] = r.getDrawable(R.drawable.icon_overlay_hidden);
+			if (boolIsNew) layers[1] = r.getDrawable(R.drawable.icon_overlay_new);
+		} else {
+			layers[1] = r.getDrawable(R.drawable.icon_overlay_hidden);
+			layers[2] = r.getDrawable(R.drawable.icon_overlay_new);
+		}
+		LayerDrawable layerDrawable = new LayerDrawable(layers);
+		myImageView.setImageDrawable(layerDrawable);
+	}
+
+	public int GetSelectColour() {
+		// Override by other activities
+		return (context.getResources().getColor(R.color.select_outline_color_notes));
+	}
+
+	public int GetBackgroundResource(boolean boolIsSelected) {
+		// Override by other activities
+		if (boolIsSelected) {
+			// Note: There is another one in MyTextView.java that does that view
+			// only because it has higher z-order
+			return R.drawable.listitem_selected_shape_notes;
+		} else {
+			return R.drawable.listitem_unselected_shape;
+		}
+	}
+
+	private void createThumbnailFromImage(String strTreenodeUuid, boolean boolIsAnnotated)
+	// Override by other activities
+	{
+		Resources r = context.getResources();
+
+		String strImageFilename = ActivityNoteStartup.fileTreeNodesDir + "/" + strTreenodeUuid + ".jpg";
+		Bitmap bitmap = BitmapFactory.decodeFile(strImageFilename);
+
+		myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_background, new BitmapDrawable(r,
+				bitmap));
+		if (boolIsAnnotated) {
+			myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground,
+					r.getDrawable(R.drawable.annotation));
+		} else {
+			myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, new ColorDrawable(
+					Color.TRANSPARENT));
+		}
+
+	}
+
+	private class MyImageOnClickListener implements View.OnClickListener {
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			ImageView myImageView = (ImageView) v.findViewById(R.id.icon);
+			clsListItem objListItem = (clsListItem) myImageView.getTag();
+			clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
+			clsUtils.CustomLog("Treenode Value=" + objTreeNode.getName());
+
+			if (objTreeNode.enumItemType == enumItemType.FOLDER_COLLAPSED) {
+				objTreeNode.enumItemType = enumItemType.FOLDER_EXPANDED;
+				objTreeview.SetAllIsDirty(true);
+			} else if (objTreeNode.enumItemType == enumItemType.FOLDER_EXPANDED) {
+				objTreeNode.enumItemType = enumItemType.FOLDER_COLLAPSED;
+				objTreeview.SetAllIsDirty(true);
+			} else {
+				return;
+			}
+
+			// Update changes
+			RefreshListView();
+		}
+	}
+
+	// class used on single click on image/video thumbnail
+	private class MyPreviewOnClickListener implements View.OnClickListener {
+		@Override
+		public void onClick(View v) {
+
+			// the folder has access to all object data via TAG
+			ImageView folder = (ImageView) v.findViewById(R.id.media_preview);
+			clsListItem objListItem = (clsListItem) folder.getTag();
+
+			String contentString = objListItem.getResourcePath();
+
+			switch (objListItem.getResourceId()) {
+			case clsTreeview.IMAGE_RESOURCE:
+				clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
+				if (objTreenode.annotation == null ||
+						((objTreenode.annotation != null) && (objTreenode.getBoolUseAnnotatedImage() == false))) { 
+					// Display using original source using stock viewer
+					Intent img_intent = new Intent();
+					img_intent.setAction(Intent.ACTION_VIEW);
+					// for remote images
+					// (local files start either with file:// or /)
+					if (!contentString.startsWith("/", 0) || !contentString.startsWith("file://", 0)) {
+						// for remote image
+						img_intent.setData(Uri.parse(contentString));
+
+						context.startActivity(img_intent);
+					} else // for local images
+					{
+						String resPath = getLocalPathFromUri(objListItem.getResourceId(), Uri.parse(contentString));
+						if (!resPath.isEmpty()) {
+							img_intent.setDataAndType(Uri.parse("file://" + resPath), "image/*");
+
+							context.startActivity(img_intent);
+						} else {
+							Toast.makeText(context, "Resourcepath is empty", Toast.LENGTH_SHORT).show();// Problem
+						}
+					}
+				} else {
+					// Annotated, display using custom viewer
+					// ActivityViewImage generates the annotated image and displays it together with
+					// additional text information
+					File fileImageFilename  = new File(ActivityNoteStartup.fileTreeNodesDir, objTreenode.guidTreeNode + "_full.jpg");
+					
+					Intent intentViewImage = new Intent(context, ActivityViewImage.class);
+
+					intentViewImage.putExtra(ActivityViewImage.FILE_FULLFILENAME, fileImageFilename.toString());
+					
+					clsAnnotationData objAnnotationData = objTreenode.annotation;
+					ArrayList<ActivityViewImage.clsListViewState> objListViewStates = new ArrayList<ActivityViewImage.clsListViewState>();
+					if (objAnnotationData != null) {
+						for (clsAnnotationData.clsAnnotationItem objAnnotationItem : objAnnotationData.items) {
+							if (objAnnotationItem.getType() == Shape.NUMBERED_ARROW) {
+								ActivityViewImage.clsListViewState objListViewState = new clsListViewState();
+								objListViewState.strArrowDescription = objAnnotationItem.getAnnotationText();
+								objListViewStates.add(objListViewState);
+							}
+						}
+					}
+					String strListViewStates = clsUtils.SerializeToString(objListViewStates);
+					intentViewImage.putExtra(ActivityViewImage.DESCRIPTION, objTreenode.getName());
+					intentViewImage.putExtra(ActivityViewImage.LISTVIEWSTATES_GSON, strListViewStates);
+					
+					String strAnnotationData = clsUtils.SerializeToString(objAnnotationData);
+					intentViewImage.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationData);
+					
+					context.startActivity(intentViewImage);
+				}
+				break;
+
+			case clsTreeview.VIDEO_RESOURCE:
+				Intent vid_intent = new Intent();
+				vid_intent.setAction(Intent.ACTION_VIEW);
+
+				// JE ToDo Handle remote (URL, Uri) videos
+
+				String resPath = getLocalPathFromUri(objListItem.getResourceId(), Uri.parse(contentString));
+
+				if (!resPath.isEmpty()) {
+					vid_intent.setDataAndType(Uri.parse("file://" + resPath), "video/*");
+
+					context.startActivity(vid_intent);
+				}
+				break;
+
+			default:
+				assert (false);
+				break;
+			}
+		}
+
+		// helper: retrieve the path of a resource from the internal database
+		// by using the URI
+		private String getLocalPathFromUri(int resourceId, Uri uri) {
+			String path = "";
+			String[] filePathColumn;
+			Cursor cursor;
+			int columnIndex;
+
+			switch (resourceId) {
+			case clsTreeview.IMAGE_RESOURCE: {
+				filePathColumn = new String[1];
+				filePathColumn[0] = MediaStore.Images.Media.DATA;
+			}
+				break;
+
+			case clsTreeview.VIDEO_RESOURCE: {
+				filePathColumn = new String[1];
+				filePathColumn[0] = MediaStore.Video.Media.DATA;
+			}
+				break;
+
+			default:
+				assert (false);
+				return path;
+			}
+
+			// retrieve the file path from the database
+			cursor = context.getContentResolver().query(uri, filePathColumn, null, null, null);
+
+			if (cursor != null) {
+				if (cursor.moveToFirst()) {
+					columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+
+					path = cursor.getString(columnIndex);
+
+					cursor.close();
+				} else {
+					// show error dialog because file could not be found
+					AlertDialog.Builder builder = new AlertDialog.Builder(context);
+					builder.setMessage(R.string.dlg_error_file_not_found);
+
+					builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int id) {
+
+						}
+					});
+
+					AlertDialog dialog = builder.create();
+					dialog.show();
+				}
+			}
+
+			return path;
+		}
+	}
+	
+
+
+	private void RefreshListView() {
+		List<clsListItem> objListItems = objTreeview.getListItems();
+		clear();
+		addAll(objListItems);
+
+		ListView objListView = ((ListActivity) context).getListView();
+		objListView.invalidateViews();
+		((Activity) context).invalidateOptionsMenu();
+	}
+
+	private class MyTextOnLongClickListener implements View.OnLongClickListener {
+		public boolean onLongClick(View v) {
+			// Selection
+			TextView myTextView = (TextView) v.findViewById(R.id.row);
+			clsListItem objListItem = (clsListItem) myTextView.getTag();
+			clsTreeNode objNewSelectedTreeNode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
+			objTreeview.setMultipleSelectedTreenodes(objNewSelectedTreeNode);
+
+			// Refresh view
+			RefreshListView();
+			return true;
+		}
+	}
+	
+
+	boolean firstTouch = false;
+	long time;
+
+	public class MyOnClickListener implements View.OnClickListener {
+
+		@Override
+		public void onClick(View v) {
+			
+
+
+			clsIndentableTextView myTextView = (clsIndentableTextView) v.findViewById(R.id.row);
+			clsListItem objListItem = (clsListItem) myTextView.getTag();
+			UUID objUuid = objListItem.getTreeNodeGuid();
+			clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
+			// Ensure item is selected first before opening by clicking
+			if (objTreeNode.getSelected() == false) {
+				objTreeview.ClearSelection();
+				objTreeNode.setSelected(true);
+				RefreshListView();
+				return;
+			}
+			
+			objTreeview.ClearSelection();
+			objTreeNode.setSelected(true);
+
+			// Shell out to edit activity
+			Intent intent = new Intent(getContext(), ActivityNoteAddNew.class);
+			intent.putExtra(ActivityNoteStartup.DESCRIPTION, objTreeNode.getName());
+			intent.putExtra(ActivityNoteStartup.RESOURCE_ID, objTreeNode.resourceId);
+			intent.putExtra(ActivityNoteStartup.RESOURCE_PATH, objTreeNode.resourcePath);
+			intent.putExtra(ActivityNoteStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
+			intent.putExtra(ActivityNoteStartup.TREENODE_OWNERNAME, ((ActivityNoteStartup) context).objGroupMembers
+					.GetUserNameFomUuid(objTreeNode.getStrOwnerUserUuid()));
+			clsNoteItemStatus objNoteItemStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
+			((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreeNode, objNoteItemStatus,
+					((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview);
+			intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
+
+			String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
+			intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
+			intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());
+			intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
+
+			((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
+
+		}
+	}
+
+	// Override by other activities
+	public View.OnLongClickListener MakeOnLongClickListener() {
+		return new MyTextOnLongClickListener();
+	}
+
+	// Override by other activities
+	public View.OnClickListener MakeOnClickListener() {
+		return new MyOnClickListener();
+	}
+
+	public void UpdateEnvironment(clsTreeview objTreeview) {
+		// TODO Auto-generated method stub
+		this.objTreeview = objTreeview;
+	}
+}

@@ -1,0 +1,61 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<!-- Options menu for EditAnnotationImageActivity -->
+    <item
+        android:id="@+id/actionAccept"
+        android:title="@string/menu_accept"
+        android:icon="@drawable/ic_action_accept"
+        android:showAsAction="ifRoom"
+    />
+ 
+    <item
+        android:id="@+id/actionCancel"
+        android:title="@string/menu_cancel"
+        android:icon="@drawable/ic_action_cancel"
+        android:showAsAction="ifRoom"
+    />
+    
+        <item
+        android:id="@+id/actionAddShape"
+        android:title="@string/menu_add_shape">
+    <!--  sub menu to select type of shape -->
+    <menu>
+    	<item
+        	android:id="@+id/actionAddArrow"
+        	android:title="@string/menu_add_arrow"
+        	android:showAsAction="ifRoom"
+        />
+    	<item
+        	android:id="@+id/actionAddNumberedArrow"
+        	android:title="@string/menu_add_numbered_arrow"
+        	android:showAsAction="ifRoom"
+        />
+    	<item
+        	android:id="@+id/actionAddRectangle"
+        	android:title="@string/menu_add_rectangle"
+        	android:showAsAction="ifRoom"
+        />
+    	</menu>
+    </item>
+    
+    <item
+        android:id="@+id/actionDeleteSelected"
+        android:title="@string/menu_selected_delete"
+    />
+ 
+    <item
+        android:id="@+id/actionAttributesSelected"
+        android:title="@string/menu_selected_attributes"
+    />
+ 
+    <item
+        android:id="@+id/actionAnnotateSelected"
+        android:title="@string/menu_selected_annotate"
+    />
+        
+    <!--   <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/action_settings"/> -->
+
+</menu>

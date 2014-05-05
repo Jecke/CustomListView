@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/AttributeDialogLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:columnCount="2"
+    android:orientation="horizontal" >
+
+    <EditText
+        android:id="@+id/editText1"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="5dp"
+        android:contentDescription="@string/layout_linewidth_content_description"
+        android:ems="10"
+        android:enabled="true"
+        android:inputType="number|numberDecimal"
+        android:maxLength="2"
+        android:text="@string/layout_linewidth_default_label" />
+
+    <TextView
+        android:id="@+id/textLineWidth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/editText1"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignTop="@id/editText1"
+        android:layout_gravity="left"
+        android:layout_marginLeft="5dp"
+        android:layout_toLeftOf="@id/editText1"
+        android:gravity="center_vertical"
+        android:text="@string/layout_linewidth_label"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <!-- ImageView -->
+    <view class="com.example.spacesavertreeview.imageannotation.ActivityEditAnnotationImage$LineStyleImageView"
+        android:id="@+id/imageViewLineStyle"
+        android:layout_width="70dp"
+        android:layout_height="30dp"
+        android:layout_alignLeft="@id/editText1"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/editText1"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="5dp"
+        android:background="@color/grey_background"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/layout_linestyle_content_description"
+        android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/textLineStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/imageViewLineStyle"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="false"
+        android:layout_alignRight="@id/textLineWidth"
+        android:layout_below="@id/textLineWidth"
+        android:layout_marginLeft="5dp"
+        android:gravity="center_vertical"
+        android:text="@string/layout_linestyle_label"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <view class="com.example.spacesavertreeview.imageannotation.ActivityEditAnnotationImage$LineColorImageView"
+        android:id="@+id/imageViewLineColor"
+        android:layout_width="70dp"
+        android:layout_height="30dp"
+        android:layout_alignLeft="@id/imageViewLineStyle"
+        android:layout_alignParentRight="true"
+        android:layout_alignRight="@id/editText1"
+        android:layout_below="@id/imageViewLineStyle"
+        android:layout_marginBottom="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="5dp"
+        android:background="@color/grey_background"
+        android:contentDescription="@+id/layout_linecolor_content_description"
+        android:scaleType="center" />
+
+    <TextView
+        android:id="@+id/textLineColor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/imageViewLineColor"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="false"
+        android:layout_alignRight="@id/textLineStyle"
+        android:layout_below="@id/textLineStyle"
+        android:layout_marginLeft="5dp"
+        android:contentDescription="@id/layout_linecolor_content_description"
+        android:gravity="center_vertical"
+        android:text="@string/layout_linecolor_label"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+</RelativeLayout>

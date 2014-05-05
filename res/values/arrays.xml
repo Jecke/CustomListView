@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Predefined line colors for annotation shapes -->
+    <string-array name="lineColor">
+        <item>#FFFFFF,#000000</item>
+        <item>#000000,#FFFFFF</item>
+        <item>#FF0000,#FFFFFF</item>
+        <item>#00FF00,#000000</item>
+        <item>#0000FF,#FFFFFF</item>
+        
+        <item>cyan,#000000</item>
+        <item>yellow,#000000</item>
+        <item>magenta,#000000</item>
+    </string-array>
+    
+</resources>
