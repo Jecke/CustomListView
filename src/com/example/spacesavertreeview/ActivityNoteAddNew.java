@@ -53,9 +53,12 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	
 	public static final int GET_IMAGE_RESOURCE = 1;
 	public static final int GET_VIDEO_RESOURCE = 2;
-	public static final int EDIT_ANNOTATION_IMAGE = 3;
-	public static final int EDIT_ANNOTATION_TEXT = 4;
-
+	public static final int GET_WEB_RESOURCE = 3;
+	
+	public static final int EDIT_ANNOTATION_IMAGE = 10;
+	public static final int EDIT_ANNOTATION_TEXT = 11;
+	
+	public static final String WEB_VIEW_URL = "com.example.spacesavertreeview.url";
 
 	
 	 public class clsArrowsListViewState 
@@ -232,7 +235,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			
 			@Override
 			public void onClick(View v) {
-				// TODO Auto-generated method stub
 				CheckBox checkBoxUseAnnotatedImage = (CheckBox)v.findViewById(R.id.checkBoxUseAnnotatedImage);
 				boolUseAnnotatedImage = checkBoxUseAnnotatedImage.isChecked();
 			}
@@ -243,7 +245,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			
 			@Override
 			public void onClick(View v) {
-				// TODO Auto-generated method stub
 	        	 if(objAnnotationData == null)
 	        	 {
 	        		 objAnnotationData = new clsAnnotationData(strTreeNodeUuid);
@@ -274,7 +275,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			
 			@Override
 			public void onClick(View v) {
-				// TODO Auto-generated method stub
 				int intArrowNum = -1;
 				int inArrowCount = 0;
 				// Find clicked item first
@@ -502,6 +502,14 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				// image as note
 				case R.id.radioURLNote:
 				{
+					TextView urlText = (TextView)findViewById(R.id.textViewURLNote);
+					String t = (String) urlText.getText();
+					
+					Intent web = new Intent(objContext, ActivityWebBrowser.class);
+					web.putExtra(WEB_VIEW_URL, t);
+
+//					startActivity(web, GET_WEB_RESOURCE);
+					startActivity(web);
 				}
 				break;
 				
@@ -509,14 +517,12 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					assert(false);
 					break;
 			}
-			
 		}
 	}
 	
     
     @Override
     protected void onStart() {
-    	// TODO Auto-generated method stub
 		clsUtils.CustomLog("onRestart LoadFile");
 		LoadFile();
     	super.onStart();
@@ -531,7 +537,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
     
     @Override
     protected void onPause() {
-    	// TODO Auto-generated method stub
     	clsUtils.CustomLog("onPause SaveFile");
     	SaveFile();
     	super.onPause();
@@ -539,7 +544,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
     
     @Override
     protected void onDestroy() {
-    	// TODO Auto-generated method stub
     	clsUtils.CustomLog("onDestroy SaveFile");
     	SaveFile();
     	super.onDestroy();
@@ -665,6 +669,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		// Note that this method gets called when the chooser gets closed (by either 
 		// selecting an image or video or aborting the chooser or the app which
 		// provides the media)
+		Bundle objBundle;
 		
 		ImageView objEditThumbnail;
 		objEditThumbnail = (ImageView)findViewById(R.id.imagePreview);
@@ -680,7 +685,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				{
 					resourcePath = origUri.toString();
 
-					pd = ProgressDialog.show(this,  
+					pd = ProgressDialog.show(this, 
 							"Please wait", 
 							"Loading Resource", 
 							true, true, null);
@@ -719,8 +724,18 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				}
 
 				break;
+				
+			case GET_WEB_RESOURCE:
+				// TODO JE launch web view
+				objBundle = data.getExtras();
+
+				String url = objBundle.getString(WEB_VIEW_URL);
+				Log.d("JE", "Webview: "+url);
+				break;
+
+				
 			case EDIT_ANNOTATION_IMAGE:
-				Bundle objBundle = data.getExtras();
+				objBundle = data.getExtras();
 				objAnnotationData = clsUtils.DeSerializeFromString(objBundle.getString(clsAnnotationData.DATA), 
 										   clsAnnotationData.class);
 
@@ -775,6 +790,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				
 				SaveFile();
 				break;
+				
 			case EDIT_ANNOTATION_TEXT:	
 				objBundle = data.getExtras();
 				clsAnnotationData.clsAnnotationItem objUpdatedAnnotationItem = clsUtils.DeSerializeFromString(objBundle.getString(clsAnnotationData.DATA), 
@@ -872,7 +888,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	}
 	
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// TODO Auto-generated method stub
 		boolean success = false;
 		
     	switch (item.getItemId()) 

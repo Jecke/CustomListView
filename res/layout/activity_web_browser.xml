@@ -15,12 +15,15 @@
             android:id="@+id/editTextNoteName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:inputType="textUri"
+            android:maxLines="1"
             android:singleLine="false"
             android:text="" >
+
         </EditText>
 
         <WebView
-            android:id="@+id/webView1"
+            android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_alignParentBottom="true"
