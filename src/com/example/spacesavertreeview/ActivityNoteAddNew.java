@@ -128,7 +128,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 
 			if(bmFull != null)// && resourcePath.contains("http"))
 			{
-				SaveBitmapToFile(bmFull, strFullFilename.getAbsolutePath(), 80);
+				SaveBitmapToFile(bmFull, strFullFilename.getAbsolutePath(), 100);
 			}
 		}
 		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
@@ -508,8 +508,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					Intent web = new Intent(objContext, ActivityWebBrowser.class);
 					web.putExtra(WEB_VIEW_URL, t);
 
-//					startActivity(web, GET_WEB_RESOURCE);
-					startActivity(web);
+					startActivityForResult(web, GET_WEB_RESOURCE);
 				}
 				break;
 				
@@ -698,10 +697,11 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					// size of the Annotation view, which actually uses the images. It should be stressed that for future
 					// high-resolution hardware that issue can arise again.
 					DisplayMetrics dm = new DisplayMetrics();
-					getWindowManager().getDefaultDisplay().getMetrics(dm);
-
+					getWindowManager().getDefaultDisplay().getMetrics(dm);			
+					
 					objResourceLoader.createThumbnailFromImageResource(this, this, requestCode, origUri, 
 							dm.widthPixels, dm.heightPixels);
+					
 					RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
 					objRelativeLayout.setVisibility(View.VISIBLE);
 					
@@ -732,7 +732,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				String url = objBundle.getString(WEB_VIEW_URL);
 				Log.d("JE", "Webview: "+url);
 				break;
-
 				
 			case EDIT_ANNOTATION_IMAGE:
 				objBundle = data.getExtras();

@@ -27,6 +27,7 @@ public class clsResourceLoader
 {	
 	private int resourceType;
 	private Uri origUri;
+	private String resPath;
 	private TaskCompletedInterface listener;
 	private Bitmap imageBitmapFull = null;
 	
@@ -64,9 +65,14 @@ public class clsResourceLoader
 				{
 					Uri uriIn = Uri.parse(uri[0]);
 
-					String resPath = clsUtils.getLocalPathFromUri(context, resourceType, uriIn); 
+					String resPath = clsUtils.getVideoPath(context, uriIn);
 
 					imageBitmapFull = ThumbnailUtils.createVideoThumbnail(resPath, MediaStore.Video.Thumbnails.MICRO_KIND);
+					
+					if(imageBitmapFull != null)
+					{
+						origUri = Uri.parse(resPath);
+					}
 				}
 				break;
 			}
@@ -118,18 +124,14 @@ public class clsResourceLoader
 				newUrl[0] = new URL(uri);
 
 				try {
-//					is = (FileInputStream)newUrl[0].getContent();
 					is = (InputStream)newUrl[0].getContent();
 				} catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
 			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -150,7 +152,6 @@ public class clsResourceLoader
 					is = new FileInputStream(fileDescriptor);
 
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} 
@@ -161,7 +162,6 @@ public class clsResourceLoader
 					is = (FileInputStream)context.getContentResolver().openInputStream(uriIn);
 
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -191,7 +191,6 @@ public class clsResourceLoader
 				try {
 					is.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -204,7 +203,6 @@ public class clsResourceLoader
 					is = (FileInputStream)context.getContentResolver().openInputStream(uriIn);
 					
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -241,12 +239,11 @@ public class clsResourceLoader
 		Bitmap imageBitmap = null;
 		
 		String res = uri.toString();
-		Log.d("-JE-", res);
 
 		if(resourceType == clsTreeview.VIDEO_RESOURCE && 
 		   res.contains("http"))
 		{
-			// JE ToDo remote videos currently not supported
+			// TODO JE remote videos currently not supported
 			clsUtils.showErrorDialog(context, R.string.video_not_supported, false);
 			listener.loadTaskComplete(imageBitmap, imageBitmapFull, origUri);	
 

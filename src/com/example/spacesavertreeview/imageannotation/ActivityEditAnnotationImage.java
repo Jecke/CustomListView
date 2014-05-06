@@ -732,10 +732,8 @@ Log.d("<<onDraw>>", String.valueOf(currentColor));
 					imageBitmap = clsUtils.downsampleImageToView(outFile, overlayImage.getWidth(), overlayImage.getHeight(), false);
 
 	            } catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}

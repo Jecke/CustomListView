@@ -42,8 +42,6 @@ public class ActivityWebBrowser extends Activity {
     }
     
 	public boolean onOptionsItemSelected(MenuItem item) {
-		boolean success = false;
-		
     	switch (item.getItemId()) 
     	{
         	case R.id.actionAccept:

@@ -566,4 +566,23 @@ public class clsUtils {
 		
 		return out;
 	}
+	
+	public static String getVideoPath(Context context, Uri uri)
+	{
+		   Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
+		   cursor.moveToFirst();
+		   String document_id = cursor.getString(0);
+		   document_id = document_id.substring(document_id.lastIndexOf(":")+1);
+		   cursor.close();
+
+		   cursor = context.getContentResolver().query( 
+		   android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+		   null, MediaStore.Video.Media._ID + " = ? ", new String[]{document_id}, null);
+		   cursor.moveToFirst();
+		   String path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
+		   cursor.close();
+
+		   return path;
+	}
 }
+
