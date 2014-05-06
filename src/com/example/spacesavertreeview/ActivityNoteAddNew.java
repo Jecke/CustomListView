@@ -499,6 +499,12 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				}
 				break;
 					
+				// image as note
+				case R.id.radioURLNote:
+				{
+				}
+				break;
+				
 				default:
 					assert(false);
 					break;

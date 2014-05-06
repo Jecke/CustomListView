@@ -7,21 +7,22 @@
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_done">Save</string>
-    <string name="menu_add_samelevel">Add at same level ...</string>
-    <string name="menu_add_nextlevel">Add at next level ...</string>
+    <string name="menu_add_samelevel">Add at same level&#8230;</string>
+    <string name="menu_add_nextlevel">Add at next level&#8230;</string>
     <string name="menu_cut">Cut</string>
     <string name="menu_copy">Copy</string>
-    <string name="menu_paste">Paste ...</string>
+    <string name="menu_paste">Paste&#8230;</string>
     <string name="menu_edit_note_heading">Edit note name</string>
     <string name="menu_edit">Edit</string>
     <string name="menu_move_up">Move up</string>
     <string name="menu_move_down">Move down</string>
     <string name="menu_delete">Delete</string>
-    <string name="menu_hide_unhide">Hide/Unhide ...</string>
+    <string name="menu_hide_unhide">Hide/Unhide&#8230;</string>
     <string name="menu_add_shortcut">Create shortcut</string>
     <string name="radio_text_note">Plain text note</string>
     <string name="radio_photo_note">Photo note</string>
     <string name="radio_video_note">Video note</string>
+    <string name="radio_url_note">Web note</string>
     <string name="menu_accept">Accept</string>
     <string name="menu_cancel">Cancel</string>
     <string name="menu_backup">Backup</string>
@@ -36,7 +37,7 @@
     <string name="menu_selected_delete">Delete</string>
     <string name="menu_selected_attributes">Change Style</string>
     <string name="menu_selected_annotate">Edit Text</string>
-    <string name="menu_checklist">Checklist ...</string>
+    <string name="menu_checklist">Checklist&#8230;</string>
     <string name="menu_search">Search</string>
     <string name="dlg_description_empty">The description is empty. Please enter a description.</string>
     <string name="dlg_error_loading_resource">Loading failed.</string>
@@ -82,14 +83,14 @@
 
     <!--
          Color used to draw selected overlay shapes while
-    	 annotating images (rubberband)
+    	 annotating images (rubberband)
     -->
     <color name="color_rubberband">#FA7603</color>
     <!--
          The below value defines the default line width of annotation shapes.
     	 A value of 100 means that the initial line width is 1/100 of the 
     	 image width in pixels. Must be > 0 even though small values 
-    	 make no sense
+    	 make no sense
     -->
     <integer name="line_width_divisor">100</integer>
 
