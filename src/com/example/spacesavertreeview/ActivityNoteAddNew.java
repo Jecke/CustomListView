@@ -881,6 +881,12 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
         		EditText objEditView    = (EditText)findViewById(R.id.editTextNoteName);
          		String   strDescription = objEditView.getText().toString();
          		clsUtils.CustomLog("on Accept, resourceId = " + resourceId);
+         		
+         		// Default: Set annotationData to null. That covers the use cases when an annotated 
+         		// image gets replaced by another type of node.
+         		String strAnnotationData = clsUtils.SerializeToString(null);
+				objIntent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationData);
+         		
          		switch(resourceId)
          		{
          			case clsTreeview.TEXT_RESOURCE:
@@ -899,7 +905,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          				
          				break;
          				
-         			case clsTreeview.IMAGE_RESOURCE: // Todo
+         			case clsTreeview.IMAGE_RESOURCE:
          				// check if resource_path is set
          				if(resourcePath == null || resourcePath.isEmpty())
          				{
@@ -910,7 +916,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          				}
          				else
          				{
-         					String strAnnotationData = clsUtils.SerializeToString(objAnnotationData);
+         					strAnnotationData = clsUtils.SerializeToString(objAnnotationData);
          					objIntent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationData);
          					success = true;
          				}
