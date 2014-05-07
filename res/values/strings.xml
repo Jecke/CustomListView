@@ -58,6 +58,7 @@
     <string name="preview_content_description">Photo Video Thumbnail</string>
     <string name="folder_content_description">showing collapsed/expanded tree</string>
     <string name="annotate_content_description">holds annotated image</string>
+    <string name="web_browser_content_description">Select Page</string>
     <string name="button_content_linestyle">lets user select a linestyle</string>
     <string name="video_not_supported">Remote videos are not supported</string>
     <!-- Strings associated with ActivityEditAnnotationImage and children -->

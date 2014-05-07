@@ -59,6 +59,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	public static final int EDIT_ANNOTATION_TEXT = 11;
 	
 	public static final String WEB_VIEW_URL = "com.example.spacesavertreeview.url";
+	public static final String WEB_VIEW_IMAGE = "com.example.spacesavertreeview.web_image";
 
 	
 	 public class clsArrowsListViewState 
@@ -146,7 +147,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		imageDirectory = new File(clsUtils.GetTreeNotesDirectoryName(this)).getAbsolutePath() + "/";
 		
 		Bundle objBundle = objIntent.getExtras();    		
-		strDescription       = objBundle.getString(ActivityNoteStartup.DESCRIPTION);
+		strDescription  = objBundle.getString(ActivityNoteStartup.DESCRIPTION);
 		resourceId      = objBundle.getInt(ActivityNoteStartup.RESOURCE_ID);
 		resourcePath    = objBundle.getString(ActivityNoteStartup.RESOURCE_PATH);
 		strTreeNodeUuid = objBundle.getString(ActivityNoteStartup.TREENODE_UID);
@@ -503,10 +504,13 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				case R.id.radioURLNote:
 				{
 					TextView urlText = (TextView)findViewById(R.id.textViewURLNote);
-					String t = (String) urlText.getText();
+					String t = urlText.getText().toString();
+					
+					String imageFile = strImageFilename.toString();
 					
 					Intent web = new Intent(objContext, ActivityWebBrowser.class);
 					web.putExtra(WEB_VIEW_URL, t);
+					web.putExtra(WEB_VIEW_IMAGE, imageFile);
 
 					startActivityForResult(web, GET_WEB_RESOURCE);
 				}
@@ -518,7 +522,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			}
 		}
 	}
-	
     
     @Override
     protected void onStart() {
@@ -737,7 +740,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				objBundle = data.getExtras();
 				objAnnotationData = clsUtils.DeSerializeFromString(objBundle.getString(clsAnnotationData.DATA), 
 										   clsAnnotationData.class);
-
 
 				
 				if (objAnnotationData != null) {

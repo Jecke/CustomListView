@@ -459,14 +459,8 @@ public class clsUtils {
 			final int halfHeight = height / 2;
 			final int halfWidth = width / 2;
 
-			// Calculate the largest inSampleSize value that is a power of 2 and keeps both
-			// height and width within the requested height and width. 
-			// original: 'larger than the requested height and width.' which leads to fails if
-			// one input dimension is significantly larger than the other.
-//			while ((halfHeight / inSampleSize) > reqHeight &&
-//				   (halfWidth  / inSampleSize) > reqWidth) 
-				while ((height / inSampleSize) > reqHeight &&
-					   (width  / inSampleSize) > reqWidth) 
+			while ((height / inSampleSize) > reqHeight &&
+				   (width  / inSampleSize) > reqWidth) 
 			{
 				inSampleSize *= 2;
 			}
