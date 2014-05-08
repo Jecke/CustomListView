@@ -51,23 +51,18 @@ import android.view.View.OnClickListener;
 
 public class ActivityNoteAddNew extends Activity implements clsResourceLoader.TaskCompletedInterface {
 	
-	public static final int GET_IMAGE_RESOURCE = 1;
-	public static final int GET_VIDEO_RESOURCE = 2;
-	public static final int GET_WEB_RESOURCE = 3;
-	
 	public static final int EDIT_ANNOTATION_IMAGE = 10;
-	public static final int EDIT_ANNOTATION_TEXT = 11;
+	public static final int EDIT_ANNOTATION_TEXT  = 11;
 	
-	public static final String WEB_VIEW_URL = "com.example.spacesavertreeview.url";
-
+	public static final String WEB_VIEW_URL   = "com.example.spacesavertreeview.url";
+	public static final String WEB_VIEW_IMAGE = "com.example.spacesavertreeview.web_image";
 	
-	 public class clsArrowsListViewState 
-	    {
-	    	int intArrowNum;
-	    	String strArrowDescription;
-	    	boolean boolIsChecked = false;
-	    }
-	
+	public class clsArrowsListViewState 
+	{
+		int intArrowNum;
+		String strArrowDescription;
+		boolean boolIsChecked = false;
+	}
 	 
 	clsActivityNoteAddNewArrayAdapter objArrayAdapter;
 	ArrayList<clsArrowsListViewState> objListViewStates =  new ArrayList<clsArrowsListViewState>();
@@ -76,6 +71,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	private Intent objIntent;
 	private Activity objContext;
 
+	private TextView urlText;
 	
 	// Annotation data
 	public clsAnnotationData objAnnotationData;
@@ -128,7 +124,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 
 			if(bmFull != null)// && resourcePath.contains("http"))
 			{
-				SaveBitmapToFile(bmFull, strFullFilename.getAbsolutePath(), 80);
+				objResourceLoader.saveBitmapToFile(objContext, bmFull, 
+													strFullFilename.getAbsolutePath(), 100);
 			}
 		}
 		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
@@ -146,7 +143,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		imageDirectory = new File(clsUtils.GetTreeNotesDirectoryName(this)).getAbsolutePath() + "/";
 		
 		Bundle objBundle = objIntent.getExtras();    		
-		strDescription       = objBundle.getString(ActivityNoteStartup.DESCRIPTION);
+		strDescription  = objBundle.getString(ActivityNoteStartup.DESCRIPTION);
 		resourceId      = objBundle.getInt(ActivityNoteStartup.RESOURCE_ID);
 		resourcePath    = objBundle.getString(ActivityNoteStartup.RESOURCE_PATH);
 		strTreeNodeUuid = objBundle.getString(ActivityNoteStartup.TREENODE_UID);
@@ -164,7 +161,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		strFullFilename            = new File(imageDirectory + strTreeNodeUuid + "_full.jpg");
 		strFullFilenameBackup      = new File(strFullFilename + ".backup");
 		
-		if(resourceId == clsTreeview.IMAGE_RESOURCE || strTreeNodeUuid.equals("temp_uuid"))
+		if(resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE ||
+		   strTreeNodeUuid.equals("temp_uuid"))
 		{
 			
 			// make copies of important files which could be altered
@@ -181,6 +179,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		}
 
 		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
+		
+		urlText = (TextView)findViewById(R.id.textViewURLNote);
 		
 		// set description field
 		EditText objEditText = (EditText)findViewById(R.id.editTextNoteName);
@@ -202,7 +202,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		TextView lblNumberedArrows = (TextView)findViewById(R.id.lblNumberedArrows);
 		lblNumberedArrows.setVisibility(View.INVISIBLE);
 		RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
-		if (resourceId == clsTreeview.IMAGE_RESOURCE) {	
+		if (resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE) {	
 			// Fill ListView ArrayAdapter
 			objArrayAdapter = new clsActivityNoteAddNewArrayAdapter(this, R.layout.arrows_list_item, objListViewStates);
 			objListView = (ListView)findViewById(R.id.listviewNumberedArrows);
@@ -313,7 +313,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			{
 				Intent chooser;
 				if(resourceId == clsTreeview.IMAGE_RESOURCE || 
-				   resourceId == clsTreeview.VIDEO_RESOURCE)
+				   resourceId == clsTreeview.VIDEO_RESOURCE ||
+				   resourceId == clsTreeview.WEB_RESOURCE)
 				{
 					Intent[] intentArray = new Intent[1];
 					Intent mediaIntent = new Intent(Intent.ACTION_GET_CONTENT, null);
@@ -351,6 +352,20 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 							// start activity and provide ID of source (i.e. image)
 							startActivityForResult(chooser, clsTreeview.VIDEO_RESOURCE);					
 							break;
+							
+						case clsTreeview.WEB_RESOURCE:
+							resourceId = clsTreeview.WEB_RESOURCE;
+
+							String t = urlText.getText().toString();
+							
+							String imageFile = strImageFilename.toString();
+							
+							Intent web = new Intent(objContext, ActivityWebBrowser.class);
+							web.putExtra(WEB_VIEW_URL, t);
+							web.putExtra(WEB_VIEW_IMAGE, imageFile);
+
+							startActivityForResult(web, clsTreeview.WEB_RESOURCE);
+							break;
 					}
 				}
 			}
@@ -359,19 +374,21 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		switch(resourceId)
 		{
 			case clsTreeview.IMAGE_RESOURCE:
-				loadThumbnailFromImage(objEditThumbnail);
-				
 				// set radio button
 				rg.check(R.id.radioImageNote);
 				break;
+
+			case clsTreeview.WEB_RESOURCE:
+				// set radio button
+				rg.check(R.id.radioURLNote);
+				break;
 				
 			case clsTreeview.VIDEO_RESOURCE:
-				loadThumbnailFromImage(objEditThumbnail);
-				
 				// set radio button
 				rg.check(R.id.radioVideoNote);
 				break;
 		}
+		loadThumbnailFromImage(objEditThumbnail);
 		
 		// object to create thumbnails from images and videos
 		objResourceLoader = new clsResourceLoader();
@@ -455,7 +472,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,  intentArray);
 					
 					// start activity and provide ID of source (i.e. image)
-					startActivityForResult(chooser, GET_IMAGE_RESOURCE);
+//					startActivityForResult(chooser, GET_IMAGE_RESOURCE);
+					startActivityForResult(chooser, clsTreeview.IMAGE_RESOURCE);
 				}	
 				break;
 					
@@ -495,21 +513,24 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,  intentArray);
 					
 					// start activity and provide ID of source (i.e. image)
-					startActivityForResult(chooser, GET_VIDEO_RESOURCE);					
+					startActivityForResult(chooser, clsTreeview.VIDEO_RESOURCE);					
 				}
 				break;
 					
 				// image as note
 				case R.id.radioURLNote:
 				{
-					TextView urlText = (TextView)findViewById(R.id.textViewURLNote);
-					String t = (String) urlText.getText();
+					resourceId = clsTreeview.WEB_RESOURCE;
+
+					String t = urlText.getText().toString();
+					
+					String imageFile = strImageFilename.toString();
 					
 					Intent web = new Intent(objContext, ActivityWebBrowser.class);
 					web.putExtra(WEB_VIEW_URL, t);
+					web.putExtra(WEB_VIEW_IMAGE, imageFile);
 
-//					startActivity(web, GET_WEB_RESOURCE);
-					startActivity(web);
+					startActivityForResult(web, clsTreeview.WEB_RESOURCE);
 				}
 				break;
 				
@@ -519,7 +540,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			}
 		}
 	}
-	
     
     @Override
     protected void onStart() {
@@ -639,7 +659,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		}
 					
 		RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
-		if (resourceId == clsTreeview.IMAGE_RESOURCE) {		
+		if (resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE) {		
 			objEditThumbnail = (ImageView)findViewById(R.id.imagePreview);
 			if (strImageFilename.exists()) {
 				loadThumbnailFromImage(objEditThumbnail);
@@ -670,6 +690,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		// selecting an image or video or aborting the chooser or the app which
 		// provides the media)
 		Bundle objBundle;
+		Uri origUri;
 		
 		ImageView objEditThumbnail;
 		objEditThumbnail = (ImageView)findViewById(R.id.imagePreview);
@@ -678,9 +699,9 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		if(resultCode == RESULT_OK)
 		{	
 			switch (requestCode) {
-			case GET_IMAGE_RESOURCE:
-			case GET_VIDEO_RESOURCE:
-				Uri origUri = data.getData();
+			case clsTreeview.IMAGE_RESOURCE:
+			case clsTreeview.VIDEO_RESOURCE:
+				origUri = data.getData();
 				if(origUri != null)
 				{
 					resourcePath = origUri.toString();
@@ -698,10 +719,11 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					// size of the Annotation view, which actually uses the images. It should be stressed that for future
 					// high-resolution hardware that issue can arise again.
 					DisplayMetrics dm = new DisplayMetrics();
-					getWindowManager().getDefaultDisplay().getMetrics(dm);
-
+					getWindowManager().getDefaultDisplay().getMetrics(dm);			
+					
 					objResourceLoader.createThumbnailFromImageResource(this, this, requestCode, origUri, 
 							dm.widthPixels, dm.heightPixels);
+					
 					RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
 					objRelativeLayout.setVisibility(View.VISIBLE);
 					
@@ -719,26 +741,78 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					SaveFile();
 				
 				}
-				else {
+				else 
+				{
 					resourcePath = "";
 				}
 
 				break;
-				
-			case GET_WEB_RESOURCE:
-				// TODO JE launch web view
+			// TODO JE Create method because code for image, video and web is almost identical.	
+			case clsTreeview.WEB_RESOURCE:
 				objBundle = data.getExtras();
 
-				String url = objBundle.getString(WEB_VIEW_URL);
-				Log.d("JE", "Webview: "+url);
-				break;
+				String url   = objBundle.getString(WEB_VIEW_URL);
+				resourcePath = objBundle.getString(WEB_VIEW_IMAGE);
+				origUri 	 = Uri.parse(resourcePath);
 
+				urlText.setText(url);
+				
+				// Put URL in description if description is empty
+				EditText objEditView = (EditText)findViewById(R.id.editTextNoteName);
+				if(objEditView.getText().toString().isEmpty())
+				{
+					// set description field
+					objEditView.setText(url);
+				}
+				
+				if(origUri != null)
+				{
+
+				pd = ProgressDialog.show(this, 
+						"Please wait", 
+						"Loading Resource", 
+						true, true, null);
+				
+
+				// This Activity is the only one which has access rights to remote images because it gets them from
+				// the external media App (e.g. Gallery or Google Photo). That is why it retrieves the media contents
+				// and creates a thumbnail bitmap and an image bitmap (not for videos).
+				// Due to limits of hardware memory large images can cause an out-of-memory exception while being loaded.
+				// To avoid this the app down-samples the images to fit the screen. The screen size is close enough to the
+				// size of the Annotation view, which actually uses the images. It should be stressed that for future
+				// high-resolution hardware that issue can arise again.
+				DisplayMetrics dm = new DisplayMetrics();
+				getWindowManager().getDefaultDisplay().getMetrics(dm);			
+				
+				objResourceLoader.createThumbnailFromImageResource(this, this, requestCode, origUri, 
+						dm.widthPixels, dm.heightPixels);
+				
+				RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
+				objRelativeLayout.setVisibility(View.VISIBLE);
+				
+				objAnnotationData = null;
+				objListViewStates.clear();
+				objArrayAdapter.clear();objArrayAdapter.addAll(objListViewStates);
+				objListView.invalidateViews();
+				TextView lblImageAnotationStatus = (TextView)findViewById(R.id.lblImageAnotationStatus);
+				lblImageAnotationStatus.setVisibility(View.INVISIBLE);
+				TextView lblNumberedArrows = (TextView)findViewById(R.id.lblNumberedArrows);
+				lblNumberedArrows.setVisibility(View.INVISIBLE);
+				CheckBox checkBoxUseAnnotatedImage = (CheckBox)findViewById(R.id.checkBoxUseAnnotatedImage);
+				boolUseAnnotatedImage = false;
+				checkBoxUseAnnotatedImage.setChecked(boolUseAnnotatedImage);
+				SaveFile();
+			
+			}
+			else {
+				resourcePath = "";
+			}
+			break;
 				
 			case EDIT_ANNOTATION_IMAGE:
 				objBundle = data.getExtras();
 				objAnnotationData = clsUtils.DeSerializeFromString(objBundle.getString(clsAnnotationData.DATA), 
 										   clsAnnotationData.class);
-
 
 				
 				if (objAnnotationData != null) {
@@ -846,31 +920,31 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	
 	private void SaveBitmapToFile (Bitmap objBitmap, String strFilename) {
 		
-		SaveBitmapToFile(objBitmap, strFilename, 100);
+		objResourceLoader.saveBitmapToFile(objContext, objBitmap, strFilename, 100);
 	}
 
-	private void SaveBitmapToFile (Bitmap objBitmap, String strFilename, int compressRate) {
-		OutputStream fOutputStream = null;
-		
-		File file = new File(strFilename);
-        try {
-            fOutputStream = new FileOutputStream(file);
-
-            objBitmap.compress(Bitmap.CompressFormat.JPEG, compressRate, fOutputStream);
-
-            fOutputStream.flush();
-            fOutputStream.close();
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Save Failed (Not Found)", Toast.LENGTH_SHORT).show();
-            return;
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Save Failed IO", Toast.LENGTH_SHORT).show();
-            return;
-        }
-	}
+//	private void SaveBitmapToFile (Bitmap objBitmap, String strFilename, int compressRate) {
+//		OutputStream fOutputStream = null;
+//		
+//		File file = new File(strFilename);
+//        try {
+//            fOutputStream = new FileOutputStream(file);
+//
+//            objBitmap.compress(Bitmap.CompressFormat.JPEG, compressRate, fOutputStream);
+//
+//            fOutputStream.flush();
+//            fOutputStream.close();
+//
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//            Toast.makeText(this, "Save Failed (Not Found)", Toast.LENGTH_SHORT).show();
+//            return;
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            Toast.makeText(this, "Save Failed IO", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -921,6 +995,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          				break;
          				
          			case clsTreeview.IMAGE_RESOURCE:
+         			case clsTreeview.WEB_RESOURCE:
          				// check if resource_path is set
          				if(resourcePath == null || resourcePath.isEmpty())
          				{
@@ -966,6 +1041,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	            	objIntent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, boolUseAnnotatedImage);
 	            	objIntent.putExtra(ActivityNoteStartup.ISDIRTY, true);
 	            	
+	            	Log.d(">>resPath<<", resourcePath);
+	            	
 	            	setResult(RESULT_OK, objIntent);
 	            	ActivityNoteAddNew.this.finish();
 	            	
@@ -977,7 +1054,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          case R.id.actionCancel:
      		// If initial resource was an Image then restore relevant files because they 
      		// might have been overwritten in that Activity.
-     		if(resourceId == clsTreeview.IMAGE_RESOURCE)
+     		if(resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE)
      		{
      			strImageFilenameBackup.renameTo(strImageFilename);
      			strThumbnailFilenameBackup.renameTo(strThumbnailFilename);

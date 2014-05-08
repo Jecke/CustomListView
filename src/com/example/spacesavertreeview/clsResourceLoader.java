@@ -1,10 +1,13 @@
 package com.example.spacesavertreeview;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -18,6 +21,7 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.widget.Toast;
 
 // Helper class which creates thumbnails from images and videos.
 // Note that remote vodeos (http, https) are currently not supported because
@@ -27,6 +31,7 @@ public class clsResourceLoader
 {	
 	private int resourceType;
 	private Uri origUri;
+	private String resPath;
 	private TaskCompletedInterface listener;
 	private Bitmap imageBitmapFull = null;
 	
@@ -64,9 +69,14 @@ public class clsResourceLoader
 				{
 					Uri uriIn = Uri.parse(uri[0]);
 
-					String resPath = clsUtils.getLocalPathFromUri(context, resourceType, uriIn); 
+					String resPath = clsUtils.getVideoPath(context, uriIn);
 
 					imageBitmapFull = ThumbnailUtils.createVideoThumbnail(resPath, MediaStore.Video.Thumbnails.MICRO_KIND);
+					
+					if(imageBitmapFull != null)
+					{
+						origUri = Uri.parse(resPath);
+					}
 				}
 				break;
 			}
@@ -118,18 +128,14 @@ public class clsResourceLoader
 				newUrl[0] = new URL(uri);
 
 				try {
-//					is = (FileInputStream)newUrl[0].getContent();
 					is = (InputStream)newUrl[0].getContent();
 				} catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
 			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -150,7 +156,6 @@ public class clsResourceLoader
 					is = new FileInputStream(fileDescriptor);
 
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} 
@@ -161,7 +166,6 @@ public class clsResourceLoader
 					is = (FileInputStream)context.getContentResolver().openInputStream(uriIn);
 
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -191,7 +195,6 @@ public class clsResourceLoader
 				try {
 					is.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -204,7 +207,6 @@ public class clsResourceLoader
 					is = (FileInputStream)context.getContentResolver().openInputStream(uriIn);
 					
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -241,19 +243,18 @@ public class clsResourceLoader
 		Bitmap imageBitmap = null;
 		
 		String res = uri.toString();
-		Log.d("-JE-", res);
 
 		if(resourceType == clsTreeview.VIDEO_RESOURCE && 
 		   res.contains("http"))
 		{
-			// JE ToDo remote videos currently not supported
+			// TODO JE remote videos currently not supported
 			clsUtils.showErrorDialog(context, R.string.video_not_supported, false);
 			listener.loadTaskComplete(imageBitmap, imageBitmapFull, origUri);	
 
 			return;
 		}
 
-		if(!res.startsWith("/", 0) || !res.startsWith("file://", 0))
+		if(!res.startsWith("/", 0) && !res.startsWith("file://", 0))
 		{
 			// remote file
 			String[] input = {res};
@@ -268,6 +269,7 @@ public class clsResourceLoader
 			switch(resourceType)
 			{
 			case clsTreeview.IMAGE_RESOURCE:
+			case clsTreeview.WEB_RESOURCE:
 				BitmapFactory.Options options = null;
 				
 				// If a valid maximum size is given then we calculate the sampleSize of the bitmap
@@ -310,4 +312,28 @@ public class clsResourceLoader
 			}
 		}
 	}
+	
+	public void saveBitmapToFile (Context context, Bitmap objBitmap, String strFilename, int compressRate) {
+		OutputStream fOutputStream = null;
+		
+		File file = new File(strFilename);
+        try {
+            fOutputStream = new FileOutputStream(file);
+
+            objBitmap.compress(Bitmap.CompressFormat.JPEG, compressRate, fOutputStream);
+
+            fOutputStream.flush();
+            fOutputStream.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Save Failed (Not Found)", Toast.LENGTH_SHORT).show();
+            return;
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Save Failed IO", Toast.LENGTH_SHORT).show();
+            return;
+        }
+	}
+
 }

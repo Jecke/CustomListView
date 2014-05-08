@@ -216,6 +216,7 @@ public class clsUtils {
 		switch(resourceId)
 		{
 			case clsTreeview.IMAGE_RESOURCE:
+			case clsTreeview.WEB_RESOURCE:
 			{
 	    		filePathColumn = new String[2];
 				filePathColumn[0] = MediaStore.Images.Media.DATA;
@@ -459,14 +460,8 @@ public class clsUtils {
 			final int halfHeight = height / 2;
 			final int halfWidth = width / 2;
 
-			// Calculate the largest inSampleSize value that is a power of 2 and keeps both
-			// height and width within the requested height and width. 
-			// original: 'larger than the requested height and width.' which leads to fails if
-			// one input dimension is significantly larger than the other.
-//			while ((halfHeight / inSampleSize) > reqHeight &&
-//				   (halfWidth  / inSampleSize) > reqWidth) 
-				while ((height / inSampleSize) > reqHeight &&
-					   (width  / inSampleSize) > reqWidth) 
+			while ((height / inSampleSize) > reqHeight &&
+				   (width  / inSampleSize) > reqWidth) 
 			{
 				inSampleSize *= 2;
 			}
@@ -557,7 +552,7 @@ public class clsUtils {
 		// calculate the sample size necessary to downscale the image
 		options.inSampleSize = 
 			clsUtils.calculateInSampleSize(options, viewWidth, viewHeight);
-		Log.d("JE", "clsUtils:sampleSize: "+ String.valueOf(options.inSampleSize));
+		
 		options.inJustDecodeBounds = false;
 		
 		options.inMutable = mutable;
@@ -566,4 +561,23 @@ public class clsUtils {
 		
 		return out;
 	}
+	
+	public static String getVideoPath(Context context, Uri uri)
+	{
+		   Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
+		   cursor.moveToFirst();
+		   String document_id = cursor.getString(0);
+		   document_id = document_id.substring(document_id.lastIndexOf(":")+1);
+		   cursor.close();
+
+		   cursor = context.getContentResolver().query( 
+		   android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+		   null, MediaStore.Video.Media._ID + " = ? ", new String[]{document_id}, null);
+		   cursor.moveToFirst();
+		   String path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
+		   cursor.close();
+
+		   return path;
+	}
 }
+

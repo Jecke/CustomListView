@@ -5,15 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.example.spacesavertreeview.ActivityNoteAddNew.clsArrowsListViewState;
 import com.example.spacesavertreeview.ActivityNoteStartup.clsNoteItemStatus;
 import com.example.spacesavertreeview.ActivityViewImage.clsListViewState;
 import com.example.spacesavertreeview.clsTreeview.clsRepository;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.clsTreeview.enumItemType;
 import com.example.spacesavertreeview.imageannotation.clsAnnotationData;
-import com.example.spacesavertreeview.imageannotation.clsCombineAnnotateImage;
-import com.example.spacesavertreeview.imageannotation.clsCombineAnnotateImage.TaskCompletedInterface;
 import com.example.spacesavertreeview.imageannotation.clsShapeFactory.Shape;
 
 import android.app.Activity;
@@ -22,7 +19,6 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -41,7 +37,6 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -67,7 +62,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 	public clsListItemArrayAdapter(Context context, int _resource, List<clsListItem> objects, clsTreeview objTreeview) {
 		super(context, _resource, objects);
-		// TODO Auto-generated constructor stub
+ 
 		this.context = context;
 		this.resource = _resource;
 		this.objListItems = objects;
@@ -75,15 +70,13 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		this.objThisArrayAdapter = this;
 		
 		int2Dp = clsUtils.dpToPx(getContext(), 2);
-		
 	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 
-		// TODO Auto-generated method stub
-
 		clsListItem objListItem = getItem(position);
+		
 		if (convertView == null) {
 			todoView = new RelativeLayout(getContext());
 			String inflater = Context.LAYOUT_INFLATER_SERVICE;
@@ -152,14 +145,17 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
 			break;
 
+		case clsTreeview.WEB_RESOURCE:
+			myMediaPreviewView.setVisibility(View.VISIBLE);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
+			break;
+
 		default:
 			myMediaPreviewView.setVisibility(View.GONE);
 			break;
 		}
 
 		ProvideThumbnailSizeToCustomView(myTextView);
-
-
 
 		// Checklist or Hide activities
 		CheckBox objCheckBox = (CheckBox) todoView.findViewById(R.id.checkBox_checklist);
@@ -231,7 +227,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 									@Override
 									public void onClick(DialogInterface dialog, int which) {
-										// TODO Auto-generated method stub
 										objDialogTreeNode.setChecked(true);
 										dialog.cancel();
 										RefreshListView();
@@ -270,7 +265,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 				@Override
 				public void onClick(View v) {
-					// TODO Auto-generated method stub
 					if (((CheckBox) v).isChecked()) {
 						objTreeview.RecursiveSetChildrenHidden(objDialogHideTreeNode, true);
 						RefreshListView();
@@ -287,7 +281,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			}
 			ProvideCheckBoxSizeToCustomView(myTextView, objCheckBox);
 		}
-		
 
 		return todoView;
 	}
@@ -416,7 +409,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	private class MyImageOnClickListener implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {
-			// TODO Auto-generated method stub
 			ImageView myImageView = (ImageView) v.findViewById(R.id.icon);
 			clsListItem objListItem = (clsListItem) myImageView.getTag();
 			clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
@@ -445,11 +437,12 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			// the folder has access to all object data via TAG
 			ImageView folder = (ImageView) v.findViewById(R.id.media_preview);
 			clsListItem objListItem = (clsListItem) folder.getTag();
-
+			
 			String contentString = objListItem.getResourcePath();
 
 			switch (objListItem.getResourceId()) {
 			case clsTreeview.IMAGE_RESOURCE:
+			case clsTreeview.WEB_RESOURCE:
 				clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
 				if (objTreenode.annotation == null ||
 						((objTreenode.annotation != null) && (objTreenode.getBoolUseAnnotatedImage() == false))) { 
@@ -458,16 +451,27 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 					img_intent.setAction(Intent.ACTION_VIEW);
 					// for remote images
 					// (local files start either with file:// or /)
-					if (!contentString.startsWith("/", 0) || !contentString.startsWith("file://", 0)) {
+					if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
 						// for remote image
 						img_intent.setData(Uri.parse(contentString));
 
 						context.startActivity(img_intent);
 					} else // for local images
 					{
-						String resPath = getLocalPathFromUri(objListItem.getResourceId(), Uri.parse(contentString));
+						String resPath = clsUtils.getLocalPathFromUri(context, objListItem.getResourceId(), Uri.parse(contentString));
 						if (!resPath.isEmpty()) {
-							img_intent.setDataAndType(Uri.parse("file://" + resPath), "image/*");
+							
+							String prefix;
+							if(resPath.startsWith("/"))
+							{
+								prefix = "file:/";
+							}
+							else
+							{
+								prefix = "file://";
+							}
+							
+							img_intent.setDataAndType(Uri.parse(prefix + resPath), "image/*");
 
 							context.startActivity(img_intent);
 						} else {
@@ -510,13 +514,22 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 				Intent vid_intent = new Intent();
 				vid_intent.setAction(Intent.ACTION_VIEW);
 
-				// JE ToDo Handle remote (URL, Uri) videos
+				// TODO JE Handle remote (URL, Uri) videos
 
-				String resPath = getLocalPathFromUri(objListItem.getResourceId(), Uri.parse(contentString));
+				if (!contentString.isEmpty()) {
+					String prefix;
+					
+					if(contentString.startsWith("/"))
+					{
+						prefix = "file:/";
+					}
+					else
+					{
+						prefix = "file://";
+					}
 
-				if (!resPath.isEmpty()) {
-					vid_intent.setDataAndType(Uri.parse("file://" + resPath), "video/*");
-
+					vid_intent.setDataAndType(Uri.parse(prefix + contentString), "video/*");
+					
 					context.startActivity(vid_intent);
 				}
 				break;
@@ -582,8 +595,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			return path;
 		}
 	}
-	
-
 
 	private void RefreshListView() {
 		List<clsListItem> objListItems = objTreeview.getListItems();
@@ -608,7 +619,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			return true;
 		}
 	}
-	
 
 	boolean firstTouch = false;
 	long time;
@@ -618,8 +628,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		@Override
 		public void onClick(View v) {
 			
-
-
 			clsIndentableTextView myTextView = (clsIndentableTextView) v.findViewById(R.id.row);
 			clsListItem objListItem = (clsListItem) myTextView.getTag();
 			UUID objUuid = objListItem.getTreeNodeGuid();
@@ -654,7 +662,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
 
 			((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
-
 		}
 	}
 

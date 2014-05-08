@@ -66,7 +66,6 @@
                 android:id="@+id/radioURLNote"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:enabled="true"
                 android:text="@string/radio_url_note" />
 
         </RadioGroup>
@@ -171,7 +170,7 @@
             android:layout_below="@+id/radioItemType"
             android:layout_marginLeft="30dp"
             android:enabled="false"
-            android:text="www.google.com.au" />
+            android:text="" />
 
     </RelativeLayout>
 

@@ -1,12 +1,21 @@
 package com.example.spacesavertreeview;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class ActivityWebBrowser extends Activity {
 
@@ -14,8 +23,11 @@ public class ActivityWebBrowser extends Activity {
 	private Context objContext;
 	
 	private String strUrl;
+	private String strWebImage;
+	private ProgressDialog pd;
 	
 	private WebView webView;
+	private TextView urlTextView;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -26,34 +38,138 @@ public class ActivityWebBrowser extends Activity {
 		objContext = this;
 		
 		webView = (WebView)findViewById(R.id.webView);
+		webView.setWebViewClient(new WebViewClient()
+		{
+			@Override
+			public void onPageFinished(WebView view, String url)
+			{
+				updateUrlTextView(url);
+				pd.dismiss();
+			}
+			
+			@Override
+			public void onPageStarted(WebView view, String url, Bitmap favicon)
+			{
+			}
+		});
+		// The backspace key does not get recognised by the emulator.
+		// TODO JE Test backspace of web view on actual phone
+		webView.setOnKeyListener(new View.OnKeyListener() 
+		{
+			@Override
+			public boolean onKey(View arg0, int arg1, KeyEvent arg2) 
+			{
+				if(arg2.getAction() == KeyEvent.ACTION_DOWN)
+				{
+					switch(arg1)
+					{
+						// back key
+						case KeyEvent.KEYCODE_BACK:
+							if(webView.canGoBack())
+							{
+								webView.goBack();
+								return true;
+							}
+					}
+				}
+				return false;
+			}
+		});
+		
+		urlTextView = (TextView)findViewById(R.id.editTextNoteName);
+		
+		Button urlSearch = (Button)findViewById(R.id.buttonWebSearch);
+		urlSearch.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// Retrieve url from text view
+				strUrl = urlTextView.getText().toString();
+				
+				loadWebPage(strUrl);
+			}
+		});
 		
 		Bundle objBundle = objIntent.getExtras();    		
 		strUrl = objBundle.getString(ActivityNoteAddNew.WEB_VIEW_URL);
-
+		strWebImage = objBundle.getString(ActivityNoteAddNew.WEB_VIEW_IMAGE);
 		
+		updateUrlTextView(strUrl);
+		loadWebPage(strUrl);
 	}
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.web_browser, menu);
+        getMenuInflater().inflate(R.menu.activity_web_browser, menu);
 		
         return super.onCreateOptionsMenu(menu);
     }
     
+    // Action bar menu
 	public boolean onOptionsItemSelected(MenuItem item) {
-		boolean success = false;
-		
     	switch (item.getItemId()) 
     	{
+    		// User is happy with the Web Page. Create a temporary snapshot of the page
+    		// and return the URI of the picture and the URL of the page to the caller.
         	case R.id.actionAccept:
+        		objIntent.putExtra(ActivityNoteAddNew.WEB_VIEW_URL, strUrl);
+        		objIntent.putExtra(ActivityNoteAddNew.WEB_VIEW_IMAGE, strWebImage);
+        		
+        		// ?? Issue ??
+        		// We only capture the visible content of the web view here because big websites can cause
+        		// an out-of-memory error. If there is a resolution for that then below call can use
+        		// webView.getContentHeight instead of webView.getHeight to get all the content of the page.
+//        		Bitmap bm = Bitmap.createBitmap(webView.getWidth(), webView.getHeight(), Config.ARGB_8888);
+//        		Canvas canvas = new Canvas(bm);
+//        		webView.draw(canvas);
+        		
+        		Bitmap bm;
+        		webView.setDrawingCacheEnabled(true);
+        		bm = Bitmap.createBitmap(webView.getDrawingCache());
+        		webView.setDrawingCacheEnabled(false);
+        		
+        		// save bitmap to local file and return the URI to the caller
+        		new clsResourceLoader().saveBitmapToFile(objContext, bm, strWebImage, 80);
+            	
+            	setResult(RESULT_OK, objIntent);
+            	this.finish();
+
         		return true;
         		
         	case R.id.actionCancel:
-        		return true;
+            	setResult(RESULT_CANCELED, objIntent);
+            	this.finish();
+                return true;
         		
             default:
                 return super.onOptionsItemSelected(item);
     	}
+	}
+	
+	// Update text view holding the Url
+	private void updateUrlTextView(String url)
+	{
+		urlTextView.setText(url);
+		strUrl = url;
+	}
+	
+	// Load web page if provided url is not empty
+	private void loadWebPage(String url)
+	{
+		if(!strUrl.isEmpty())
+		{
+			if(!strUrl.startsWith("http"))
+			{
+				strUrl = "http://" + strUrl;
+			}
+			
+			pd = ProgressDialog.show(objContext, 
+					"Please wait", 
+					"Loading ...", 
+					true, true, null);
+
+			webView.loadUrl(strUrl);
+		}
 	}
 }
