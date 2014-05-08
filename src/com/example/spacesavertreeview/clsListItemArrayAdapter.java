@@ -145,6 +145,11 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
 			break;
 
+		case clsTreeview.WEB_RESOURCE:
+			myMediaPreviewView.setVisibility(View.VISIBLE);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
+			break;
+
 		default:
 			myMediaPreviewView.setVisibility(View.GONE);
 			break;
@@ -437,6 +442,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 			switch (objListItem.getResourceId()) {
 			case clsTreeview.IMAGE_RESOURCE:
+			case clsTreeview.WEB_RESOURCE:
 				clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
 				if (objTreenode.annotation == null ||
 						((objTreenode.annotation != null) && (objTreenode.getBoolUseAnnotatedImage() == false))) { 
@@ -445,16 +451,27 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 					img_intent.setAction(Intent.ACTION_VIEW);
 					// for remote images
 					// (local files start either with file:// or /)
-					if (!contentString.startsWith("/", 0) || !contentString.startsWith("file://", 0)) {
+					if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
 						// for remote image
 						img_intent.setData(Uri.parse(contentString));
 
 						context.startActivity(img_intent);
 					} else // for local images
 					{
-						String resPath = getLocalPathFromUri(objListItem.getResourceId(), Uri.parse(contentString));
+						String resPath = clsUtils.getLocalPathFromUri(context, objListItem.getResourceId(), Uri.parse(contentString));
 						if (!resPath.isEmpty()) {
-							img_intent.setDataAndType(Uri.parse("file://" + resPath), "image/*");
+							
+							String prefix;
+							if(resPath.startsWith("/"))
+							{
+								prefix = "file:/";
+							}
+							else
+							{
+								prefix = "file://";
+							}
+							
+							img_intent.setDataAndType(Uri.parse(prefix + resPath), "image/*");
 
 							context.startActivity(img_intent);
 						} else {

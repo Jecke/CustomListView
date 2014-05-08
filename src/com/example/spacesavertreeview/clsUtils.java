@@ -216,6 +216,7 @@ public class clsUtils {
 		switch(resourceId)
 		{
 			case clsTreeview.IMAGE_RESOURCE:
+			case clsTreeview.WEB_RESOURCE:
 			{
 	    		filePathColumn = new String[2];
 				filePathColumn[0] = MediaStore.Images.Media.DATA;
@@ -551,7 +552,7 @@ public class clsUtils {
 		// calculate the sample size necessary to downscale the image
 		options.inSampleSize = 
 			clsUtils.calculateInSampleSize(options, viewWidth, viewHeight);
-		Log.d("JE", "clsUtils:sampleSize: "+ String.valueOf(options.inSampleSize));
+		
 		options.inJustDecodeBounds = false;
 		
 		options.inMutable = mutable;

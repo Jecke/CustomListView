@@ -24,6 +24,7 @@ public class clsTreeview {
 	public static final int ANNOTATION_RESOURCE = 3;
 	public static final int SHARED_FOLDER_RESOURCE = 6;
 	public static final int PUBLISHED_FOLDER_RESOURCE = 7;
+	public static final int WEB_RESOURCE = 8;
 
 	private clsRepository _objRepository = new clsRepository();
 	public ArrayList<clsTreeNode> objClipboardTreeNodes = new ArrayList<clsTreeNode>();
@@ -452,8 +453,14 @@ public class clsTreeview {
 							String strAnnotateFullFilename = ActivityNoteStartup.fileTreeNodesDir + "/"
 									+ guidTreeNode.toString() + "_full.jpg";
 							File objAnnotateThumbnailFile = new File(strAnnotateFullFilename);
-
+							
 							objTempAnnotateFile.renameTo(objAnnotateThumbnailFile);
+
+							// Workaround for local files. Replace temporary resourcePath by actual 
+							if(this.resourcePath.contains("temp_uuid"))
+							{
+								this.resourcePath = strAnnotateFullFilename;
+							}
 						}
 					}
 				}
@@ -1387,6 +1394,7 @@ public class clsTreeview {
 		case ANNOTATION_RESOURCE:
 			return clsAnnotationData.EDIT_ANNOTATION_TEXT;
 		case IMAGE_RESOURCE:
+		case WEB_RESOURCE:
 			return clsAnnotationData.EDIT_ANNOTATION_IMAGE;
 		default:
 			return clsAnnotationData.INVALID;
