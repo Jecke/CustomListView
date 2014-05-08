@@ -169,5 +169,7 @@
     <string name="url_subscriptions_add">"/api/TreeManager/SubscriptionsAdd"</string>
     <string name="url_is_server_alive">"/api/TreeManager/IsServerAlive"</string>
     <string name="url_clear_webservice_repository">"/api/TreeManager/ClearRepository"</string>
+    
+    <string name="title_activity_activity_view_image">ActivityViewImage</string>
 
 </resources>
