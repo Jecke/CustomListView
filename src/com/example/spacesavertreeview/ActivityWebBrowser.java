@@ -77,6 +77,22 @@ public class ActivityWebBrowser extends Activity {
 		});
 		
 		urlTextView = (TextView)findViewById(R.id.editTextNoteName);
+		urlTextView.setOnKeyListener(new View.OnKeyListener() 
+		{
+			@Override
+			public boolean onKey(View v, int keyCode, KeyEvent event) 
+			{
+				if(event.getAction() == KeyEvent.ACTION_DOWN &&
+					keyCode == KeyEvent.KEYCODE_ENTER)
+				{
+					Toast.makeText(objContext, "Enter", Toast.LENGTH_SHORT).show();
+					
+					return true;
+				}
+				
+				return false;
+			}
+		});
 		
 		Button urlSearch = (Button)findViewById(R.id.buttonWebSearch);
 		urlSearch.setOnClickListener(new View.OnClickListener() {

@@ -178,6 +178,7 @@
     
     <string name="add_new_use_annotated_text">Use annotated</string>
     <string name="add_new_numbered_arrow_label_text">Numbered arrows:</string>
-    <string name="add_new_image_annotation_text">Texti</string>
+    <string name="add_new_image_annotation_text">Text</string>
+    <string name="test_change_to_test_git">GitTest</string>
     
 </resources>
