@@ -79,7 +79,7 @@
             android:layout_alignLeft="@+id/editTextNoteName"
             android:layout_below="@+id/radioItemType"
             android:enabled="false"
-            android:text="" />
+            android:text=""/>
 
         <RelativeLayout
             android:id="@+id/relativeLayoutAnnotation"
