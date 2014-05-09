@@ -392,6 +392,7 @@ public class ActivityNoteStartup extends ListActivity {
     
     private void SaveFile() {
     	clsUtils.CustomLog("NodeCountAtSave=" + objNoteTreeview.getRepository().objRootNodes.size());
+    	objNoteTreeview.SetAllIsDirty(false);
 		objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildTempNoteFilename(fileTreeNodesDir));
 		objGroupMembers.SaveFile();
 		objMessaging.SaveFile(this);
@@ -721,6 +722,7 @@ public class ActivityNoteStartup extends ListActivity {
         		 Toast.makeText(this, "You need to register first before you can sync",Toast.LENGTH_SHORT).show();
         		 return true;
         	 }
+        	 SaveFile();
         	 URL urlFeed;
         	 try {
 				urlFeed = new URL(objMessaging.GetServerUrl(objNoteTreeview) + getResources().getString(R.string.url_note_sync));
