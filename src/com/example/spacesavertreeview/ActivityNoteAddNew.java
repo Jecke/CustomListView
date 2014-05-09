@@ -71,7 +71,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	private Intent objIntent;
 	private Activity objContext;
 
-	private TextView urlText;
+	//private TextView urlText;
+	private String url = "";
 	
 	// Annotation data
 	public clsAnnotationData objAnnotationData;
@@ -180,7 +181,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 
 		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
 		
-		urlText = (TextView)findViewById(R.id.textViewURLNote);
+		//urlText = (TextView)findViewById(R.id.textViewURLNote);
 		
 		// set description field
 		EditText objEditText = (EditText)findViewById(R.id.editTextNoteName);
@@ -356,12 +357,12 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 						case clsTreeview.WEB_RESOURCE:
 							resourceId = clsTreeview.WEB_RESOURCE;
 
-							String t = urlText.getText().toString();
+							//String t = urlText.getText().toString();
 							
 							String imageFile = strImageFilename.toString();
 							
 							Intent web = new Intent(objContext, ActivityWebBrowser.class);
-							web.putExtra(WEB_VIEW_URL, t);
+							web.putExtra(WEB_VIEW_URL, url);
 							web.putExtra(WEB_VIEW_IMAGE, imageFile);
 
 							startActivityForResult(web, clsTreeview.WEB_RESOURCE);
@@ -522,12 +523,12 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				{
 					resourceId = clsTreeview.WEB_RESOURCE;
 
-					String t = urlText.getText().toString();
+					//String t = urlText.getText().toString();
 					
 					String imageFile = strImageFilename.toString();
 					
 					Intent web = new Intent(objContext, ActivityWebBrowser.class);
-					web.putExtra(WEB_VIEW_URL, t);
+					//web.putExtra(WEB_VIEW_URL, t);
 					web.putExtra(WEB_VIEW_IMAGE, imageFile);
 
 					startActivityForResult(web, clsTreeview.WEB_RESOURCE);
@@ -711,35 +712,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 							"Loading Resource", 
 							true, true, null);
 
-					// This Activity is the only one which has access rights to remote images because it gets them from
-					// the external media App (e.g. Gallery or Google Photo). That is why it retrieves the media contents
-					// and creates a thumbnail bitmap and an image bitmap (not for videos).
-					// Due to limits of hardware memory large images can cause an out-of-memory exception while being loaded.
-					// To avoid this the app down-samples the images to fit the screen. The screen size is close enough to the
-					// size of the Annotation view, which actually uses the images. It should be stressed that for future
-					// high-resolution hardware that issue can arise again.
-					DisplayMetrics dm = new DisplayMetrics();
-					getWindowManager().getDefaultDisplay().getMetrics(dm);			
-					
-					objResourceLoader.createThumbnailFromImageResource(this, this, requestCode, origUri, 
-							dm.widthPixels, dm.heightPixels);
-					
-					RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
-					objRelativeLayout.setVisibility(View.VISIBLE);
-					
-					objAnnotationData = null;
-					objListViewStates.clear();
-					objArrayAdapter.clear();objArrayAdapter.addAll(objListViewStates);
-					objListView.invalidateViews();
-					TextView lblImageAnotationStatus = (TextView)findViewById(R.id.lblImageAnotationStatus);
-					lblImageAnotationStatus.setVisibility(View.INVISIBLE);
-					TextView lblNumberedArrows = (TextView)findViewById(R.id.lblNumberedArrows);
-					lblNumberedArrows.setVisibility(View.INVISIBLE);
-					CheckBox checkBoxUseAnnotatedImage = (CheckBox)findViewById(R.id.checkBoxUseAnnotatedImage);
-					boolUseAnnotatedImage = false;
-					checkBoxUseAnnotatedImage.setChecked(boolUseAnnotatedImage);
-					SaveFile();
-				
+					loadImageAndEnableAnnotation(requestCode, origUri);
 				}
 				else 
 				{
@@ -751,11 +724,11 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			case clsTreeview.WEB_RESOURCE:
 				objBundle = data.getExtras();
 
-				String url   = objBundle.getString(WEB_VIEW_URL);
+				url          = objBundle.getString(WEB_VIEW_URL);
 				resourcePath = objBundle.getString(WEB_VIEW_IMAGE);
 				origUri 	 = Uri.parse(resourcePath);
 
-				urlText.setText(url);
+				//urlText.setText(url);
 				
 				// Put URL in description if description is empty
 				EditText objEditView = (EditText)findViewById(R.id.editTextNoteName);
@@ -768,46 +741,19 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				if(origUri != null)
 				{
 
-				pd = ProgressDialog.show(this, 
-						"Please wait", 
-						"Loading Resource", 
-						true, true, null);
-				
+					pd = ProgressDialog.show(this, 
+							"Please wait", 
+							"Loading Resource", 
+							true, true, null);
 
-				// This Activity is the only one which has access rights to remote images because it gets them from
-				// the external media App (e.g. Gallery or Google Photo). That is why it retrieves the media contents
-				// and creates a thumbnail bitmap and an image bitmap (not for videos).
-				// Due to limits of hardware memory large images can cause an out-of-memory exception while being loaded.
-				// To avoid this the app down-samples the images to fit the screen. The screen size is close enough to the
-				// size of the Annotation view, which actually uses the images. It should be stressed that for future
-				// high-resolution hardware that issue can arise again.
-				DisplayMetrics dm = new DisplayMetrics();
-				getWindowManager().getDefaultDisplay().getMetrics(dm);			
-				
-				objResourceLoader.createThumbnailFromImageResource(this, this, requestCode, origUri, 
-						dm.widthPixels, dm.heightPixels);
-				
-				RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
-				objRelativeLayout.setVisibility(View.VISIBLE);
-				
-				objAnnotationData = null;
-				objListViewStates.clear();
-				objArrayAdapter.clear();objArrayAdapter.addAll(objListViewStates);
-				objListView.invalidateViews();
-				TextView lblImageAnotationStatus = (TextView)findViewById(R.id.lblImageAnotationStatus);
-				lblImageAnotationStatus.setVisibility(View.INVISIBLE);
-				TextView lblNumberedArrows = (TextView)findViewById(R.id.lblNumberedArrows);
-				lblNumberedArrows.setVisibility(View.INVISIBLE);
-				CheckBox checkBoxUseAnnotatedImage = (CheckBox)findViewById(R.id.checkBoxUseAnnotatedImage);
-				boolUseAnnotatedImage = false;
-				checkBoxUseAnnotatedImage.setChecked(boolUseAnnotatedImage);
-				SaveFile();
-			
-			}
-			else {
-				resourcePath = "";
-			}
-			break;
+
+					loadImageAndEnableAnnotation(requestCode, origUri);
+				}
+				else 
+				{
+					resourcePath = "";
+				}
+				break;
 				
 			case EDIT_ANNOTATION_IMAGE:
 				objBundle = data.getExtras();
@@ -918,33 +864,43 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		
 	}
 	
+	// Helper
+	private void loadImageAndEnableAnnotation(int requestCode, Uri origUri)
+	{
+		// This Activity is the only one which has access rights to remote images because it gets them from
+		// the external media App (e.g. Gallery or Google Photo). That is why it retrieves the media contents
+		// and creates a thumbnail bitmap and an image bitmap (not for videos).
+		// Due to limits of hardware memory large images can cause an out-of-memory exception while being loaded.
+		// To avoid this the app down-samples the images to fit the screen. The screen size is close enough to the
+		// size of the Annotation view, which actually uses the images. It should be stressed that for future
+		// high-resolution hardware that issue can arise again.
+		DisplayMetrics dm = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(dm);			
+		
+		objResourceLoader.createThumbnailFromImageResource(this, this, requestCode, origUri, 
+				dm.widthPixels, dm.heightPixels);
+		
+		RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
+		objRelativeLayout.setVisibility(View.VISIBLE);
+		
+		objAnnotationData = null;
+		objListViewStates.clear();
+		objArrayAdapter.clear();objArrayAdapter.addAll(objListViewStates);
+		objListView.invalidateViews();
+		TextView lblImageAnotationStatus = (TextView)findViewById(R.id.lblImageAnotationStatus);
+		lblImageAnotationStatus.setVisibility(View.INVISIBLE);
+		TextView lblNumberedArrows = (TextView)findViewById(R.id.lblNumberedArrows);
+		lblNumberedArrows.setVisibility(View.INVISIBLE);
+		CheckBox checkBoxUseAnnotatedImage = (CheckBox)findViewById(R.id.checkBoxUseAnnotatedImage);
+		boolUseAnnotatedImage = false;
+		checkBoxUseAnnotatedImage.setChecked(boolUseAnnotatedImage);
+		SaveFile();	
+	}
+
 	private void SaveBitmapToFile (Bitmap objBitmap, String strFilename) {
 		
 		objResourceLoader.saveBitmapToFile(objContext, objBitmap, strFilename, 100);
 	}
-
-//	private void SaveBitmapToFile (Bitmap objBitmap, String strFilename, int compressRate) {
-//		OutputStream fOutputStream = null;
-//		
-//		File file = new File(strFilename);
-//        try {
-//            fOutputStream = new FileOutputStream(file);
-//
-//            objBitmap.compress(Bitmap.CompressFormat.JPEG, compressRate, fOutputStream);
-//
-//            fOutputStream.flush();
-//            fOutputStream.close();
-//
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//            Toast.makeText(this, "Save Failed (Not Found)", Toast.LENGTH_SHORT).show();
-//            return;
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            Toast.makeText(this, "Save Failed IO", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
