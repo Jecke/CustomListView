@@ -171,4 +171,13 @@
     <string name="url_is_server_alive">"/api/TreeManager/IsServerAlive"</string>
     <string name="url_clear_webservice_repository">"/api/TreeManager/ClearRepository"</string>
 
+    <string name="add_new_rel_layout_content_descr">Annotate image</string>    
+    <string name="add_new_arrow_button_content_descr">Edit arrows</string>
+    <string name="add_new_annotate_button_content_descr">Edit annotation</string>
+    <string name="add_new_image_preview_content_descr">Image preview</string>
+    
+    <string name="add_new_use_annotated_text">Use annotated</string>
+    <string name="add_new_numbered_arrow_label_text">Numbered arrows:</string>
+    <string name="add_new_image_annotation_text">Text</string>
+    
 </resources>
