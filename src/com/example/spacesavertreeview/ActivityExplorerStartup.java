@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -17,8 +16,6 @@ import java.util.UUID;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.example.spacesavertreeview.clsExplorerTreeview.clsExplorerTreeNode;
-import com.example.spacesavertreeview.clsIntentMessaging.clsChosenMembers;
 import com.example.spacesavertreeview.clsTreeview.clsRepository;
 import com.example.spacesavertreeview.clsTreeview.clsShareUser;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
@@ -34,17 +31,12 @@ import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersCommand
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncResult;
-import com.example.spacesavertreeview.sharing.clsMessaging.clsUploadImageFileAsyncTask;
-import com.example.spacesavertreeview.sharing.clsMessaging.clsUploadImageFileCommandMsg;
-import com.example.spacesavertreeview.sharing.clsMessaging.clsUploadImageFileResponseMsg;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivityPublications;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivityPublications.clsPublicationsIntentData;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivityPublications.clsSelectedNoteData;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions.clsSubcriptionsIntentData;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -115,8 +107,6 @@ public class ActivityExplorerStartup extends ListActivity {
 	private clsMessaging objMessaging = new clsMessaging();
 	private boolean boolDoNotSaveFile = false;
 	private static Activity objContext;
-	
-	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -966,47 +956,6 @@ public class ActivityExplorerStartup extends ListActivity {
 			boolDoNotSaveFile = true;
 			finish();
 			return true;
-		case R.id.actionImageUploadTest:
-			clsUploadImageFileCommandMsg objCommand = objMessaging.new clsUploadImageFileCommandMsg();
-			objCommand.strImageUuid = "f3e902a5-6499-411d-9280-b2eafd0a8c6b";
-			objCommand.strFileExtentionWithoutDot ="jpg";
-			objCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/f3e902a5-6499-411d-9280-b2eafd0a8c6b.jpg";
-			clsUploadImageFileResponseMsg objResponse = objMessaging.new clsUploadImageFileResponseMsg();
-			final boolean boolDisplayProgress = true;
-			class clsMyUploadImageFileAsyncTask extends clsUploadImageFileAsyncTask {
-
-				public clsMyUploadImageFileAsyncTask(Activity objActivity, boolean boolDisplayProgress, String strUrl,
-						clsUploadImageFileCommandMsg objCommand, clsUploadImageFileResponseMsg objResponse) {
-					super(objActivity, boolDisplayProgress, strUrl, objCommand, objResponse);
-					// TODO Auto-generated constructor stub
-				}
-				
-				
-				@Override
-				protected void onPostExecute(clsUploadImageFileResponseMsg objResponse) {
-					// TODO Auto-generated method stub
-					super.onPostExecute(objResponse);
-					if (objResponse.intErrorCode == clsMessaging.ERROR_NONE) {
-						if (boolDisplayProgress){
-							Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
-						} else {
-							Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
-						}
-					}
-				}
-			}
-			String strServerUrl;
-			if(objMessaging.objRepository.boolIsServerIisExpress) {
-				strServerUrl =  clsMessaging.SERVER_URL_IIS_EXPRESS;
-			}
-			else {
-				strServerUrl =  clsMessaging.SERVER_URL_AZURE;
-			}
-			String strUrl = strServerUrl + getResources().getString(R.string.url_upload_image_file);
-			objMyUploadImageFileAsyncTask = new clsMyUploadImageFileAsyncTask(this, boolDisplayProgress, strUrl, objCommand, objResponse);
-			objMyUploadImageFileAsyncTask.execute("");
-			return true;	
-			
 		case R.id.actionClearWebServiceRepository:
 			builder = new AlertDialog.Builder(this);
 			builder.setMessage("Are you sure you weant to clear the webservice repository?");
@@ -1693,7 +1642,7 @@ public class ActivityExplorerStartup extends ListActivity {
 									strOwnerUserUuid, strOwnerUserUuid);
 							objExplorerTreeview.getRepository().objRootNodes.add(objPublishingFolderTreeNode);
 						}
-						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed note",
+						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Shared note",
 								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, strOwnerUserUuid,
 								strOwnerUserUuid);
 						objNoteTreeview = new clsNoteTreeview(objGroupMembers);

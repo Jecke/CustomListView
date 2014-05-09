@@ -1,6 +1,10 @@
 package com.example.spacesavertreeview.sharing;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,10 +39,10 @@ import android.widget.Toast;
 
 public class clsMessaging {
 	
-	private static final int NET_CONNECT_TIMEOUT_MILLIS = 15000;  // 15 seconds
-    private static final int NET_READ_TIMEOUT_MILLIS = 10000;  // 10 seconds
+	private static final int NET_CONNECT_TIMEOUT_MILLIS = 60000;  // 15 seconds
+    private static final int NET_READ_TIMEOUT_MILLIS = 60000;  // 10 seconds
     public static String SERVER_URL_AZURE = "http://treenotes.azurewebsites.net";
-    public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.6";
+    public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.7";
 	
     // Webserver instructions
     public static final int SERVER_INSTRUCT_KEEP_ORIGINAL = 0;
@@ -76,9 +80,10 @@ public class clsMessaging {
     public static int ERROR_REMOVE_PUBLICATIONS = 12;
     public static int ERROR_IS_SERVER_ALIVE = 13;
     public static int ERROR_ADD_PUBLICATIONS = 14;
+    public static int ERROR_UPLOAD_IMAGE = 15;
 
 	// Persistent items
-	class clsRepository {
+	public class clsRepository {
 		public boolean boolIsServerIisExpress = true;
 		public boolean boolIsServerAlive = false;	
 	}
@@ -476,6 +481,147 @@ public class clsMessaging {
 		}
 		
 	}
+    // -------------- UploadImageFileAsyncTask
+    
+    
+    public class clsUploadImageFileCommandMsg extends clsMsg {
+    	public  String strImageUuid;
+    	public  String strFileExtentionWithoutDot;
+    	public  String strImageLocalFullPathName;
+    }
+    
+    public class clsUploadImageFileResponseMsg extends clsMsg {
+    	public Integer intServerInstructions;
+    	public String strServerMessages;
+    }
+    
+    public static class clsUploadImageFileAsyncTask extends AsyncTask<String, Void, clsUploadImageFileResponseMsg>
+   	{
+   		static Exception mException = null;
+   		static clsUploadImageFileCommandMsg objCommand;
+   		static clsUploadImageFileResponseMsg objResponse;
+   		static String strUrl;
+   		ProgressDialog objProgressDialog;
+   		static boolean boolDisplayProgress = true;
+   		
+   		public clsUploadImageFileAsyncTask (Activity objActivity, boolean boolDisplayProgress, String strUrl,
+   				clsUploadImageFileCommandMsg objCommand, clsUploadImageFileResponseMsg objResponse) {
+   			clsUploadImageFileAsyncTask.objCommand = objCommand;
+   			clsUploadImageFileAsyncTask.objResponse = objResponse;
+   			clsUploadImageFileAsyncTask.strUrl = strUrl;
+   			objProgressDialog = new ProgressDialog(objActivity);
+   			clsUploadImageFileAsyncTask.boolDisplayProgress = boolDisplayProgress;
+   		}
+   		
+   		
+   		@Override
+   	    protected void onPreExecute()
+   	    {
+   	        super.onPreExecute();
+   	        mException = null;
+   	        objProgressDialog.setMessage("Processing..., please wait.");
+   	        if (boolDisplayProgress) {
+   		        objProgressDialog.show();
+   	        }
+   	    }
+
+   		@Override
+   		protected clsUploadImageFileResponseMsg doInBackground(String... arg0) {
+   			HttpURLConnection connection = null;
+   			DataOutputStream outputStream = null;
+   			DataInputStream inputStream = null;
+   			String pathToOurFile = objCommand.strImageLocalFullPathName;
+   			String urlServer = strUrl;
+   			String lineEnd = "\r\n";
+   			String twoHyphens = "--";
+   			String boundary =  "*****";
+   			 
+   			int bytesRead, bytesAvailable, bufferSize;
+   			byte[] buffer;
+   			int maxBufferSize = 1*1024*1024;
+   			  			
+   			try
+   			{
+   			    FileInputStream fileInputStream = new FileInputStream(new File(pathToOurFile) );
+   			 
+   			    URL url = new URL(urlServer);
+   			    connection = (HttpURLConnection) url.openConnection();
+   			 
+   			    // Allow Inputs &amp; Outputs.
+   			    connection.setDoInput(true);
+   			    connection.setDoOutput(true);
+   			    connection.setUseCaches(false);
+   			 
+   			    // Set HTTP method to POST.
+   			    connection.setRequestMethod("POST");
+   			 
+   			    connection.setRequestProperty("Connection", "Keep-Alive");
+   			    connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
+   			 
+   			    outputStream = new DataOutputStream( connection.getOutputStream() );
+   			    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+   			    String strImageFilename = objCommand.strImageUuid + "." + objCommand.strFileExtentionWithoutDot;
+   			    outputStream.writeBytes("Content-Disposition: form-data; name=\"UploadImageFile\";filename=\"" + strImageFilename +"\"" + lineEnd);
+   			    outputStream.writeBytes(lineEnd);
+   			 
+   			    bytesAvailable = fileInputStream.available();
+   			    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+   			    buffer = new byte[bufferSize];
+   			 
+   			    // Read file
+   			    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+   			 
+   			    while (bytesRead > 0)
+   			    {
+   			        outputStream.write(buffer, 0, bufferSize);
+   			        bytesAvailable = fileInputStream.available();
+   			        bufferSize = Math.min(bytesAvailable, maxBufferSize);
+   			        bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+   			    }
+   			 
+   			    outputStream.writeBytes(lineEnd);
+   			    outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+   			 
+   			    // Responses from the server (code and message)
+   			    int serverResponseCode = connection.getResponseCode();
+   			    String serverResponseMessage = connection.getResponseMessage();
+   			 
+   			    fileInputStream.close();
+   			    outputStream.flush();
+   			    outputStream.close();
+   			}
+   			catch (Exception ex)
+   			{
+   			    //Exception handling
+   			}
+   	        return objResponse;
+   		}
+   		
+   		@Override
+   	    protected void onPostExecute(clsUploadImageFileResponseMsg objResponse)
+   	    {
+   	        super.onPostExecute(objResponse);
+   	        
+   	        if (objProgressDialog.isShowing()) {
+   	        	objProgressDialog.dismiss();
+   	        }
+
+   	        if (WebServiceAsyncTask.mException != null) {
+   	        	clsUtils.CustomLog(WebServiceAsyncTask.mException.toString() + ". " + "Error # WebServiceAsyncTask");	
+   	        } 
+   	        
+   	    }
+   		
+   		@Override
+   		protected void onCancelled() {
+   			super.onCancelled();
+   			
+   			if (objProgressDialog.isShowing()) {
+   				objProgressDialog.dismiss();
+   			}
+   		}
+   		
+   	}
     
  // ------------------------------------------------------------------------------------
     public class clsSyncNoteCommandMsg extends clsMsg {
