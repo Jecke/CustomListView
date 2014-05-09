@@ -5,7 +5,11 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.Layout;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -45,6 +49,7 @@ public class ActivityWebBrowser extends Activity {
 			{
 				updateUrlTextView(url);
 				pd.dismiss();
+				Toast.makeText(objContext, "Finished", Toast.LENGTH_SHORT).show();
 			}
 			
 			@Override
@@ -76,6 +81,18 @@ public class ActivityWebBrowser extends Activity {
 			}
 		});
 		
+		Button urlSearch = (Button)findViewById(R.id.buttonWebSearch);
+		urlSearch.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// Retrieve url from text view
+				strUrl = urlTextView.getText().toString();
+				
+				loadWebPage(strUrl);
+			}
+		});
+
 		urlTextView = (TextView)findViewById(R.id.editTextNoteName);
 		urlTextView.setOnKeyListener(new View.OnKeyListener() 
 		{
@@ -86,23 +103,13 @@ public class ActivityWebBrowser extends Activity {
 					keyCode == KeyEvent.KEYCODE_ENTER)
 				{
 					Toast.makeText(objContext, "Enter", Toast.LENGTH_SHORT).show();
+					Button urlSearch = (Button)findViewById(R.id.buttonWebSearch);
+					urlSearch.callOnClick();
 					
 					return true;
 				}
 				
 				return false;
-			}
-		});
-		
-		Button urlSearch = (Button)findViewById(R.id.buttonWebSearch);
-		urlSearch.setOnClickListener(new View.OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				// Retrieve url from text view
-				strUrl = urlTextView.getText().toString();
-				
-				loadWebPage(strUrl);
 			}
 		});
 		
@@ -132,18 +139,23 @@ public class ActivityWebBrowser extends Activity {
         		objIntent.putExtra(ActivityNoteAddNew.WEB_VIEW_URL, strUrl);
         		objIntent.putExtra(ActivityNoteAddNew.WEB_VIEW_IMAGE, strWebImage);
         		
-        		// ?? Issue ??
-        		// We only capture the visible content of the web view here because big websites can cause
-        		// an out-of-memory error. If there is a resolution for that then below call can use
-        		// webView.getContentHeight instead of webView.getHeight to get all the content of the page.
-//        		Bitmap bm = Bitmap.createBitmap(webView.getWidth(), webView.getHeight(), Config.ARGB_8888);
-//        		Canvas canvas = new Canvas(bm);
-//        		webView.draw(canvas);
-        		
         		Bitmap bm;
-        		webView.setDrawingCacheEnabled(true);
-        		bm = Bitmap.createBitmap(webView.getDrawingCache());
-        		webView.setDrawingCacheEnabled(false);
+    			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) 
+    			{
+            		webView.setDrawingCacheEnabled(true);
+            		bm = Bitmap.createBitmap(webView.getDrawingCache());
+            		webView.setDrawingCacheEnabled(false);
+    			}
+    			else
+    			{
+            		// ?? Issue ??
+            		// We only capture the visible content of the web view here because big websites can cause
+            		// an out-of-memory error. If there is a resolution for that then below call can use
+            		// webView.getContentHeight instead of webView.getHeight to get all the content of the page.
+            		bm = Bitmap.createBitmap(webView.getWidth(), webView.getHeight(), Config.ARGB_8888);
+            		Canvas canvas = new Canvas(bm);
+            		webView.draw(canvas);
+    			}
         		
         		// save bitmap to local file and return the URI to the caller
         		new clsResourceLoader().saveBitmapToFile(objContext, bm, strWebImage, 80);
