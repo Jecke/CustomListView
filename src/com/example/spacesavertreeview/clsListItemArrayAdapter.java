@@ -128,6 +128,8 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		myMediaPreviewLayerDrawable = (LayerDrawable) context.getResources()
 				.getDrawable(R.drawable.media_preview_layer);
 		myMediaPreviewView.setImageDrawable(myMediaPreviewLayerDrawable);
+		
+
 
 		// draw content of preview ImageView if resource is image or video
 		switch (objListItem.getResourceId()) {
@@ -137,17 +139,17 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 		case clsTreeview.IMAGE_RESOURCE:
 			myMediaPreviewView.setVisibility(View.VISIBLE);
-			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.intResourceId);
 			break;
 
 		case clsTreeview.VIDEO_RESOURCE:
 			myMediaPreviewView.setVisibility(View.VISIBLE);
-			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.intResourceId);
 			break;
 
 		case clsTreeview.WEB_RESOURCE:
 			myMediaPreviewView.setVisibility(View.VISIBLE);
-			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.intResourceId);
 			break;
 
 		default:
@@ -386,23 +388,33 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		}
 	}
 
-	private void createThumbnailFromImage(String strTreenodeUuid, boolean boolIsAnnotated)
+	private void createThumbnailFromImage(String strTreenodeUuid, boolean boolIsAnnotated, int intResourceId)
 	// Override by other activities
 	{
 		Resources r = context.getResources();
-
+		
 		String strImageFilename = ActivityNoteStartup.fileTreeNodesDir + "/" + strTreenodeUuid + ".jpg";
 		Bitmap bitmap = BitmapFactory.decodeFile(strImageFilename);
 
 		myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_background, new BitmapDrawable(r,
 				bitmap));
-		if (boolIsAnnotated) {
-			myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground,
-					r.getDrawable(R.drawable.annotation));
+		if (intResourceId != clsTreeview.WEB_RESOURCE) {
+			if (boolIsAnnotated) {
+				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground,
+						r.getDrawable(R.drawable.annotation));
+			} else {
+				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, new ColorDrawable(
+						Color.TRANSPARENT));
+			}		
 		} else {
-			myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, new ColorDrawable(
-					Color.TRANSPARENT));
+			if (boolIsAnnotated) {
+				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground,
+						r.getDrawable(R.drawable.annotation_www));
+			} else {
+				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, r.getDrawable(R.drawable.www));
+			}
 		}
+
 
 	}
 

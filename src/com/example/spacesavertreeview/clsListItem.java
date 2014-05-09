@@ -13,6 +13,7 @@ public class clsListItem {
 	private enumItemLevelRelation _AboveItemLevelRelation, _BelowItemLevelRelation;
 	public boolean	_boolIsSelected;
 	public boolean _boolFolderHasHiddenItems;
+	public int intResourceId;
 	
 	// JE
 	private String _resourcePath;
@@ -23,7 +24,8 @@ public class clsListItem {
 	
 	public clsListItem(String strName, int intLevel, 
 						UUID guidTreeNode,  enumItemType enumItemType, 
-						boolean	boolIsSelected, String resourcePath, int resourceId, boolean boolIsAnnotated){
+						boolean	boolIsSelected, String resourcePath, int resourceId, boolean boolIsAnnotated,
+						int intResourceId){
 		_strName = strName;
 		_intLevel = intLevel;
 		_guidTreeNode = guidTreeNode;
@@ -33,6 +35,7 @@ public class clsListItem {
 		_resourceId = resourceId;
 		_boolFolderHasHiddenItems = false;
 		this.boolIsAnnotated = boolIsAnnotated;
+		this.intResourceId = intResourceId;
 	}
 	
 	public String getName(){

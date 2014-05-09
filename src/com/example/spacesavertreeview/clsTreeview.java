@@ -839,7 +839,7 @@ public class clsTreeview {
 		boolean boolIsAnnotated = (objTreeNode.annotation != null) ? true : false;
 		clsListItem objListItem = new clsListItem(objTreeNode.getName(), intLevel, objTreeNode.guidTreeNode,
 				getItemType(objTreeNode), objTreeNode.getSelected(), objTreeNode.resourcePath, objTreeNode.resourceId,
-				boolIsAnnotated);
+				boolIsAnnotated,objTreeNode.resourceId );
 
 		// Fill in the _boolFolderHasHiddenItems property. If any child with
 		// hidden items, return true
