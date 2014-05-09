@@ -80,7 +80,7 @@ public class ActivitySubscriptionSearch  extends ListActivity {
 			url = new URL(strUrl);
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
-			clsUtils.MessageBox(objContext, e.getMessage());
+			clsUtils.MessageBox(objContext, e.getMessage(), false);
 			return;
 		}
 		
@@ -311,7 +311,7 @@ public class ActivitySubscriptionSearch  extends ListActivity {
    					ListView objListView = ((ActivitySubscriptionSearch) objContext).getListView(); 
    					objListView.invalidateViews();
 	   			} else {
-	   				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage);
+	   				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage, false);
 	   			}	
 	   		}
 	   		

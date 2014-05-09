@@ -285,7 +285,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					}
 				}
 				if (intArrowNum == -1) {
-					clsUtils.MessageBox(objContext, "Please select an arrow item first");
+					clsUtils.MessageBox(objContext, "Please select an arrow item first", false);
 					return;
 				}
 				

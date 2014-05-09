@@ -167,7 +167,7 @@ public class ActivityPublications extends ListActivity {
 		switch (id) {
 		case R.id.action_publications_add:
 			if (objPublicationsIntentData.lstSelectedNoteDatas.size() == 0) {
-				clsUtils.MessageBox(this, "No notes has been selected in the Explorer. Please select at least one to publish");
+				clsUtils.MessageBox(this, "No notes has been selected in the Explorer. Please select at least one to publish", false);
 				return true;
 			}
 			if (AreNotesAlreadyPublished(objPublicationsIntentData.lstSelectedNoteDatas)) {
@@ -408,7 +408,7 @@ public class ActivityPublications extends ListActivity {
 				ListView objListView = ((ActivityPublications) objContext).getListView();  
 				objListView.invalidateViews();
 			} else {
-				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage);
+				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage, false);
 			}	
 		}
 		
@@ -524,11 +524,11 @@ public class ActivityPublications extends ListActivity {
 						ActivityPublications.objListViewStates.remove(obToBeRemovedListViewState);
 					}
 				}
-				clsUtils.MessageBox(objContext," All publications successfully removed");
+				clsUtils.MessageBox(objContext," All publications successfully removed", false);
 				ListView objListView = ((ActivityPublications) objContext).getListView();  
 				objListView.invalidateViews();
 			} else {
-				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage);
+				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage, false);
 			}	
 		}
 		
@@ -665,7 +665,7 @@ public class ActivityPublications extends ListActivity {
 	   	        } else {
    	        		strMessage += objResult.strErrorMessage + ".\n";
 	   	        }
-	   	   	    clsUtils.MessageBox(objContext, strMessage);
+	   	   	    clsUtils.MessageBox(objContext, strMessage, false);
 	   	    }
 			
 			private boolean ListViewStatesExist(clsListViewState objCheckedListViewState) {

@@ -433,7 +433,7 @@ public class ActivitySubscriptions extends ListActivity {
 				ListView objListView = ((ActivitySubscriptions) objContext).getListView();  
 				objListView.invalidateViews();
 			} else {
-				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage);
+				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage, false);
 			}	
 		}
 

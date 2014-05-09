@@ -1686,7 +1686,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				}
 
 			}
-			clsUtils.MessageBox(objContext, strMessage);
+			clsUtils.MessageBox(objContext, strMessage, true);
 		}
 	}
 
