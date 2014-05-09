@@ -49,7 +49,6 @@ public class ActivityWebBrowser extends Activity {
 			{
 				updateUrlTextView(url);
 				pd.dismiss();
-				Toast.makeText(objContext, "Finished", Toast.LENGTH_SHORT).show();
 			}
 			
 			@Override
@@ -102,7 +101,8 @@ public class ActivityWebBrowser extends Activity {
 				if(event.getAction() == KeyEvent.ACTION_DOWN &&
 					keyCode == KeyEvent.KEYCODE_ENTER)
 				{
-					Toast.makeText(objContext, "Enter", Toast.LENGTH_SHORT).show();
+					// Activate the search button (start to load page) if user presses
+					// ENTER in the text field containing the URL.
 					Button urlSearch = (Button)findViewById(R.id.buttonWebSearch);
 					urlSearch.callOnClick();
 					
@@ -142,6 +142,8 @@ public class ActivityWebBrowser extends Activity {
         		Bitmap bm;
     			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) 
     			{
+    				// Note: The below code does not work for API's <KITKAT.
+    				// getDrawingCache always returns null
             		webView.setDrawingCacheEnabled(true);
             		bm = Bitmap.createBitmap(webView.getDrawingCache());
             		webView.setDrawingCacheEnabled(false);
@@ -158,6 +160,7 @@ public class ActivityWebBrowser extends Activity {
     			}
         		
         		// save bitmap to local file and return the URI to the caller
+    			// image is saved in 80 percent quality to save some space
         		new clsResourceLoader().saveBitmapToFile(objContext, bm, strWebImage, 80);
             	
             	setResult(RESULT_OK, objIntent);
@@ -185,7 +188,7 @@ public class ActivityWebBrowser extends Activity {
 	// Load web page if provided url is not empty
 	private void loadWebPage(String url)
 	{
-		if(!strUrl.isEmpty())
+		if(strUrl != null && !strUrl.isEmpty())
 		{
 			if(!strUrl.startsWith("http"))
 			{
