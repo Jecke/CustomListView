@@ -110,6 +110,7 @@ public class clsTreeview {
 		// Data for sharing
 		public ArrayList<clsShareUser> objSharedUsers = new ArrayList<clsShareUser>();
 		private String strOwnerUserUuid = "";
+		public boolean boolIsSubscribed = false;
 
 		// Data for deletion
 		private boolean boolIsDeleted = false;
@@ -172,6 +173,7 @@ public class clsTreeview {
 			objclsSyncRepository.objSharedUsers = this.objSharedUsers;
 			objclsSyncRepository.strOwnerUserUuid = this.strOwnerUserUuid;
 			objclsSyncRepository.boolIsDeleted = this.boolIsDeleted;
+			objclsSyncRepository.boolIsSubscribed = this.boolIsSubscribed;
 			return objclsSyncRepository;
 		}
 
@@ -270,6 +272,7 @@ public class clsTreeview {
 		public ArrayList<clsShareUser> objSharedUsers = new ArrayList<clsShareUser>();
 		public String strOwnerUserUuid = "";
 		public boolean boolIsDeleted = false;
+		public boolean boolIsSubscribed = false;
 
 		public clsRepository getCopy() {
 			clsRepository objRepository = new clsRepository();
@@ -283,6 +286,7 @@ public class clsTreeview {
 			objRepository.objSharedUsers = this.objSharedUsers;
 			objRepository.strOwnerUserUuid = this.strOwnerUserUuid;
 			objRepository.boolIsDeleted = this.boolIsDeleted;
+			objRepository.boolIsSubscribed = this.boolIsSubscribed;
 			return objRepository;
 		}
 
@@ -858,10 +862,11 @@ public class clsTreeview {
 
 	public boolean IsNoteShared() {
 		// TODO Auto-generated method stub
-		if (this.getRepository().getObjSharedUsers().size() == 0) {
-			return false;
+		if ((this.getRepository().getObjSharedUsers().size() != 0) ||
+				(this.getRepository().boolIsSubscribed)){
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	private boolean IsAnyHiddenItems(clsTreeNode objParentTreeNode) {
