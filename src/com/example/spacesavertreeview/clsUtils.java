@@ -42,6 +42,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 public class clsUtils {
 
@@ -59,17 +60,21 @@ public class clsUtils {
 	
 	static String strDateTimeFormat = "dd/MM/yyyy hh:mm:ss Z";
 	
-	public static void MessageBox(Context context, String strMessage ) {
-    	
-    	AlertDialog.Builder builder = new AlertDialog.Builder(context);
-	    builder.setMessage(strMessage);
-	    builder.setCancelable(true);
-	    builder.setPositiveButton("Close", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-            }
-        });
-	    AlertDialog dialog = builder.create();
-	    dialog.show();    	
+	public static void MessageBox(Context context, String strMessage, boolean boolDisplayAsToast ) {
+		
+		if (!boolDisplayAsToast ) {
+	    	AlertDialog.Builder builder = new AlertDialog.Builder(context);
+		    builder.setMessage(strMessage);
+		    builder.setCancelable(true);
+		    builder.setPositiveButton("Close", new DialogInterface.OnClickListener() {
+	            public void onClick(DialogInterface dialog, int id) {
+	            }
+	        });
+		    AlertDialog dialog = builder.create();
+		    dialog.show();
+		} else {
+			Toast.makeText(context, strMessage, Toast.LENGTH_SHORT).show();
+		}
     }
 	
     public static String RemoveExtension( String in )

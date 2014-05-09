@@ -391,8 +391,8 @@ public class ActivityNoteStartup extends ListActivity {
     }
     
     private void SaveFile() {
-    	clsUtils.CustomLog("NodeCountAtSave=" + objNoteTreeview.getRepository().objRootNodes.size());
-    	objNoteTreeview.SetAllIsDirty(false);
+    	clsUtils.CustomLog("SaveFile");
+    	// objNoteTreeview.SetAllIsDirty(false);
 		objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildTempNoteFilename(fileTreeNodesDir));
 		objGroupMembers.SaveFile();
 		objMessaging.SaveFile(this);
@@ -404,10 +404,10 @@ public class ActivityNoteStartup extends ListActivity {
 	}
  
 	private void LoadFile() {
+		clsUtils.CustomLog("LoadFile");
 		objNoteTreeview = new clsNoteTreeview(objGroupMembers);
 		objNoteTreeview.UpdateEnvironment(clsExplorerTreeview.enumCutCopyPasteState.INACTIVE, new ArrayList<clsTreeNode>() ); // Must be persisted at a later stage
 		objNoteTreeview.DeserializeFromFile(clsUtils.BuildTempNoteFilename(fileTreeNodesDir));
-		clsUtils.CustomLog("NodeCountAtLoad=" + objNoteTreeview.getRepository().objRootNodes.size());
 		objGroupMembers.LoadFile();
 		objGroupMembers.UpdateEnvironment(this);
     	ArrayList<clsListItem> objListItems = objNoteTreeview.getListItems();
@@ -437,7 +437,7 @@ public class ActivityNoteStartup extends ListActivity {
     	 switch (item.getItemId()) {
          case R.id.actionAddAtSameLevel:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;
         	 }
         	     	     
@@ -450,10 +450,10 @@ public class ActivityNoteStartup extends ListActivity {
              return true;            
          case R.id.actionButtonAddAtNextLevel:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please select an item first.");
+        		 clsUtils.MessageBox(this, "Please select an item first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;     		 
         	 }
         	     	     
@@ -466,13 +466,13 @@ public class ActivityNoteStartup extends ListActivity {
          case R.id.actionEdit:
         	 // Only applicable if a row is selected
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please add some items first.");
+        		 clsUtils.MessageBox(this, "Please add some items first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please select an item first.");
+        		 clsUtils.MessageBox(this, "Please select an item first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;     		 
         	 }
         	         	 
@@ -491,13 +491,13 @@ public class ActivityNoteStartup extends ListActivity {
              
          case R.id.actionDelete:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please add some items first.");
+        		 clsUtils.MessageBox(this, "Please add some items first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please select an item first.");
+        		 clsUtils.MessageBox(this, "Please select an item first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;     		 
         	 }
         	builder = new AlertDialog.Builder(this);
@@ -582,13 +582,13 @@ public class ActivityNoteStartup extends ListActivity {
          	return true;	
          case R.id.actionMoveUp:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please add some items first.");
+        		 clsUtils.MessageBox(this, "Please add some items first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please select an item first.");
+        		 clsUtils.MessageBox(this, "Please select an item first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;     		 
         	 }
         	 clsTreeNode objMoveUpTreeNode = objSelectedTreeNodes.get(0);
@@ -615,13 +615,13 @@ public class ActivityNoteStartup extends ListActivity {
         	 return true;
          case R.id.actionMoveDown:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please add some items first.");
+        		 clsUtils.MessageBox(this, "Please add some items first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please select an item first.");
+        		 clsUtils.MessageBox(this, "Please select an item first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;     		 
         	 }
         	 clsTreeNode objMoveDownTreeNode = objSelectedTreeNodes.get(0);
@@ -632,10 +632,10 @@ public class ActivityNoteStartup extends ListActivity {
         	 
          case R.id.actionCut:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please add some items first.");
+        		 clsUtils.MessageBox(this, "Please add some items first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please select items first.");
+        		 clsUtils.MessageBox(this, "Please select items first.", false);
         		 return false;
         	 }
         	 objNoteTreeview.objClipboardTreeNodes = objSelectedTreeNodes; 
@@ -646,10 +646,10 @@ public class ActivityNoteStartup extends ListActivity {
         	 
          case R.id.actionCopy:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please add some items first.");
+        		 clsUtils.MessageBox(this, "Please add some items first.", false);
         		 return false;
         	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-        		 clsUtils.MessageBox(this, "Please select items first.");
+        		 clsUtils.MessageBox(this, "Please select items first.", false);
         		 return false;
         	 }
         	 objNoteTreeview.objClipboardTreeNodes = objSelectedTreeNodes;
@@ -659,7 +659,7 @@ public class ActivityNoteStartup extends ListActivity {
         	 return true;
          case R.id.actionPasteAtSameLevel:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;     		 
         	 }
         	 boolIsBusyWithCutOperation = (objNoteTreeview.intCutCopyPasteState == enumCutCopyPasteState.CUTTING)?true:false;
@@ -676,7 +676,7 @@ public class ActivityNoteStartup extends ListActivity {
         	 
          case R.id.actionPasteAtNextLevel:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-        		 clsUtils.MessageBox(this, "Please select only one item at a time");
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;     		 
         	 }
         	 boolIsBusyWithCutOperation = (objNoteTreeview.intCutCopyPasteState == enumCutCopyPasteState.CUTTING)?true:false;
@@ -816,13 +816,13 @@ public class ActivityNoteStartup extends ListActivity {
 		 ArrayList<clsTreeNode> objSelectedTreeNodes = objNoteTreeview.getSelectedTreenodes();
 			// Only applicable if a row is selected
        	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-       		 clsUtils.MessageBox(objContext, "Please add some items first.");
+       		 clsUtils.MessageBox(objContext, "Please add some items first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-       		clsUtils.MessageBox(objContext, "Please select an item first.");
+       		clsUtils.MessageBox(objContext, "Please select an item first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-       		clsUtils.MessageBox(objContext, "Please select only one item at a time");
+       		clsUtils.MessageBox(objContext, "Please select only one item at a time", false);
        		 return;     		 
        	 }
        	 clsTreeNode objEditTreeNode = objSelectedTreeNodes.get(0);
@@ -842,13 +842,13 @@ public class ActivityNoteStartup extends ListActivity {
 		 ArrayList<clsTreeNode> objSelectedTreeNodes = objNoteTreeview.getSelectedTreenodes();
 			// Only applicable if a row is selected
        	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-       		 clsUtils.MessageBox(objContext, "Please add some items first.");
+       		 clsUtils.MessageBox(objContext, "Please add some items first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-       		clsUtils.MessageBox(objContext, "Please select an item first.");
+       		clsUtils.MessageBox(objContext, "Please select an item first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-       		clsUtils.MessageBox(objContext, "Please select only one item at a time");
+       		clsUtils.MessageBox(objContext, "Please select only one item at a time", false);
        		 return;     		 
        	 }
        	 clsTreeNode objEditTreeNode = objSelectedTreeNodes.get(0);
@@ -1252,29 +1252,29 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_KEEP_ORIGINAL:
 			   	   	   	   if (boolDisplayToasts) {
 			   	   	   		   strMessage += "A new note has been created on server";
-			   	   	   		   // Toast.makeText(objContext, "A nNew note has been created on server", Toast.LENGTH_SHORT).show();
 				 	        }
 	   	   	   	        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_REPLACE_ORIGINAL:
 	   	   	   	        	objNoteTreeview.getRepository().objRootNodes = objResult.objSyncRepositories.get(i).getRepositoryRootNodesCopy();
 	   			   	   	    if (boolDisplayToasts) {
 	   			   	   	    	strMessage += "This note has been replaced with an updated version";
-   			 	        		// Toast.makeText(objContext, "This note has been replaced with an updated version", Toast.LENGTH_SHORT).show();
-	   			 	        }
+	   			   	   	    }
 	   			   	   	    objNoteTreeview.UpdateItemTypes();
 	   	   	   	        	((ActivityNoteStartup) objContext).RefreshListView();
+	   	   	   	        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
+	   	   	   	        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:     	
 	   	   		        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
 	   	   	   	        	break;
 	   	   	   	    	}
 	   	        	}
-	   	        	clsUtils.MessageBox(objContext, strMessage);
+	   	        	clsUtils.MessageBox(objContext, strMessage, true);
 	   	        		
 	   	        } else {
 	   	        	if (boolDisplayToasts) {
-	   	        		Toast.makeText(objContext, objResult.strErrorMessage, Toast.LENGTH_SHORT).show();
+	   	        		clsUtils.MessageBox(objContext, objResult.strErrorMessage, true);
 	   	        	}
 
 	   	        }
