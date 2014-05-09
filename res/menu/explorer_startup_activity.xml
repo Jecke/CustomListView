@@ -197,6 +197,12 @@
             <item android:id="@+id/actionTestQuick"
                   android:icon="@drawable/ic_action_share"
                   android:title="Quick"/>
+            <item android:id="@+id/actionImageUploadTest"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="Image upload test"/>
+            <item android:id="@+id/actionImageDownloadTest"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="Image download test"/>
             <item android:id="@+id/actionClearWebServiceRepository"
                   android:icon="@drawable/ic_action_share"
                   android:title="Clear webservice repository"/>
