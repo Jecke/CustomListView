@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -81,6 +82,7 @@ public class clsMessaging {
     public static int ERROR_IS_SERVER_ALIVE = 13;
     public static int ERROR_ADD_PUBLICATIONS = 14;
     public static int ERROR_UPLOAD_IMAGE = 15;
+    public static int ERROR_DOWNLOAD_IMAGE = 16;
 
 	// Persistent items
 	public class clsRepository {
@@ -593,6 +595,7 @@ public class clsMessaging {
    			catch (Exception ex)
    			{
    			    //Exception handling
+   				ex.printStackTrace();
    			}
    	        return objResponse;
    		}
@@ -621,6 +624,113 @@ public class clsMessaging {
    			}
    		}
    		
+   	}
+   	
+// -------------- DownloadImageFileAsyncTask
+    
+    
+    public class clsDownloadImageFileCommandMsg extends clsMsg {
+    	public  String strImageUuid;
+    	public  String strFileExtentionWithoutDot;
+    	public  String strImageLocalFullPathName;
+    }
+    
+    public class clsDownloadImageFileResponseMsg extends clsMsg {
+
+    }
+    
+    public static class clsDownloadImageFileAsyncTask extends AsyncTask<String, Void, clsDownloadImageFileResponseMsg>
+   	{
+   		static Exception mException = null;
+   		static clsDownloadImageFileCommandMsg objCommand;
+   		static clsDownloadImageFileResponseMsg objResponse;
+   		static String strUrl;
+   		ProgressDialog objProgressDialog;
+   		static boolean boolDisplayProgress = true;
+   		
+   		public clsDownloadImageFileAsyncTask (Activity objActivity, boolean boolDisplayProgress, String strUrl,
+   				clsDownloadImageFileCommandMsg objCommand, clsDownloadImageFileResponseMsg objResponse) {
+   			clsDownloadImageFileAsyncTask.objCommand = objCommand;
+   			clsDownloadImageFileAsyncTask.objResponse = objResponse;
+   			clsUploadImageFileAsyncTask.strUrl = strUrl;
+   			objProgressDialog = new ProgressDialog(objActivity);
+   			clsUploadImageFileAsyncTask.boolDisplayProgress = boolDisplayProgress;
+   		}
+   		
+   		@Override
+   	    protected void onPreExecute()
+   	    {
+   	        super.onPreExecute();
+   	        mException = null;
+   	        objProgressDialog.setMessage("Processing..., please wait.");
+   	        if (boolDisplayProgress) {
+   		        objProgressDialog.show();
+   	        }
+   	    }
+
+		@Override
+		protected clsDownloadImageFileResponseMsg doInBackground(String... arg0) {
+			// TODO Auto-generated method stub
+			objResponse.intErrorCode = ERROR_NONE;
+	        objResponse.strErrorMessage = "";
+			try {
+			    URL url = new URL(strUrl);
+			    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+			    urlConnection.setRequestMethod("GET");
+			    urlConnection.setDoOutput(true);
+			    urlConnection.connect();
+
+			    File file = new File(objCommand.strImageLocalFullPathName);
+
+			    FileOutputStream fileOutput = new FileOutputStream(file);
+			    InputStream inputStream = urlConnection.getInputStream();
+
+			    int maxBufferSize = 1*1024*1024;
+			    byte[] buffer = new byte[maxBufferSize];
+			    int bufferLength = 0;
+
+			    while ( (bufferLength = inputStream.read(buffer)) > 0 ) {
+			        fileOutput.write(buffer, 0, bufferLength);
+			    }
+			    fileOutput.close();
+
+			} catch (MalformedURLException e) {
+			        e.printStackTrace();
+			        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
+			        objResponse.strErrorMessage = e.getMessage();
+			} catch (IOException e) {
+			        e.printStackTrace();
+			        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
+			        objResponse.strErrorMessage = e.getMessage();
+			}
+
+			return objResponse;
+		}
+		
+		@Override
+   	    protected void onPostExecute(clsDownloadImageFileResponseMsg objResponse)
+   	    {
+   	        super.onPostExecute(objResponse);
+   	        
+   	        if (objProgressDialog.isShowing()) {
+   	        	objProgressDialog.dismiss();
+   	        }
+
+   	        if (clsDownloadImageFileAsyncTask.mException != null) {
+   	        	clsUtils.CustomLog(clsDownloadImageFileAsyncTask.mException.toString() + ". " + "Error # WebServiceAsyncTask");	
+   	        } 
+   	        
+   	    }
+   		
+   		@Override
+   		protected void onCancelled() {
+   			super.onCancelled();
+   			
+   			if (objProgressDialog.isShowing()) {
+   				objProgressDialog.dismiss();
+   			}
+   		}
+   	
    	}
     
  // ------------------------------------------------------------------------------------

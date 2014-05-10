@@ -27,6 +27,9 @@ import com.example.spacesavertreeview.sharing.clsGroupMembers.clsMembersReposito
 import com.example.spacesavertreeview.sharing.clsGroupMembers.clsUser;
 import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsMessaging.NoteSyncAsyncTask;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileAsyncTask;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileCommandMsg;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileResponseMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncNoteCommandMsg;
@@ -113,6 +116,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	private static Activity objContext;
 	
 	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
+	clsDownloadImageFileAsyncTask objMyDownloadImageFileAsyncTask;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -1002,7 +1006,47 @@ public class ActivityExplorerStartup extends ListActivity {
 			objMyUploadImageFileAsyncTask = new clsMyUploadImageFileAsyncTask(this, boolDisplayProgress, strUrl, objCommand, objResponse);
 			objMyUploadImageFileAsyncTask.execute("");
 			return true;	
-			
+	
+		case R.id.actionImageDownloadTest:
+			clsDownloadImageFileCommandMsg objDownloadCommand = objMessaging.new clsDownloadImageFileCommandMsg();
+			objDownloadCommand.strImageUuid = "BarCode";
+			objDownloadCommand.strFileExtentionWithoutDot ="jpg";
+			objDownloadCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/f3e902a5-6499-411d-9280-b2eafd0a8c6b.jpg";
+			clsDownloadImageFileResponseMsg objDownloadResponse = objMessaging.new clsDownloadImageFileResponseMsg();
+			final boolean boolDisplayDownloadProgress = true;
+			class clsMyDownloadImageFileAsyncTask extends clsDownloadImageFileAsyncTask {
+
+				public clsMyDownloadImageFileAsyncTask(Activity objActivity, boolean boolDisplayProgress, String strUrl,
+						clsDownloadImageFileCommandMsg objCommand, clsDownloadImageFileResponseMsg objResponse) {
+					super(objActivity, boolDisplayProgress, strUrl, objCommand, objResponse);
+					// TODO Auto-generated constructor stub
+				}
+				
+				
+				@Override
+				protected void onPostExecute(clsDownloadImageFileResponseMsg objResponse) {
+					// TODO Auto-generated method stub
+					super.onPostExecute(objResponse);
+					if (objResponse.intErrorCode == clsMessaging.ERROR_NONE) {
+						if (boolDisplayDownloadProgress){
+							Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
+						} else {
+							Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
+						}
+					}
+				}
+			}
+
+			if(objMessaging.objRepository.boolIsServerIisExpress) {
+				strServerUrl =  clsMessaging.SERVER_URL_IIS_EXPRESS;
+			}
+			else {
+				strServerUrl =  clsMessaging.SERVER_URL_AZURE;
+			}
+			strUrl = strServerUrl + getResources().getString(R.string.url_download_image_file);
+			objMyDownloadImageFileAsyncTask = new clsMyDownloadImageFileAsyncTask(this, boolDisplayDownloadProgress, strUrl, objDownloadCommand, objDownloadResponse);
+			objMyDownloadImageFileAsyncTask.execute("");
+			return true;			
 		case R.id.actionClearWebServiceRepository:
 			builder = new AlertDialog.Builder(this);
 			builder.setMessage("Are you sure you weant to clear the webservice repository?");
