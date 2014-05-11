@@ -987,11 +987,9 @@ public class ActivityExplorerStartup extends ListActivity {
 					// TODO Auto-generated method stub
 					super.onPostExecute(objResponse);
 					if (objResponse.intErrorCode == clsMessaging.ERROR_NONE) {
-						if (boolDisplayProgress){
-							Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
-						} else {
-							Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
-						}
+						Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
+					} else {
+						Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
 					}
 				}
 			}
@@ -1011,7 +1009,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			clsDownloadImageFileCommandMsg objDownloadCommand = objMessaging.new clsDownloadImageFileCommandMsg();
 			objDownloadCommand.strImageUuid = "BarCode";
 			objDownloadCommand.strFileExtentionWithoutDot ="jpg";
-			objDownloadCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/f3e902a5-6499-411d-9280-b2eafd0a8c6b.jpg";
+			objDownloadCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/BarCode.jpg";
 			clsDownloadImageFileResponseMsg objDownloadResponse = objMessaging.new clsDownloadImageFileResponseMsg();
 			final boolean boolDisplayDownloadProgress = true;
 			class clsMyDownloadImageFileAsyncTask extends clsDownloadImageFileAsyncTask {
@@ -1028,11 +1026,9 @@ public class ActivityExplorerStartup extends ListActivity {
 					// TODO Auto-generated method stub
 					super.onPostExecute(objResponse);
 					if (objResponse.intErrorCode == clsMessaging.ERROR_NONE) {
-						if (boolDisplayDownloadProgress){
-							Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
-						} else {
-							Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
-						}
+						Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
+					} else {
+						Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
 					}
 				}
 			}

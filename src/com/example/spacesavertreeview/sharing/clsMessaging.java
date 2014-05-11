@@ -652,9 +652,9 @@ public class clsMessaging {
    				clsDownloadImageFileCommandMsg objCommand, clsDownloadImageFileResponseMsg objResponse) {
    			clsDownloadImageFileAsyncTask.objCommand = objCommand;
    			clsDownloadImageFileAsyncTask.objResponse = objResponse;
-   			clsUploadImageFileAsyncTask.strUrl = strUrl;
+   			clsDownloadImageFileAsyncTask.strUrl = strUrl;
    			objProgressDialog = new ProgressDialog(objActivity);
-   			clsUploadImageFileAsyncTask.boolDisplayProgress = boolDisplayProgress;
+   			clsDownloadImageFileAsyncTask.boolDisplayProgress = boolDisplayProgress;
    		}
    		
    		@Override
@@ -676,8 +676,18 @@ public class clsMessaging {
 			try {
 			    URL url = new URL(strUrl);
 			    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-			    urlConnection.setRequestMethod("GET");
+			    
+			    // Allow Inputs and Outputs.
+			    urlConnection.setDoInput(true);
 			    urlConnection.setDoOutput(true);
+			    urlConnection.setUseCaches(false);
+   			 
+   			    // Set HTTP method to POST.
+			    urlConnection.setRequestMethod("POST");
+			    
+//			    urlConnection.setRequestMethod("GET");
+//			    urlConnection.setDoOutput(true);
+   			    
 			    urlConnection.connect();
 
 			    File file = new File(objCommand.strImageLocalFullPathName);
