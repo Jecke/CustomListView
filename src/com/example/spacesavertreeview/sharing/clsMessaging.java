@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.apache.http.HttpStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -676,25 +677,33 @@ public class clsMessaging {
 			try {
 			    URL url = new URL(strUrl);
 			    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-			    
-			    // Allow Inputs and Outputs.
-			    urlConnection.setDoInput(true);
+			    urlConnection.setReadTimeout(NET_READ_TIMEOUT_MILLIS /* milliseconds */);
+			    urlConnection.setConnectTimeout(NET_CONNECT_TIMEOUT_MILLIS /* milliseconds */); 
+			    urlConnection.setRequestMethod("POST");  
+			    urlConnection.setUseCaches(false); 
+			    urlConnection.setRequestProperty("Content-Type","application/json"); 
+		        
 			    urlConnection.setDoOutput(true);
-			    urlConnection.setUseCaches(false);
-   			 
-   			    // Set HTTP method to POST.
-			    urlConnection.setRequestMethod("POST");
-			    
-//			    urlConnection.setRequestMethod("GET");
-//			    urlConnection.setDoOutput(true);
-   			    
+			    urlConnection.setDoInput(true);
+
+		        // Starts the query
 			    urlConnection.connect();
-
+			    
+			    // Output 
+		        OutputStreamWriter out = new   OutputStreamWriter(urlConnection.getOutputStream());
+		        Gson gson = new Gson();
+		        String strJsonCommand = gson.toJson(objCommand);
+		        out.write(strJsonCommand);
+		        out.close();
+				
+		        // Input
 			    File file = new File(objCommand.strImageLocalFullPathName);
-
-			    FileOutputStream fileOutput = new FileOutputStream(file);
 			    InputStream inputStream = urlConnection.getInputStream();
-
+			    
+   			    int serverResponseCode = urlConnection.getResponseCode();
+   			    String serverResponseMessage = urlConnection.getResponseMessage();
+   			    
+			    FileOutputStream fileOutput = new FileOutputStream(file);
 			    int maxBufferSize = 1*1024*1024;
 			    byte[] buffer = new byte[maxBufferSize];
 			    int bufferLength = 0;
@@ -707,11 +716,15 @@ public class clsMessaging {
 			} catch (MalformedURLException e) {
 			        e.printStackTrace();
 			        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
-			        objResponse.strErrorMessage = e.getMessage();
+			        objResponse.strErrorMessage = "MalformedURLException. " + e.getMessage();
 			} catch (IOException e) {
 			        e.printStackTrace();
 			        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
-			        objResponse.strErrorMessage = e.getMessage();
+			        objResponse.strErrorMessage = "IOException. " + e.getMessage();
+			} catch (Exception e) {
+		        e.printStackTrace();
+		        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
+		        objResponse.strErrorMessage = "Exception. " + e.getMessage();
 			}
 
 			return objResponse;
