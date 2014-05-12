@@ -767,6 +767,13 @@ public class clsMessaging {
     	public ArrayList<clsSyncRepository> objSyncRepositories = new ArrayList<clsSyncRepository>();
     	public ArrayList<Integer> intServerInstructions = new ArrayList<Integer>();
     	public ArrayList<String> strServerMessages = new ArrayList<String>();
+    	public ArrayList<clsImageLoadData> objImageLoadDatas = new ArrayList<clsImageLoadData>();
+    	
+    	public class clsImageLoadData {
+    		public String strNoteUuid;
+    		public ArrayList<String> strImagesToBeUploaded = new ArrayList<String>();
+    		public ArrayList<String> strImagesToBeDownloaded = new ArrayList<String>();   		
+    	}
     }
     
     
