@@ -191,6 +191,7 @@ public class clsTreeview {
 			objNewTreeNode.strOwnerUserUuid = objTreeNode.strOwnerUserUuid;
 			objNewTreeNode.strLastChangedByUserUuid = objTreeNode.strLastChangedByUserUuid;
 			objNewTreeNode.strLastChangedDateTimeStamp = objTreeNode.strLastChangedDateTimeStamp;
+			objNewTreeNode.strLastResourceChangedDateTimeStamp = objTreeNode.strLastResourceChangedDateTimeStamp;
 			objNewTreeNode.boolIsDeleted = objTreeNode.boolIsDeleted;
 			objNewTreeNode.boolIsNew = objTreeNode.boolIsNew;
 			objNewTreeNode.strAnnotationGson = clsUtils.SerializeToString(objTreeNode.annotation);
@@ -314,6 +315,7 @@ public class clsTreeview {
 			objNewTreeNode.strOwnerUserUuid = objSyncTreeNode.strOwnerUserUuid;
 			objNewTreeNode.strLastChangedByUserUuid = objSyncTreeNode.strLastChangedByUserUuid;
 			objNewTreeNode.strLastChangedDateTimeStamp = objSyncTreeNode.strLastChangedDateTimeStamp;
+			objNewTreeNode.strLastResourceChangedDateTimeStamp = objSyncTreeNode.strLastResourceChangedDateTimeStamp;
 			objNewTreeNode.boolIsDeleted = objSyncTreeNode.boolIsDeleted;
 			objNewTreeNode.boolIsNew = objSyncTreeNode.boolIsNew;
 			objNewTreeNode.annotation = clsUtils.DeSerializeFromString(objSyncTreeNode.strAnnotationGson,
@@ -346,6 +348,7 @@ public class clsTreeview {
 		private String strName = "";
 		public enumItemType enumItemType;
 		public String resourcePath = "";
+		public String strLastResourceChangedDateTimeStamp = "";
 		public int resourceId;
 		public boolean boolIsSelected;
 		public ArrayList<clsTreeNode> objChildren = new ArrayList<clsTreeNode>();
@@ -395,6 +398,7 @@ public class clsTreeview {
 			this.strOwnerUserUuid = "";
 			this.strLastChangedByUserUuid = "";
 			this.strLastChangedDateTimeStamp = "";
+			this.strLastResourceChangedDateTimeStamp = "";
 		}
 
 		public clsTreeNode(String strName, enumItemType enumItemType, boolean boolIsSelected, String resourcePath,
@@ -412,6 +416,7 @@ public class clsTreeview {
 			this.strOwnerUserUuid = strOwnerUserUuid;
 			this.strLastChangedByUserUuid = strLastChangedByUserUuid;
 			this.strLastChangedDateTimeStamp = clsUtils.GetStrCurrentDateTime();
+			this.strLastResourceChangedDateTimeStamp = clsUtils.GetStrCurrentDateTime();;
 
 			if (resourcePath != "") {
 				// When created and not empty implies there could be a thumbnail
@@ -662,6 +667,7 @@ public class clsTreeview {
 		public ArrayList<clsSyncTreeNode> objChildren = new ArrayList<clsSyncTreeNode>();
 		public int intItemType;
 		public String resourcePath = "";
+		public String strLastResourceChangedDateTimeStamp = "";
 		public int resourceId;
 		public boolean boolIsChecked;
 		public boolean boolIsHidden;
@@ -700,6 +706,7 @@ public class clsTreeview {
 		objNewTreeNode.strOwnerUserUuid = objTreeNode.strOwnerUserUuid;
 		objNewTreeNode.strLastChangedByUserUuid = objTreeNode.strLastChangedByUserUuid;
 		objNewTreeNode.strLastChangedDateTimeStamp = objTreeNode.strLastChangedDateTimeStamp;
+		objNewTreeNode.strLastResourceChangedDateTimeStamp = objTreeNode.strLastResourceChangedDateTimeStamp;
 		objNewTreeNode.boolIsDeleted = objTreeNode.boolIsDeleted;
 		objNewTreeNode.boolIsNew = objTreeNode.boolIsNew;
 		objNewTreeNode.boolUseAnnotatedImage = objTreeNode.boolUseAnnotatedImage;
