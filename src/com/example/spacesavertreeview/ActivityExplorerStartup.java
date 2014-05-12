@@ -30,6 +30,7 @@ import com.example.spacesavertreeview.sharing.clsMessaging.NoteSyncAsyncTask;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileAsyncTask;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileResponseMsg;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncNoteCommandMsg;
@@ -1688,6 +1689,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "Note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been replaced with an updated version.\n";
 						}
+						
+						((ActivityExplorerStartup)objContext).UpdateImageLoadDatas(objNoteTreeview);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
 						clsExplorerTreeview objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1717,6 +1720,7 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New shared note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
+						((ActivityExplorerStartup)objContext).UpdateImageLoadDatas(objNoteTreeview);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
 						objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1744,6 +1748,7 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New subscribed note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
+						((ActivityExplorerStartup)objContext).UpdateImageLoadDatas(objNoteTreeview);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
 						if (boolDisplayResults) {
@@ -1755,9 +1760,6 @@ public class ActivityExplorerStartup extends ListActivity {
 							clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
 							strMessage += "Note '" + objSyncRepository.strRepositoryName + "' had a sync problem. "
 									+ objResult.strServerMessages.get(i) + ".\n";
-							// Toast.makeText(objContext,
-							// objResult.strServerMessages.get(i),
-							// Toast.LENGTH_LONG).show();
 						}
 						break;
 					}
@@ -1767,8 +1769,6 @@ public class ActivityExplorerStartup extends ListActivity {
 			} else {
 				if (boolDisplayResults) {
 					strMessage += objResult.strErrorMessage + ".\n";
-					// Toast.makeText(objContext, objResult.strErrorMessage,
-					// Toast.LENGTH_LONG).show();
 				}
 
 			}
@@ -1897,6 +1897,41 @@ public class ActivityExplorerStartup extends ListActivity {
 				objProgressDialog.dismiss();
 			}
 		}
+	}
+
+	public void UpdateImageLoadDatas(clsNoteTreeview objNoteTreeview) {
+		// Look for all images needed by note, if they already exist on client, collect all the missing ones
+		// Class that iterates
+		class clsMyTreeviewIterator extends clsTreeviewIterator {
+			
+			clsImageLoadData objImageLoadData;
+
+			public clsMyTreeviewIterator(clsTreeview objTreeview, clsImageLoadData objImageLoadData) {
+				super(objTreeview);
+				this.objImageLoadData = objImageLoadData;
+			}
+
+			@Override
+			public void ProcessTreeNode(clsTreeNode objTreeNode) {
+				// TODO Auto-generated method stub
+				if (!objTreeNode.resourcePath.isEmpty()) {
+					File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
+					if (!fileImage.exists()) {
+						objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+					}
+				}
+			}	
+		}
+		
+		// Do work here
+		ArrayList<clsImageLoadData> objImageLoadDatas = objExplorerTreeview.getRepository().objImageLoadDatas;
+		
+		for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
+			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
+				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, objImageLoadData);	
+				objMyTreeviewIterator.Execute();
+			}
+		}		
 	}
 
 }

@@ -13,6 +13,7 @@ import android.util.Log;
 
 import com.example.spacesavertreeview.imageannotation.clsAnnotationData;
 import com.example.spacesavertreeview.sharing.clsGroupMembers;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
 import com.google.gson.Gson;
 
 public class clsTreeview {
@@ -80,6 +81,12 @@ public class clsTreeview {
 		} else {
 			clsUtils.CustomLog("Backup file is empty");
 		}
+		
+		// To ensure some form of compatibility with older repositories
+		if (getRepository().objImageLoadDatas == null) {
+			getRepository().objImageLoadDatas = new ArrayList<clsImageLoadData>();
+		}
+		
 	}
 
 	public void SetAsCheckList(boolean boolIsCheckList) {
@@ -111,6 +118,7 @@ public class clsTreeview {
 		public ArrayList<clsShareUser> objSharedUsers = new ArrayList<clsShareUser>();
 		private String strOwnerUserUuid = "";
 		public boolean boolIsSubscribed = false;
+		public ArrayList<clsImageLoadData> objImageLoadDatas = new ArrayList<clsImageLoadData>();
 
 		// Data for deletion
 		private boolean boolIsDeleted = false;

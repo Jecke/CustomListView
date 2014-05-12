@@ -93,6 +93,12 @@ public class clsMessaging {
 	public clsRepository objRepository = new clsRepository();
 	// End of persistence items
 	
+	public class clsImageLoadData {
+		public String strNoteUuid;
+		public ArrayList<String> strImagesToBeUploaded = new ArrayList<String>();
+		public ArrayList<String> strImagesToBeDownloaded = new ArrayList<String>();   		
+	}
+	
 	public boolean getBoolIsServerIisExpress() {
 		return objRepository.boolIsServerIisExpress;
 	}
@@ -769,11 +775,7 @@ public class clsMessaging {
     	public ArrayList<String> strServerMessages = new ArrayList<String>();
     	public ArrayList<clsImageLoadData> objImageLoadDatas = new ArrayList<clsImageLoadData>();
     	
-    	public class clsImageLoadData {
-    		public String strNoteUuid;
-    		public ArrayList<String> strImagesToBeUploaded = new ArrayList<String>();
-    		public ArrayList<String> strImagesToBeDownloaded = new ArrayList<String>();   		
-    	}
+
     }
     
     
@@ -785,6 +787,7 @@ public class clsMessaging {
     	public ArrayList<clsSyncRepository> objSyncRepositories;
     	public ArrayList<Integer> intServerInstructions;
     	public ArrayList<String> strServerMessages;
+    	public ArrayList<clsImageLoadData> objImageLoadDatas = new ArrayList<clsImageLoadData>();
     }
 	
 
@@ -863,6 +866,7 @@ public class clsMessaging {
 					objResult.objSyncRepositories = objResponse.objSyncRepositories;
 					objResult.intServerInstructions = objResponse.intServerInstructions;
 					objResult.strServerMessages = objResponse.strServerMessages;
+					objResult.objImageLoadDatas = objResponse.objImageLoadDatas;
 
 			} else {
 				objResult.intErrorCode=clsSyncResult.ERROR_NETWORK;
