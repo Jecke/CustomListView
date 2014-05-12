@@ -987,10 +987,10 @@ public class ActivityExplorerStartup extends ListActivity {
 					// TODO Auto-generated method stub
 					super.onPostExecute(objResponse);
 					if (objResponse.intErrorCode == clsMessaging.ERROR_NONE) {
-						Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
-					} else {
-						Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
-					}
+							Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
+						} else {
+							Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
+						}
 				}
 			}
 			String strServerUrl;
@@ -1009,7 +1009,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			clsDownloadImageFileCommandMsg objDownloadCommand = objMessaging.new clsDownloadImageFileCommandMsg();
 			objDownloadCommand.strImageUuid = "BarCode";
 			objDownloadCommand.strFileExtentionWithoutDot ="jpg";
-			objDownloadCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/BarCode.jpg";
+			objDownloadCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/f3e902a5-6499-411d-9280-b2eafd0a8c6b.jpg";
 			clsDownloadImageFileResponseMsg objDownloadResponse = objMessaging.new clsDownloadImageFileResponseMsg();
 			final boolean boolDisplayDownloadProgress = true;
 			class clsMyDownloadImageFileAsyncTask extends clsDownloadImageFileAsyncTask {
@@ -1697,12 +1697,12 @@ public class ActivityExplorerStartup extends ListActivity {
 						if (objSharingFolderTreeNode == null) {
 							// Create a sharing folder as it does not exist yet
 							objSharingFolderTreeNode = objExplorerTreeview.new clsTreeNode("Shared notes",
-									enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.SHARED_FOLDER_RESOURCE,
+									enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.SHARED_FOLDER_RESOURCE, "",
 									strOwnerUserUuid, strOwnerUserUuid);
 							objExplorerTreeview.getRepository().objRootNodes.add(objSharingFolderTreeNode);
 						}
 						clsTreeNode objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Shared note",
-								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, strOwnerUserUuid,
+								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid,
 								strOwnerUserUuid);
 						objNoteTreeview = new clsNoteTreeview(objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
@@ -1726,12 +1726,11 @@ public class ActivityExplorerStartup extends ListActivity {
 							// Create a sharing folder as it does not exist yet
 							objPublishingFolderTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed notes",
 									enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.PUBLISHED_FOLDER_RESOURCE,
-									strOwnerUserUuid, strOwnerUserUuid);
+									"", strOwnerUserUuid, strOwnerUserUuid);
 							objExplorerTreeview.getRepository().objRootNodes.add(objPublishingFolderTreeNode);
 						}
-						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed note",
-								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, strOwnerUserUuid,
-								strOwnerUserUuid);
+						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed note", 
+								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid, strOwnerUserUuid);
 						objNoteTreeview = new clsNoteTreeview(objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
 						objExplorerNoteTreeNode.setName(objNoteTreeview.getRepository().getName());

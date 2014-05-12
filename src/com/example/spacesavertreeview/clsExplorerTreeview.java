@@ -132,7 +132,7 @@ public class clsExplorerTreeview extends clsTreeview {
 		private static final long serialVersionUID = 1L;
 		
 		clsExplorerTreeNode(String strName, enumItemType enumItemType, boolean	boolIsSelected, String strOwnerUserUuid, String strLastChangedByUserUuid){
-			super(strName,enumItemType,boolIsSelected,"",0,strOwnerUserUuid, strLastChangedByUserUuid);
+			super(strName,enumItemType,boolIsSelected,"",0,strOwnerUserUuid, strLastChangedByUserUuid,"");
 		}
 		
 		
@@ -150,6 +150,7 @@ public class clsExplorerTreeview extends clsTreeview {
 		objNewTreeNode.boolIsSelected = false;
 		objNewTreeNode.resourcePath = objTreeNode.resourcePath;
 		objNewTreeNode.resourceId = objTreeNode.resourceId;
+		objNewTreeNode.strWebPageURL = objTreeNode.strWebPageURL;
 		if (objNewTreeNode.resourcePath != "") {
 			// Make copy of thumbnail file since the UUID is different
 			String strSourceFilename = objTreeNode.guidTreeNode.toString() + ".jpg";

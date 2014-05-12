@@ -185,6 +185,7 @@ public class clsTreeview {
 			objNewTreeNode.intItemType = objTreeNode.enumItemType.getValue();
 			objNewTreeNode.resourcePath = objTreeNode.resourcePath;
 			objNewTreeNode.resourceId = objTreeNode.resourceId;
+			objNewTreeNode.strWebPageURL = objTreeNode.strWebPageURL;
 			objNewTreeNode.boolIsChecked = objTreeNode.boolIsChecked;
 			objNewTreeNode.boolIsHidden = objTreeNode.boolIsHidden;
 			objNewTreeNode.intHash = objTreeNode.intHash;
@@ -309,6 +310,7 @@ public class clsTreeview {
 			objNewTreeNode.enumItemType = objItemType[objSyncTreeNode.intItemType];
 			objNewTreeNode.resourcePath = objSyncTreeNode.resourcePath;
 			objNewTreeNode.resourceId = objSyncTreeNode.resourceId;
+			objNewTreeNode.strWebPageURL = objSyncTreeNode.strWebPageURL;
 			objNewTreeNode.boolIsChecked = objSyncTreeNode.boolIsChecked;
 			objNewTreeNode.boolIsHidden = objSyncTreeNode.boolIsHidden;
 			objNewTreeNode.intHash = objSyncTreeNode.intHash;
@@ -350,6 +352,7 @@ public class clsTreeview {
 		public String resourcePath = "";
 		public String strLastResourceChangedDateTimeStamp = "";
 		public int resourceId;
+		public String strWebPageURL; // Used to save the URL in case resourceId indicates a webpage resource
 		public boolean boolIsSelected;
 		public ArrayList<clsTreeNode> objChildren = new ArrayList<clsTreeNode>();
 		public boolean boolIsChecked;
@@ -392,6 +395,7 @@ public class clsTreeview {
 			this.boolIsSelected = false;
 			this.resourcePath = "";
 			this.resourceId = 0;
+			this.strWebPageURL = "";
 			this.boolIsChecked = false;
 			this.boolIsHidden = false;
 			this._boolIsDirty = true;
@@ -402,13 +406,14 @@ public class clsTreeview {
 		}
 
 		public clsTreeNode(String strName, enumItemType enumItemType, boolean boolIsSelected, String resourcePath,
-				int resourceId, String strOwnerUserUuid, String strLastChangedByUserUuid) {
+				int resourceId, String strWebPageURL, String strOwnerUserUuid, String strLastChangedByUserUuid) {
 			this.strName = strName;
 			guidTreeNode = UUID.randomUUID();
 			this.enumItemType = enumItemType;
 			this.boolIsSelected = boolIsSelected;
 			this.resourcePath = resourcePath;
 			this.resourceId = resourceId;
+			this.strWebPageURL = strWebPageURL;
 			this.intHash = clsUtils.GetHashCode(strName);
 			this.boolIsChecked = false;
 			this.boolIsHidden = false;
@@ -669,6 +674,7 @@ public class clsTreeview {
 		public String resourcePath = "";
 		public String strLastResourceChangedDateTimeStamp = "";
 		public int resourceId;
+		public String strWebPageURL;
 		public boolean boolIsChecked;
 		public boolean boolIsHidden;
 		public int intHash = 0;
@@ -702,6 +708,7 @@ public class clsTreeview {
 		objNewTreeNode.boolIsSelected = false;
 		objNewTreeNode.resourcePath = objTreeNode.resourcePath;
 		objNewTreeNode.resourceId = objTreeNode.resourceId;
+		objNewTreeNode.strWebPageURL = objTreeNode.strWebPageURL;
 		objNewTreeNode.intHash = objTreeNode.intHash;
 		objNewTreeNode.strOwnerUserUuid = objTreeNode.strOwnerUserUuid;
 		objNewTreeNode.strLastChangedByUserUuid = objTreeNode.strLastChangedByUserUuid;
@@ -846,7 +853,7 @@ public class clsTreeview {
 		boolean boolIsAnnotated = (objTreeNode.annotation != null) ? true : false;
 		clsListItem objListItem = new clsListItem(objTreeNode.getName(), intLevel, objTreeNode.guidTreeNode,
 				getItemType(objTreeNode), objTreeNode.getSelected(), objTreeNode.resourcePath, objTreeNode.resourceId,
-				boolIsAnnotated,objTreeNode.resourceId );
+				boolIsAnnotated, objTreeNode.strWebPageURL);
 
 		// Fill in the _boolFolderHasHiddenItems property. If any child with
 		// hidden items, return true

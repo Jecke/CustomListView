@@ -139,17 +139,17 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 		case clsTreeview.IMAGE_RESOURCE:
 			myMediaPreviewView.setVisibility(View.VISIBLE);
-			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.intResourceId);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.getResourceId());
 			break;
 
 		case clsTreeview.VIDEO_RESOURCE:
 			myMediaPreviewView.setVisibility(View.VISIBLE);
-			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.intResourceId);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.getResourceId());
 			break;
 
 		case clsTreeview.WEB_RESOURCE:
 			myMediaPreviewView.setVisibility(View.VISIBLE);
-			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.intResourceId);
+			createThumbnailFromImage(objListItem.getTreeNodeGuid().toString(), objListItem.boolIsAnnotated, objListItem.getResourceId());
 			break;
 
 		default:

@@ -13,19 +13,20 @@ public class clsListItem {
 	private enumItemLevelRelation _AboveItemLevelRelation, _BelowItemLevelRelation;
 	public boolean	_boolIsSelected;
 	public boolean _boolFolderHasHiddenItems;
-	public int intResourceId;
 	
 	// JE
 	private String _resourcePath;
 	private int    _resourceId = -1;
+	private String _strWebPageURL;
 	
+
+
 	// Annotation
 	public boolean boolIsAnnotated = false;
 	
 	public clsListItem(String strName, int intLevel, 
 						UUID guidTreeNode,  enumItemType enumItemType, 
-						boolean	boolIsSelected, String resourcePath, int resourceId, boolean boolIsAnnotated,
-						int intResourceId){
+						boolean	boolIsSelected, String resourcePath, int resourceId, boolean boolIsAnnotated, String strWebPageURL){
 		_strName = strName;
 		_intLevel = intLevel;
 		_guidTreeNode = guidTreeNode;
@@ -35,7 +36,7 @@ public class clsListItem {
 		_resourceId = resourceId;
 		_boolFolderHasHiddenItems = false;
 		this.boolIsAnnotated = boolIsAnnotated;
-		this.intResourceId = intResourceId;
+		_strWebPageURL = strWebPageURL;
 	}
 	
 	public String getName(){
@@ -55,6 +56,14 @@ public class clsListItem {
 	// return the type of the row content (text, image or video) 
 	public int getResourceId(){
 		return _resourceId;
+	}
+	
+	public String getWebPageURL() {
+		return _strWebPageURL;
+	}
+
+	public void setWebPageURL(String strWebPageURL) {
+		this._strWebPageURL = strWebPageURL;
 	}
 	
 	public void setLevel(int intLevel){

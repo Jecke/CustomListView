@@ -27,7 +27,7 @@ public class clsGroupMembersTreeview extends clsTreeview {
 
 		
 		clsGroupMembersTreeNode(String strName, enumItemType enumItemType, boolean	boolIsSelected){
-			super(strName,enumItemType,boolIsSelected,"",0,"","");
+			super(strName,enumItemType,boolIsSelected,"",0,"","","");
 		}
 
 

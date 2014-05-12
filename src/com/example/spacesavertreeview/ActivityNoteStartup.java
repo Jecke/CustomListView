@@ -935,11 +935,11 @@ public class ActivityNoteStartup extends ListActivity {
     	    		if (!objNoteTreeview.boolIsUserCommenting(objGroupMembers.objMembersRepository.getStrRegisteredUserUuid())) {
     	    			
     	    			objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-								resourcePath, resourceId, strOwnerUserUuid, strOwnerUserUuid);
+								resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
     				}
     				else {
     					objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-								resourcePath, resourceId, strOwnerUserUuid, strOwnerUserUuid);
+								resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
     				}
     	    		UpdateAnnotationDataWithNewNodeUuid(objAnnotationData,objNewTreeNode.guidTreeNode.toString());
     	    		objNewTreeNode.annotation = objAnnotationData;
@@ -970,11 +970,11 @@ public class ActivityNoteStartup extends ListActivity {
     	    		strOwnerUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
     	    		if (!objNoteTreeview.boolIsUserCommenting(objGroupMembers.objMembersRepository.getStrRegisteredUserUuid())) {
     	    			objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-        	    				resourcePath, resourceId, strOwnerUserUuid, strOwnerUserUuid);
+        	    				resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
     				}
     				else {
     					objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-        	    				resourcePath, resourceId, strOwnerUserUuid, strOwnerUserUuid);
+        	    				resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
     				}
     	    		UpdateAnnotationDataWithNewNodeUuid(objAnnotationData,objNewTreeNode.guidTreeNode.toString());
     	    		objNewTreeNode.annotation = objAnnotationData;
