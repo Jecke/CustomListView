@@ -499,6 +499,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 					Intent intentViewImage = new Intent(context, ActivityViewImage.class);
 
 					intentViewImage.putExtra(ActivityViewImage.FILE_FULLFILENAME, fileImageFilename.toString());
+					intentViewImage.putExtra(ActivityViewImage.URL, objTreenode.strWebPageURL);
 					
 					clsAnnotationData objAnnotationData = objTreenode.annotation;
 					ArrayList<ActivityViewImage.clsListViewState> objListViewStates = new ArrayList<ActivityViewImage.clsListViewState>();

@@ -1,10 +1,13 @@
 package com.example.spacesavertreeview.imageannotation;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.net.Uri;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -31,6 +34,8 @@ public class clsZoomableImageView extends ImageView
     float width, height;
     float saveScale = 1f;
     float right, bottom, origWidth, origHeight, bmWidth, bmHeight;
+    
+    private String _strWebPageURL = "";
 
     ScaleGestureDetector mScaleDetector;
     Context context;
@@ -116,7 +121,10 @@ public class clsZoomableImageView extends ImageView
                         int xDiff = (int) Math.abs(curr.x - start.x);
                         int yDiff = (int) Math.abs(curr.y - start.y);
                         if (xDiff < CLICK && yDiff < CLICK)
+                        {
                             performClick();
+                            checkAndExecuteWebNote();
+                        }
                         break;
 
                     case MotionEvent.ACTION_POINTER_UP:
@@ -248,5 +256,23 @@ public class clsZoomableImageView extends ImageView
         right = width * saveScale - width - (2 * redundantXSpace * saveScale);
         bottom = height * saveScale - height - (2 * redundantYSpace * saveScale);
         setImageMatrix(matrix);
+    }
+    
+    public void setWebPageURL(String strWebPageURL)
+    {
+    	_strWebPageURL = strWebPageURL;
+    }
+    
+    private void checkAndExecuteWebNote()
+    {
+    	// Start external internet browser
+    	if(_strWebPageURL != null && !_strWebPageURL.isEmpty())
+    	{
+    		Log.d(">>web", _strWebPageURL);
+    		
+    		Intent intent = new Intent(Intent.ACTION_VIEW);
+    		intent.setData(Uri.parse(_strWebPageURL));
+    		context.startActivity(intent);
+    	}
     }
 }

@@ -47,6 +47,7 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 		public String strDescription;
 		ArrayList<clsListViewState> objListViewStates = new ArrayList<clsListViewState>();
 		public String strCombinedFileFullFilename;
+		public String strWebPageURL;
 	}
 
 	public static class clsListViewState {
@@ -54,6 +55,7 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 	}
 
 	public static final String FILE_FULLFILENAME = "com.example.spacesavertreeview.strFileFullFilename";
+	public static final String URL               = "com.example.spacesavertreeview.strWebPageURL";
 
 	public static final String LISTVIEWSTATES_GSON = "com.example.spacesavertreeview.listviewstates_gson";
 
@@ -76,7 +78,6 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 		thisObject = this;
 		
 		ListView objListView = (ListView) findViewById(R.id.activity_view_image_arrows);
-		
 		
 		clsZoomableImageView objImageView = (clsZoomableImageView) findViewById(R.id.activity_view_image_image);
 		//File fileImageFilename  = new File(objSession.strCombinedFileFullFilename);
@@ -107,6 +108,7 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 			
 			objSession.strDescription = objBundle.getString(ActivityViewImage.DESCRIPTION);
 			objSession.strCombinedFileFullFilename = objBundle.getString(ActivityViewImage.FILE_FULLFILENAME);
+			objSession.strWebPageURL = objBundle.getString(ActivityViewImage.URL);
 			
 			String strListViewStatesGson = objBundle.getString(ActivityViewImage.LISTVIEWSTATES_GSON);
 			if (!strListViewStatesGson.isEmpty()) {
@@ -146,14 +148,6 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 		}
 		if(!numberedArrowAvailable)
 		{
-			
-			// hide 
-//			TextView objLabel = (TextView)findViewById(R.id.activity_view_arrow_label);
-//			objLabel.setVisibility(View.GONE);
-//			//ListView list = (ListView)findViewById(R.id.activity_view_image_arrows);
-//			objListView.setVisibility(View.GONE);
-//			
-//			
 			// hide layout which contains the texts for the numbered arrows
 			LinearLayout objLayout = (LinearLayout)findViewById(R.id.linear_layout_arrow_info);
 			objLayout.setVisibility(View.GONE);
@@ -164,8 +158,6 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 			TextView objLabel = (TextView)findViewById(R.id.activity_view_description);
 			RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) objLabel.getLayoutParams();
 			lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, objLabel.getId());
-			
-			Log.d("JE", "-- GONE --");
 		}
 		
 		UpdateScreen();
@@ -179,6 +171,7 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 
 		clsZoomableImageView objImageView = (clsZoomableImageView)findViewById(R.id.activity_view_image_image);
 		objImageView.setImageBitmap(bitmap);
+		objImageView.setWebPageURL(objSession.strWebPageURL);
 
 		TextView objTextView = (TextView)findViewById(R.id.activity_view_description);
 		objTextView.setText(objSession.strDescription);
