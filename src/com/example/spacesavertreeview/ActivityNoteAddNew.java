@@ -720,7 +720,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				}
 
 				break;
-			// TODO JE Create method because code for image, video and web is almost identical.	
+				
 			case clsTreeview.WEB_RESOURCE:
 				objBundle = data.getExtras();
 
@@ -728,7 +728,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				resourcePath = objBundle.getString(WEB_VIEW_IMAGE);
 				origUri 	 = Uri.parse(resourcePath);
 
-				//urlText.setText(url);
 				
 				// Put URL in description if description is empty
 				EditText objEditView = (EditText)findViewById(R.id.editTextNoteName);
@@ -746,7 +745,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 							"Loading Resource", 
 							true, true, null);
 
-
 					loadImageAndEnableAnnotation(requestCode, origUri);
 				}
 				else 
@@ -759,7 +757,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				objBundle = data.getExtras();
 				objAnnotationData = clsUtils.DeSerializeFromString(objBundle.getString(clsAnnotationData.DATA), 
 										   clsAnnotationData.class);
-
 				
 				if (objAnnotationData != null) {
 					if (objAnnotationData.items.size()  == 0 ) {
@@ -932,6 +929,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          		String strAnnotationData = clsUtils.SerializeToString(null);
 				objIntent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationData);
          		
+				String strWebPageURL = "";
+				
          		switch(resourceId)
          		{
          			case clsTreeview.TEXT_RESOURCE:
@@ -962,13 +961,18 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          				}
          				else
          				{
+         					if(resourceId == clsTreeview.WEB_RESOURCE)
+         					{
+         						strWebPageURL = url;
+         					}
+         					
          					strAnnotationData = clsUtils.SerializeToString(objAnnotationData);
          					objIntent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationData);
          					success = true;
          				}
          				break;
          				
-         			case clsTreeview.VIDEO_RESOURCE: // Todo
+         			case clsTreeview.VIDEO_RESOURCE:
          				if(resourcePath == null || resourcePath.isEmpty())
          				{
          					// pop up information dialog
@@ -993,11 +997,10 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	            	objIntent.putExtra(ActivityNoteStartup.DESCRIPTION,   strDescription);
 	            	objIntent.putExtra(ActivityNoteStartup.RESOURCE_ID,   resourceId);            	
 	            	objIntent.putExtra(ActivityNoteStartup.RESOURCE_PATH, resourcePath);
+	            	objIntent.putExtra(ActivityNoteStartup.TREENODE_URL, strWebPageURL);
 	            	objIntent.putExtra(ActivityNoteStartup.TREENODE_UID, strTreeNodeUuid);
 	            	objIntent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, boolUseAnnotatedImage);
 	            	objIntent.putExtra(ActivityNoteStartup.ISDIRTY, true);
-	            	
-	            	Log.d(">>resPath<<", resourcePath);
 	            	
 	            	setResult(RESULT_OK, objIntent);
 	            	ActivityNoteAddNew.this.finish();

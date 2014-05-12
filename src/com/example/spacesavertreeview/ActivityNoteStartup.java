@@ -55,6 +55,7 @@ public class ActivityNoteStartup extends ListActivity {
 	public static final String DESCRIPTION   = "com.example.spacesavertreeview.description";
 	public static final String RESOURCE_ID   = "com.example.spacesavertreeview.resource_id";
 	public static final String RESOURCE_PATH = "com.example.spacesavertreeview.resource_path";
+	public static final String TREENODE_URL = "com.example.spacesavertreeview.treenode_url";
 	public static final String TREENODE_UID = "com.example.spacesavertreeview.treenode_uuid";
 	public static final String TREENODE_OWNERNAME = "com.example.spacesavertreeview.treenode_ownername";
 	public static final String ANNOTATION_DATA_GSON = "com.example.spacesavertreeview.annotation_data";
@@ -905,6 +906,7 @@ public class ActivityNoteStartup extends ListActivity {
 			
 			String strResult    = objBundle.getString(DESCRIPTION);
 			String resourcePath = objBundle.getString(RESOURCE_PATH);
+			String strWebPageURL = objBundle.getString(TREENODE_URL);
 			int    resourceId   = objBundle.getInt(RESOURCE_ID);
 			String strAnnotationData = objBundle.getString(ANNOTATION_DATA_GSON);
 			boolean boolUseAnnotatedImage = objBundle.getBoolean(ActivityNoteStartup.USE_ANNOTATED_IMAGE);
@@ -915,7 +917,7 @@ public class ActivityNoteStartup extends ListActivity {
 			ListView          objListView;
 			clsTreeNode       objNewTreeNode;
 			clsTreeNode       objParentTreeNode;
-			clsNoteItemStatus objNoteItemStatusx = new clsNoteItemStatus();
+			clsNoteItemStatus objNoteItemStatus = new clsNoteItemStatus();
 	
 												
     		switch(requestCode)
@@ -935,11 +937,11 @@ public class ActivityNoteStartup extends ListActivity {
     	    		if (!objNoteTreeview.boolIsUserCommenting(objGroupMembers.objMembersRepository.getStrRegisteredUserUuid())) {
     	    			
     	    			objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-								resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
+								resourcePath, resourceId, strWebPageURL, strOwnerUserUuid, strOwnerUserUuid);
     				}
     				else {
     					objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-								resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
+								resourcePath, resourceId, strWebPageURL, strOwnerUserUuid, strOwnerUserUuid);
     				}
     	    		UpdateAnnotationDataWithNewNodeUuid(objAnnotationData,objNewTreeNode.guidTreeNode.toString());
     	    		objNewTreeNode.annotation = objAnnotationData;
@@ -970,11 +972,11 @@ public class ActivityNoteStartup extends ListActivity {
     	    		strOwnerUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
     	    		if (!objNoteTreeview.boolIsUserCommenting(objGroupMembers.objMembersRepository.getStrRegisteredUserUuid())) {
     	    			objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-        	    				resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
+        	    				resourcePath, resourceId, strWebPageURL, strOwnerUserUuid, strOwnerUserUuid);
     				}
     				else {
     					objNewTreeNode = objNoteTreeview.new clsTreeNode(strResult, clsTreeview.enumItemType.FOLDER_EMPTY, false,
-        	    				resourcePath, resourceId, "", strOwnerUserUuid, strOwnerUserUuid);
+        	    				resourcePath, resourceId, strWebPageURL, strOwnerUserUuid, strOwnerUserUuid);
     				}
     	    		UpdateAnnotationDataWithNewNodeUuid(objAnnotationData,objNewTreeNode.guidTreeNode.toString());
     	    		objNewTreeNode.annotation = objAnnotationData;
