@@ -359,7 +359,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 
 							//String t = urlText.getText().toString();
 							
-							String imageFile = strImageFilename.toString();
+							String imageFile = strFullFilename.toString();
 							
 							Intent web = new Intent(objContext, ActivityWebBrowser.class);
 							web.putExtra(WEB_VIEW_URL, url);

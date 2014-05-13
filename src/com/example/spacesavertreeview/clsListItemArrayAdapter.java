@@ -474,16 +474,23 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 						if (!resPath.isEmpty()) {
 							
 							String prefix;
-							if(resPath.startsWith("/"))
+							
+							if(!resPath.startsWith("file:"))
 							{
-								prefix = "file:/";
+								if(resPath.startsWith("/"))
+								{
+									prefix = "file:/";
+								}
+								else
+								{
+									prefix = "file://";
+								}
+								img_intent.setDataAndType(Uri.parse(prefix + resPath), "image/*");
 							}
 							else
 							{
-								prefix = "file://";
+								img_intent.setDataAndType(Uri.parse(resPath), "image/*");
 							}
-							
-							img_intent.setDataAndType(Uri.parse(prefix + resPath), "image/*");
 
 							context.startActivity(img_intent);
 						} else {
