@@ -25,6 +25,7 @@ import com.example.spacesavertreeview.clsTreeview;
 import com.example.spacesavertreeview.clsTreeview.clsSyncRepository;
 import com.example.spacesavertreeview.clsUtils;
 import com.example.spacesavertreeview.sharing.clsGroupMembers.clsSyncMembersRepository;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageUpDownloadResult.clsError;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions.ActivitySubscriptionsAddAsyncTask;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions.clsSubscriptionsAddCommandMsg;
 import com.google.gson.Gson;
@@ -499,10 +500,7 @@ public class clsMessaging {
     	public  String strImageLocalFullPathName;
     }
     
-    public class clsUploadImageFileResponseMsg extends clsMsg {
-    	public Integer intServerInstructions;
-    	public String strServerMessages;
-    }
+    public class clsUploadImageFileResponseMsg extends clsMsg {}
     
     public static class clsUploadImageFileAsyncTask extends AsyncTask<String, Void, clsUploadImageFileResponseMsg>
    	{
@@ -633,6 +631,8 @@ public class clsMessaging {
    		
    	}
    	
+ 
+   	
 // -------------- DownloadImageFileAsyncTask
     
     
@@ -642,9 +642,7 @@ public class clsMessaging {
     	public  String strImageLocalFullPathName;
     }
     
-    public class clsDownloadImageFileResponseMsg extends clsMsg {
-
-    }
+    public class clsDownloadImageFileResponseMsg extends clsMsg {}
     
     public static class clsDownloadImageFileAsyncTask extends AsyncTask<String, Void, clsDownloadImageFileResponseMsg>
    	{
@@ -761,6 +759,134 @@ public class clsMessaging {
    		}
    	
    	}
+   	
+ // -------------- ImageUpDownloadAsyncTask  
+   	class clsImageUpDownloadResult {
+   		ArrayList<clsError> strUploadErrors = new ArrayList<clsError>();
+   		ArrayList<clsError> strDownloadErrors = new ArrayList<clsError>();
+   		
+   		class clsError {
+   			public String strNoteUuid;
+   			public String strDescription;
+   		}
+   	}
+   	
+    public static class clsImageUpDownloadAsyncTask extends AsyncTask<Void, Void, Void> {
+
+    	static Activity objActivity;
+    	static clsMessaging objMessaging;
+   		static ArrayList<clsImageLoadData> objImageLoadDatas;
+   		static clsImageUpDownloadResult objImageUpDownloadResult;
+   		ProgressDialog objProgressDialog;
+   		static boolean boolDisplayProgress = true;
+   		static String strUploadUrl;
+   		static String strDownloadUrl;
+    	
+    	public clsImageUpDownloadAsyncTask (Activity objActivity, clsMessaging objMessaging, boolean boolDisplayProgress, 
+    			ArrayList<clsImageLoadData> objImageLoadDatas) {
+    		clsImageUpDownloadAsyncTask.objActivity = objActivity;
+    		clsImageUpDownloadAsyncTask.objImageLoadDatas = objImageLoadDatas;
+    		clsImageUpDownloadAsyncTask.objImageUpDownloadResult = objMessaging.new clsImageUpDownloadResult();
+    		clsImageUpDownloadAsyncTask.boolDisplayProgress = boolDisplayProgress;
+    		clsImageUpDownloadAsyncTask.objMessaging = objMessaging;
+    		objProgressDialog = new ProgressDialog(objActivity);
+    		String strServerUrl;
+    		if(objMessaging.objRepository.boolIsServerIisExpress) {
+				strServerUrl =  clsMessaging.SERVER_URL_IIS_EXPRESS;
+			}
+			else {
+				strServerUrl =  clsMessaging.SERVER_URL_AZURE;
+			}
+			strUploadUrl = strServerUrl + objActivity.getResources().getString(R.string.url_upload_image_file);
+			strDownloadUrl = strServerUrl + objActivity.getResources().getString(R.string.url_download_image_file);
+		}
+    	
+    	@Override
+   	    protected void onPreExecute()
+   	    {
+   	        super.onPreExecute();
+   	        objProgressDialog.setMessage("Processing..., please wait.");
+   	        if (boolDisplayProgress) {
+   		        objProgressDialog.show();
+   	        }
+   	    }
+    	
+    	@Override
+		protected Void doInBackground(Void... arg0) {
+			for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
+				for(String strImageToBeUploaded: objImageLoadData.strImagesToBeUploaded) {
+					clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
+					objUploadCommand.strImageLocalFullPathName = "";
+					objUploadCommand.strFileExtentionWithoutDot = "jpg";
+					objUploadCommand.strImageUuid = strImageToBeUploaded;
+					String strUploadReturn = UploadImageToServer(strUploadUrl, objUploadCommand);
+					if (!strUploadReturn.isEmpty()) {
+						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
+						objError.strNoteUuid = strImageToBeUploaded;
+						objError.strDescription = strUploadReturn;
+						objImageUpDownloadResult.strUploadErrors.add(objError);
+					}								
+				}	
+				
+				for(String strImageToBeUploaded: objImageLoadData.strImagesToBeUploaded) {
+					clsDownloadImageFileCommandMsg objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
+					objDownloadCommand.strImageLocalFullPathName = "";
+					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
+					objDownloadCommand.strImageUuid = strImageToBeUploaded;
+					String strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
+					if (!strDownloadReturn.isEmpty()) {
+						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
+						objError.strNoteUuid = strImageToBeUploaded;
+						objError.strDescription = strDownloadReturn;
+						objImageUpDownloadResult.strDownloadErrors.add(objError);
+					}
+				}	
+			}
+			
+			return null;
+		}
+    	
+    	@Override
+   	    protected void onPostExecute(Void result)
+   	    {
+   	        super.onPostExecute(result);
+   	        
+   	        if (objProgressDialog.isShowing()) {
+   	        	objProgressDialog.dismiss();
+   	        }
+   	        
+   	        if ((objImageUpDownloadResult.strDownloadErrors.size() == 0) && 
+   	        		(objImageUpDownloadResult.strUploadErrors.size() == 0)) {
+   	        	clsUtils.MessageBox(objActivity, "Background image sync complete", true);
+   	        } else {
+   	        	String strMessage = "Image sync completed with errors\n";
+   	        	if (objImageUpDownloadResult.strDownloadErrors.size() != 0) {
+   	        		strMessage += "Downloads:\n";
+   	        		for (clsError clsError:objImageUpDownloadResult.strDownloadErrors) {
+   	        			strMessage += "File: " +  clsError.strNoteUuid + "\n";
+   	   	        	}
+   	        	}
+   	        	
+   	        	if (objImageUpDownloadResult.strUploadErrors.size() == 0) {
+   	        		strMessage += "Uploads:\n";
+   	        		for (clsError clsError:objImageUpDownloadResult.strUploadErrors) {
+   	        			strMessage += "File: " +  clsError.strNoteUuid + "\n";
+   	   	        	}
+   	        	}
+   	        	clsUtils.MessageBox(objActivity, strMessage, true); 	        	
+   	        }     
+   	    }
+   		
+   		@Override
+   		protected void onCancelled() {
+   			super.onCancelled();
+   			
+   			if (objProgressDialog.isShowing()) {
+   				objProgressDialog.dismiss();
+   			}
+   		}
+    	
+    }
     
  // ------------------------------------------------------------------------------------
     public class clsSyncNoteCommandMsg extends clsMsg {
@@ -921,8 +1047,145 @@ public class clsMessaging {
 
         return conn.getInputStream();
     }
-    
-    public static JSONObject updateLocalFeedData(InputStream inStream)	throws IOException, JSONException {
+ 
+	public static String UploadImageToServer(String strUploadUrl,
+			clsUploadImageFileCommandMsg objUploadCommand) {
+		int serverResponseCode = HttpStatus.SC_OK;
+		String serverResponseMessage = "";
+		HttpURLConnection connection = null;
+		DataOutputStream outputStream = null;
+		DataInputStream inputStream = null;
+		String pathToOurFile = objUploadCommand.strImageLocalFullPathName;
+		String urlServer = strUploadUrl;
+		String lineEnd = "\r\n";
+		String twoHyphens = "--";
+		String boundary = "*****";
+
+		int bytesRead, bytesAvailable, bufferSize;
+		byte[] buffer;
+		int maxBufferSize = 1 * 1024 * 1024;
+		try {
+			FileInputStream fileInputStream = new FileInputStream(new File(
+					pathToOurFile));
+
+			URL url = new URL(urlServer);
+			connection = (HttpURLConnection) url.openConnection();
+
+			// Allow Inputs &amp; Outputs.
+			connection.setDoInput(true);
+			connection.setDoOutput(true);
+			connection.setUseCaches(false);
+
+			// Set HTTP method to POST.
+			connection.setRequestMethod("POST");
+
+			connection.setRequestProperty("Connection", "Keep-Alive");
+			connection.setRequestProperty("Content-Type",
+					"multipart/form-data;boundary=" + boundary);
+
+			outputStream = new DataOutputStream(connection.getOutputStream());
+			outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+			String strImageFilename = objUploadCommand.strImageUuid + "."
+					+ objUploadCommand.strFileExtentionWithoutDot;
+			outputStream
+					.writeBytes("Content-Disposition: form-data; name=\"UploadImageFile\";filename=\""
+							+ strImageFilename + "\"" + lineEnd);
+			outputStream.writeBytes(lineEnd);
+
+			bytesAvailable = fileInputStream.available();
+			bufferSize = Math.min(bytesAvailable, maxBufferSize);
+			buffer = new byte[bufferSize];
+
+			// Read file
+			bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+			while (bytesRead > 0) {
+				outputStream.write(buffer, 0, bufferSize);
+				bytesAvailable = fileInputStream.available();
+				bufferSize = Math.min(bytesAvailable, maxBufferSize);
+				bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+			}
+
+			outputStream.writeBytes(lineEnd);
+			outputStream.writeBytes(twoHyphens + boundary + twoHyphens
+					+ lineEnd);
+
+			// Responses from the server (code and message)
+			serverResponseCode = connection.getResponseCode();
+			serverResponseMessage = connection.getResponseMessage();
+
+			fileInputStream.close();
+			outputStream.flush();
+			outputStream.close();
+		} catch (Exception ex) {
+			// Exception handling
+			ex.printStackTrace();
+			return ex.getMessage();
+		}
+		if (serverResponseCode != HttpStatus.SC_OK) {
+			return serverResponseMessage;
+		}
+
+		return "";
+	}
+
+	public static String DownloadImageToServer(String strUrl,
+			clsDownloadImageFileCommandMsg objCommand) {
+		try {
+			
+			
+			URL url = new URL(strUrl);
+			HttpURLConnection urlConnection = (HttpURLConnection) url
+					.openConnection();
+			urlConnection
+					.setReadTimeout(NET_READ_TIMEOUT_MILLIS /* milliseconds */);
+			urlConnection
+					.setConnectTimeout(NET_CONNECT_TIMEOUT_MILLIS /* milliseconds */);
+			urlConnection.setRequestMethod("POST");
+			urlConnection.setUseCaches(false);
+			urlConnection
+					.setRequestProperty("Content-Type", "application/json");
+
+			urlConnection.setDoOutput(true);
+			urlConnection.setDoInput(true);
+
+			// Starts the query
+			urlConnection.connect();
+
+			// Output
+			OutputStreamWriter out = new OutputStreamWriter(
+					urlConnection.getOutputStream());
+			Gson gson = new Gson();
+			String strJsonCommand = gson.toJson(objCommand);
+			out.write(strJsonCommand);
+			out.close();
+
+			// Input
+			File file = new File(objCommand.strImageLocalFullPathName);
+			InputStream inputStream = urlConnection.getInputStream();
+
+			FileOutputStream fileOutput = new FileOutputStream(file);
+			int maxBufferSize = 1 * 1024 * 1024;
+			byte[] buffer = new byte[maxBufferSize];
+			int bufferLength = 0;
+
+			while ((bufferLength = inputStream.read(buffer)) > 0) {
+				fileOutput.write(buffer, 0, bufferLength);
+			}
+			fileOutput.close();
+
+		} catch (MalformedURLException e) {
+			return "MalformedURLException. " + e.getMessage();
+		} catch (IOException e) {
+			return "IOException. " + e.getMessage();
+		} catch (Exception e) {
+			return "Exception. " + e.getMessage();
+		}
+
+		return "";
+	}
+
+	public static JSONObject updateLocalFeedData(InputStream inStream)	throws IOException, JSONException {
 
 		JSONObject object = null;
 		try {

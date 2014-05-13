@@ -31,6 +31,7 @@ import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileA
 import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsDownloadImageFileResponseMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageUpDownloadAsyncTask;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncNoteCommandMsg;
@@ -90,6 +91,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	public static final String TREENODE_NAME = "com.example.spacesavertreeview.treenote_name";
 	public static final String SHORTCUT_NAME = "com.example.spacesavertreeview.shortcut_name";
 	public static final String IS_SHORTCUT = "com.example.spacesavertreeview.is_shortcut";
+	public static final String IMAGE_LOAD_DATAS = "com.example.spacesavertreeview.image_load_datas";
 
 	public static final int GET_DESCRIPTION_ADD_SAME_LEVEL = 0;
 	public static final int GET_DESCRIPTION_ADD_NEXT_LEVEL = 1;
@@ -107,6 +109,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	private static final int SHARE_CHOOSE_GROUP_MEMBERS = 13;
 	private static final int ANNOTATOR = 14;
 	private static final int SHARE_SUBSCRIPTIONS = 15;
+	
 
 	public clsExplorerTreeview objExplorerTreeview;
 	public static File fileTreeNodesDir;
@@ -118,6 +121,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	
 	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
 	clsDownloadImageFileAsyncTask objMyDownloadImageFileAsyncTask;
+	clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -1043,7 +1047,12 @@ public class ActivityExplorerStartup extends ListActivity {
 			strUrl = strServerUrl + getResources().getString(R.string.url_download_image_file);
 			objMyDownloadImageFileAsyncTask = new clsMyDownloadImageFileAsyncTask(this, boolDisplayDownloadProgress, strUrl, objDownloadCommand, objDownloadResponse);
 			objMyDownloadImageFileAsyncTask.execute("");
-			return true;			
+			return true;
+		case R.id.actionImageUpDownloadTest:
+			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(this, objMessaging, true,
+					objExplorerTreeview.getRepository().objImageLoadDatas);
+			objImageUpDownloadAsyncTask.execute();
+			return true;
 		case R.id.actionClearWebServiceRepository:
 			builder = new AlertDialog.Builder(this);
 			builder.setMessage("Are you sure you weant to clear the webservice repository?");
@@ -1449,6 +1458,8 @@ public class ActivityExplorerStartup extends ListActivity {
 						intent.putExtra(TREENODE_UID, objNewTreeNode.guidTreeNode.toString());
 						intent.putExtra(TREENODE_NAME, objNewTreeNode.getName());
 						intent.putExtra(IS_SHORTCUT, false);
+						String strImageLoadDatas = clsUtils.SerializeToString(objExplorerTreeview.getRepository().objImageLoadDatas);
+						intent.putExtra(IMAGE_LOAD_DATAS,strImageLoadDatas);
 						startActivityForResult(intent, ADD_NOTE);
 					} else {
 						// Create item in explorer
@@ -1469,6 +1480,8 @@ public class ActivityExplorerStartup extends ListActivity {
 						intent.putExtra(TREENODE_UID, objNewTreeNode.guidTreeNode.toString());
 						intent.putExtra(TREENODE_NAME, objNewTreeNode.getName());
 						intent.putExtra(IS_SHORTCUT, false);
+						String strImageLoadDatas = clsUtils.SerializeToString(objExplorerTreeview.getRepository().objImageLoadDatas);
+						intent.putExtra(IMAGE_LOAD_DATAS,strImageLoadDatas);
 						startActivityForResult(intent, ADD_NOTE);
 					}
 
@@ -1657,6 +1670,9 @@ public class ActivityExplorerStartup extends ListActivity {
 			super.onPostExecute(objResult);
 			// Do what needs to be done with the result
 			if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
+				clsUtils.UpdateImageLoadDatasForUploads(((ActivityExplorerStartup)objContext).objMessaging,
+						objResult.objImageLoadDatas,
+						((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 				for (int i = 0; i < objResult.intServerInstructions.size(); i++) {
 					// Depending on server instructions
 					switch (objResult.intServerInstructions.get(i)) {
@@ -1689,8 +1705,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "Note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been replaced with an updated version.\n";
 						}
-						
-						((ActivityExplorerStartup)objContext).UpdateImageLoadDatas(objNoteTreeview);
+						clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, 
+								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
 						clsExplorerTreeview objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1720,7 +1736,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New shared note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						((ActivityExplorerStartup)objContext).UpdateImageLoadDatas(objNoteTreeview);
+						clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, 
+								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
 						objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1748,7 +1765,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New subscribed note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						((ActivityExplorerStartup)objContext).UpdateImageLoadDatas(objNoteTreeview);
+						clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, 
+								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
 						if (boolDisplayResults) {
@@ -1899,39 +1917,5 @@ public class ActivityExplorerStartup extends ListActivity {
 		}
 	}
 
-	public void UpdateImageLoadDatas(clsNoteTreeview objNoteTreeview) {
-		// Look for all images needed by note, if they already exist on client, collect all the missing ones
-		// Class that iterates
-		class clsMyTreeviewIterator extends clsTreeviewIterator {
-			
-			clsImageLoadData objImageLoadData;
-
-			public clsMyTreeviewIterator(clsTreeview objTreeview, clsImageLoadData objImageLoadData) {
-				super(objTreeview);
-				this.objImageLoadData = objImageLoadData;
-			}
-
-			@Override
-			public void ProcessTreeNode(clsTreeNode objTreeNode) {
-				// TODO Auto-generated method stub
-				if (!objTreeNode.resourcePath.isEmpty()) {
-					File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
-					if (!fileImage.exists()) {
-						objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
-					}
-				}
-			}	
-		}
-		
-		// Do work here
-		ArrayList<clsImageLoadData> objImageLoadDatas = objExplorerTreeview.getRepository().objImageLoadDatas;
-		
-		for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
-			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
-				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, objImageLoadData);	
-				objMyTreeviewIterator.Execute();
-			}
-		}		
-	}
 
 }
