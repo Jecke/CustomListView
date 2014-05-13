@@ -23,8 +23,10 @@ import com.example.spacesavertreeview.sharing.clsGroupMembers;
 import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsGroupMembers.clsUser;
 import com.example.spacesavertreeview.sharing.clsMessaging.NoteSyncAsyncTask;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncResult;
+import com.google.gson.reflect.TypeToken;
 
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -89,6 +91,7 @@ public class ActivityNoteStartup extends ListActivity {
 	 boolean boolIsUserRegistered = false;
 	 private boolean boolUserIsNoteOwner = false;
 	 static Context objContext;
+	 static ArrayList<clsImageLoadData> objImageLoadDatas;
 	 
 	 
 	 // Temporarily locals
@@ -117,6 +120,10 @@ public class ActivityNoteStartup extends ListActivity {
 			String strUuid    = objBundle.getString(ActivityExplorerStartup.TREENODE_UID);
 		
 			boolIsShortcut = objBundle.getBoolean(ActivityExplorerStartup.IS_SHORTCUT);
+			
+			String strImageLoadDatas = objBundle.getString(ActivityExplorerStartup.IMAGE_LOAD_DATAS);
+			java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
+			objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
 
 			File objFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, strUuid );
 			objNoteTreeview = new clsNoteTreeview(objGroupMembers);
@@ -400,6 +407,8 @@ public class ActivityNoteStartup extends ListActivity {
 		SharedPreferences sharedPref = this.getSharedPreferences("ActivityNoteStartup",Context.MODE_PRIVATE);
     	SharedPreferences.Editor editor = sharedPref.edit();
     	editor.putBoolean("boolIsShortcut",boolIsShortcut);
+    	String strImageLoadDatas = clsUtils.SerializeToString(objImageLoadDatas);
+    	editor.putString("objImageLoadDatas", strImageLoadDatas);
     	editor.commit();
     	sharedPref = null;
 	}
@@ -419,6 +428,9 @@ public class ActivityNoteStartup extends ListActivity {
    	    objContext = this;
    	    SharedPreferences sharedPref = this.getSharedPreferences("ActivityNoteStartup",Context.MODE_PRIVATE);
    	    boolIsShortcut = sharedPref.getBoolean("boolIsShortcut",false);
+   	    String strImageLoadDatas = sharedPref.getString("objImageLoadDatas", "");
+   	    java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
+   	    objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
    	    GetUserRegistrationStatus(); // Update boolIsUserRegistered and boolUserIsNoteOwner
 	}
 	
@@ -1186,7 +1198,7 @@ public class ActivityNoteStartup extends ListActivity {
 		    	return;
 			}
 		}
-		// Queery user if save or cancel
+		// Query user if save or cancel
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
     	builder.setTitle("Do you want to save or cancel the edits?");
     	builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
@@ -1197,6 +1209,8 @@ public class ActivityNoteStartup extends ListActivity {
 				objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildNoteFilename(fileTreeNodesDir, objNoteTreeview.getRepository().uuidRepository.toString()));
 				// Return to caller
 				Intent objIntent = getIntent();
+				String strImageLoadDatas = clsUtils.SerializeToString(objImageLoadDatas);
+				objIntent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS, strImageLoadDatas);
 				if (boolIsShortcut) {
 					objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, true);
 				} else {
@@ -1273,6 +1287,9 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	    	}
 	   	        	}
 	   	        	clsUtils.MessageBox(objContext, strMessage, true);
+	   	        	clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, objImageLoadDatas);
+	   	        	clsUtils.UpdateImageLoadDatasForUploads(((ActivityNoteStartup)objContext).objMessaging, 
+	   	        			objResult.objImageLoadDatas, objImageLoadDatas);
 	   	        		
 	   	        } else {
 	   	        	if (boolDisplayToasts) {

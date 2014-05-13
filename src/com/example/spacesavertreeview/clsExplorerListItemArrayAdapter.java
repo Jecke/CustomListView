@@ -113,6 +113,8 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 				intent.putExtra(ActivityExplorerStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
 				intent.putExtra(ActivityExplorerStartup.TREENODE_NAME, objTreeview.getTreeNodeFromUuid(objUuid)
 						.getName());
+				String strImageLoadDatas = clsUtils.SerializeToString(((ActivityExplorerStartup)_context).objExplorerTreeview.getRepository().objImageLoadDatas);
+				intent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS,strImageLoadDatas);
 				((Activity) context).startActivityForResult(intent, ActivityExplorerStartup.EDIT_NOTE);
 			} else {
 				((ActivityExplorerStartup) context).AddEditFolder(objTreeNode.getName(), false, false, objUuid);

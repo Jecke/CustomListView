@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.zip.CRC32;
 
+import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
+import com.example.spacesavertreeview.sharing.clsMessaging;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptionSearch.clsListViewStateSearch;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -583,6 +586,72 @@ public class clsUtils {
 		   cursor.close();
 
 		   return path;
+	}
+	
+	public static void UpdateImageLoadDatasForDownloads(clsNoteTreeview objNoteTreeview, 
+			File fileTreeNodesDir, ArrayList<clsImageLoadData> objImageLoadDatas) {
+		// Look for all images needed by note, if they already exist on client, collect all the missing ones
+		// Class that iterates
+		class clsMyTreeviewIterator extends clsTreeviewIterator {
+			
+			clsImageLoadData objImageLoadData;
+			File fileTreeNodesDir;
+
+			public clsMyTreeviewIterator(clsTreeview objTreeview, File fileTreeNodesDir, clsImageLoadData objImageLoadData) {
+				super(objTreeview);
+				this.objImageLoadData = objImageLoadData;
+				this.fileTreeNodesDir = fileTreeNodesDir;
+			}
+
+			@Override
+			public void ProcessTreeNode(clsTreeNode objTreeNode) {
+				// TODO Auto-generated method stub
+				if (!objTreeNode.resourcePath.isEmpty()) {
+					File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
+					if (!fileImage.exists()) {
+						// Add only unique items
+						if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
+							objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+						}
+					}
+				}
+			}	
+		}
+		
+		// Do work here
+		// Collect the items that needs to be downloaded (local file checks)
+		for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
+			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
+				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir, objImageLoadData);	
+				objMyTreeviewIterator.Execute();
+			}
+		}
+
+	}
+	
+	public static void UpdateImageLoadDatasForUploads(clsMessaging objMessaging, ArrayList<clsImageLoadData> objServerImageLoadDatas, ArrayList<clsImageLoadData> objClientImageLoadDatas) {
+		// Merge the items that needs to be uploaded server with client (server gave this info)
+
+		for (clsImageLoadData objServerImageLoadData: objServerImageLoadDatas ) {
+			String strServerNoteUuid = objServerImageLoadData.strNoteUuid;
+			// If note image data already exists on client side ...
+			boolean boolEntryExists = false;
+			for (clsImageLoadData objClientImageLoadData: objClientImageLoadDatas ) {
+				if (objClientImageLoadData.strNoteUuid.equals(strServerNoteUuid)) {
+					// There is an entry, so overwrite with latest report from server
+					objClientImageLoadData.strImagesToBeUploaded = objServerImageLoadData.strImagesToBeUploaded;
+					boolEntryExists = true;
+					break;
+				}
+			}
+			if (!boolEntryExists) {
+				// Does not exist, so create a new entry
+				clsImageLoadData objClientImageLoadData = objMessaging.new clsImageLoadData();
+				objClientImageLoadData.strNoteUuid = strServerNoteUuid;
+				objClientImageLoadData.strImagesToBeUploaded =  objServerImageLoadData.strImagesToBeUploaded;
+				objClientImageLoadDatas.add(objClientImageLoadData);
+			}		
+		}
 	}
 }
 
