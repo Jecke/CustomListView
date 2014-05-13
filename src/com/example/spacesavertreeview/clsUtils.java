@@ -588,7 +588,7 @@ public class clsUtils {
 		   return path;
 	}
 	
-	public static void UpdateImageLoadDatasForDownloads(clsNoteTreeview objNoteTreeview, 
+	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsNoteTreeview objNoteTreeview, 
 			File fileTreeNodesDir, ArrayList<clsImageLoadData> objImageLoadDatas) {
 		// Look for all images needed by note, if they already exist on client, collect all the missing ones
 		// Class that iterates
@@ -620,11 +620,20 @@ public class clsUtils {
 		
 		// Do work here
 		// Collect the items that needs to be downloaded (local file checks)
+		boolean boolAlreadyExists = false;
 		for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
 			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
+				boolAlreadyExists = true;
 				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir, objImageLoadData);	
 				objMyTreeviewIterator.Execute();
 			}
+		}
+		if (!boolAlreadyExists) {
+			clsImageLoadData objImageLoadData = objMessaging.new clsImageLoadData();
+			objImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
+			objImageLoadDatas.add(objImageLoadData);
+			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir, objImageLoadData);	
+			objMyTreeviewIterator.Execute();
 		}
 
 	}

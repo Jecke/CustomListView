@@ -816,7 +816,7 @@ public class clsMessaging {
 			for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
 				for(String strImageToBeUploaded: objImageLoadData.strImagesToBeUploaded) {
 					clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
-					objUploadCommand.strImageLocalFullPathName = "";
+					objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + strImageToBeUploaded + ".jpg";
 					objUploadCommand.strFileExtentionWithoutDot = "jpg";
 					objUploadCommand.strImageUuid = strImageToBeUploaded;
 					String strUploadReturn = UploadImageToServer(strUploadUrl, objUploadCommand);
@@ -828,15 +828,15 @@ public class clsMessaging {
 					}								
 				}	
 				
-				for(String strImageToBeUploaded: objImageLoadData.strImagesToBeUploaded) {
+				for(String strImageToBeDownloaded: objImageLoadData.strImagesToBeDownloaded) {
 					clsDownloadImageFileCommandMsg objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
-					objDownloadCommand.strImageLocalFullPathName = "";
+					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + strImageToBeDownloaded + ".jpg";
 					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
-					objDownloadCommand.strImageUuid = strImageToBeUploaded;
+					objDownloadCommand.strImageUuid = strImageToBeDownloaded;
 					String strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
 					if (!strDownloadReturn.isEmpty()) {
 						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
-						objError.strNoteUuid = strImageToBeUploaded;
+						objError.strNoteUuid = strImageToBeDownloaded;
 						objError.strDescription = strDownloadReturn;
 						objImageUpDownloadResult.strDownloadErrors.add(objError);
 					}

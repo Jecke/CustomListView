@@ -1279,6 +1279,8 @@ public class clsTreeview {
 		while (getRepository().objRootNodes.size() != 0) {
 			RemoveTreeNode(getRepository().objRootNodes.get(0), true);
 		}
+		getRepository().objImageLoadDatas.clear();
+		getRepository().objSharedUsers.clear();
 	}
 
 	public void RecursiveSetChildrenChecked(clsTreeNode objTreeNode, boolean boolChecked) {

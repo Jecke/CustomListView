@@ -97,6 +97,33 @@ public class clsNoteTreeview extends clsTreeview {
 		} else {
 			if (objTreeNode.boolIsOwnNote(objGroupMembers, objTreeview)) {
 				if (objTreeNode.boolIsOwnComment(objGroupMembers, objTreeview)) {
+					// Own note, own comment, display green
+					switch (intItemType) {
+					case FOLDER_EXPANDED:
+						return R.drawable.comment_green_expanded;
+					case FOLDER_COLLAPSED:
+						return R.drawable.comment_green_collapsed;
+					case FOLDER_EMPTY:
+						return R.drawable.comment_green;
+					case OTHER:
+						return R.drawable.comment_green;
+					}
+				} else {
+					// Own note, foreign comment, display grey
+					switch (intItemType) {
+					case FOLDER_EXPANDED:
+						return R.drawable.comment_grey_expanded;
+					case FOLDER_COLLAPSED:
+						return R.drawable.comment_grey_collapsed;
+					case FOLDER_EMPTY:
+						return R.drawable.comment_grey;
+					case OTHER:
+						return R.drawable.comment_grey;
+					}
+				}
+			} else {
+				if (objTreeNode.boolIsOwnComment(objGroupMembers, objTreeview)) {
+					// Foreign note, own comment 
 					// Display green
 					switch (intItemType) {
 					case FOLDER_EXPANDED:
@@ -109,43 +136,18 @@ public class clsNoteTreeview extends clsTreeview {
 						return R.drawable.comment_green;
 					}
 				} else {
-					// Display yellow
-					switch (intItemType) {
-					case FOLDER_EXPANDED:
-						return R.drawable.comment_yellow_expanded;
-					case FOLDER_COLLAPSED:
-						return R.drawable.comment_yellow_collapsed;
-					case FOLDER_EMPTY:
-						return R.drawable.comment_yellow;
-					case OTHER:
-						return R.drawable.comment_yellow;
-					}
-				}
-			} else {
-				if (objTreeNode.boolIsOwnComment(objGroupMembers, objTreeview)) {
-					// Display blue
-					switch (intItemType) {
-					case FOLDER_EXPANDED:
-						return R.drawable.comment_blue_expanded;
-					case FOLDER_COLLAPSED:
-						return R.drawable.comment_blue_collapsed;
-					case FOLDER_EMPTY:
-						return R.drawable.comment_blue;
-					case OTHER:
-						return R.drawable.comment_blue;
-					}
-				} else {
-					// Display yellow
+					// Foreign note, foreign comment
+					// Display grey
 
 					switch (intItemType) {
 					case FOLDER_EXPANDED:
-						return R.drawable.comment_yellow_expanded;
+						return R.drawable.comment_grey_expanded;
 					case FOLDER_COLLAPSED:
-						return R.drawable.comment_yellow_collapsed;
+						return R.drawable.comment_grey_collapsed;
 					case FOLDER_EMPTY:
-						return R.drawable.comment_yellow;
+						return R.drawable.comment_grey;
 					case OTHER:
-						return R.drawable.comment_yellow;
+						return R.drawable.comment_grey;
 					}
 				}
 			}
