@@ -628,6 +628,10 @@ public class ActivityNoteStartup extends ListActivity {
         	 objNoteTreeview.getRepository().boolIsHiddenActive = false;
         	 RefreshListView();
         	 return true;
+         case R.id.actionSendToGmail:
+        	 String strText = "Hello, here is some <b>bold text</b> some <u>underline text</u> and <a href=\"http://www.google.com\">a link</a>.";
+        	 clsUtils.SendGmail(this, "Test", strText);
+        	 return true;
          case R.id.actionMoveDown:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
         		 clsUtils.MessageBox(this, "Please add some items first.", false);

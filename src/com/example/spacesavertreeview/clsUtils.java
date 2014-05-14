@@ -28,8 +28,10 @@ import com.google.gson.reflect.TypeToken;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -41,6 +43,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.text.Html;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
@@ -661,6 +664,22 @@ public class clsUtils {
 				objClientImageLoadDatas.add(objClientImageLoadData);
 			}		
 		}
+	}
+	
+	public static void SendGmail(Activity activity, String subject, String text) {
+   
+	    final Intent intent = new Intent(Intent.ACTION_SEND);
+	    intent.setType("text/html");    
+	    String[] toArr = new String[] { "someone@somewhere.com" };
+	    intent.putExtra(Intent.EXTRA_EMAIL, toArr);
+	    intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+	    intent.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(text));
+	
+	    try {
+	      activity.startActivity(intent);
+	    } catch(ActivityNotFoundException ex) {
+	      // handle error
+	    }
 	}
 }
 
