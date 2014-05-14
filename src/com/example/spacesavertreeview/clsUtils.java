@@ -17,11 +17,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.UUID;
 import java.util.zip.CRC32;
 
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptionSearch.clsListViewStateSearch;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -651,7 +653,7 @@ public class clsUtils {
 			for (clsImageLoadData objClientImageLoadData: objClientImageLoadDatas ) {
 				if (objClientImageLoadData.strNoteUuid.equals(strServerNoteUuid)) {
 					// There is an entry, so overwrite with latest report from server
-					objClientImageLoadData.strImagesToBeUploaded = objServerImageLoadData.strImagesToBeUploaded;
+					objClientImageLoadData.objImageToBeUploadedDatas = objServerImageLoadData.objImageToBeUploadedDatas;
 					boolEntryExists = true;
 					break;
 				}
@@ -660,7 +662,7 @@ public class clsUtils {
 				// Does not exist, so create a new entry
 				clsImageLoadData objClientImageLoadData = objMessaging.new clsImageLoadData();
 				objClientImageLoadData.strNoteUuid = strServerNoteUuid;
-				objClientImageLoadData.strImagesToBeUploaded =  objServerImageLoadData.strImagesToBeUploaded;
+				objClientImageLoadData.objImageToBeUploadedDatas = objServerImageLoadData.objImageToBeUploadedDatas;
 				objClientImageLoadDatas.add(objClientImageLoadData);
 			}		
 		}
