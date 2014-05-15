@@ -17,6 +17,8 @@ import com.example.spacesavertreeview.clsTreeview.clsShareUser;
 import com.example.spacesavertreeview.clsTreeview.clsSyncRepository;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.clsTreeview.enumCutCopyPasteState;
+import com.example.spacesavertreeview.export.clsExportData;
+import com.example.spacesavertreeview.export.clsMainExport;
 import com.example.spacesavertreeview.imageannotation.clsAnnotationData;
 import com.example.spacesavertreeview.sharing.ActivityGroupMembers;
 import com.example.spacesavertreeview.sharing.clsGroupMembers;
@@ -723,10 +725,6 @@ public class ActivityNoteStartup extends ListActivity {
   		    dialog = builder.create();
    		    dialog.show();		
          	return true;
-         	 
-         case R.id.actionSendToFacebook:
-        	 Log.d("--", "actionSendToFacebook selected");
-        	 return true;
 
          case R.id.actionShareSync: 
         	 clsUser objRegisteredUser = objGroupMembers.GetRegisteredUser();

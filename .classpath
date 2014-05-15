@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
-	<classpathentry exported="true" kind="lib" path="C:/Downloads/AndroidDev/google-gson-2.2.4-release/google-gson-2.2.4/gson-2.2.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="C:/Downloads/AndroidDev/google-gson-2.2.4-release/google-gson-2.2.4/gson-2.2.4-javadoc.jar"/>
-	<classpathentry exported="true" kind="lib" path="C:/Downloads/AndroidDev/google-gson-2.2.4-release/google-gson-2.2.4/gson-2.2.4-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/downloads/AndroidDev/google-gson-2.2.4-release/google-gson-2.2.4/gson-2.2.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/downloads/AndroidDev/google-gson-2.2.4-release/google-gson-2.2.4/gson-2.2.4-javadoc.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/downloads/AndroidDev/google-gson-2.2.4-release/google-gson-2.2.4/gson-2.2.4-sources.jar"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="lib" path="C:/Devel/Android_SDK/facebook-android-sdk-3.14.1/facebook/bin/facebooksdk.jar"/>
+	<classpathentry kind="lib" path="C:/Devel/Android_SDK/sdk/extras/android/support/v13/android-support-v13.jar"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

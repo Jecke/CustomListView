@@ -21,6 +21,10 @@ import com.example.spacesavertreeview.clsTreeview.clsShareUser;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.clsTreeview.enumCutCopyPasteState;
 import com.example.spacesavertreeview.clsTreeview.enumItemType;
+import com.example.spacesavertreeview.export.ActivityFacebookExport;
+import com.example.spacesavertreeview.export.clsExportData;
+import com.example.spacesavertreeview.export.clsMainExport;
+import com.example.spacesavertreeview.imageannotation.ActivityEditAnnotationImage;
 import com.example.spacesavertreeview.sharing.ActivityGroupMembers;
 import com.example.spacesavertreeview.sharing.clsGroupMembers;
 import com.example.spacesavertreeview.sharing.clsGroupMembers.clsMembersRepository;
@@ -589,6 +593,27 @@ public class ActivityExplorerStartup extends ListActivity {
 				Toast.makeText(this, "A shortcut already exists, please delete first", Toast.LENGTH_SHORT).show();
 			}
 			return true;
+			
+		// Export note to Facebook
+        case R.id.actionSendToFacebook:
+
+        	// Start export only if exactly one note is selected 
+        	if (objExplorerTreeview.getRepository().objRootNodes.size() != 0 && 
+        		objSelectedTreeNodes.size() == 1 							 && 
+        		objSelectedTreeNodes.get(0).enumItemType == enumItemType.OTHER)
+        	{
+        		// Create access to the export functionality, gather necessary data and start export.
+        		clsExportData data = new clsExportData(objSelectedTreeNodes.get(0));
+
+        		clsMainExport export = new clsMainExport(objContext);
+        		export.export(clsMainExport.EXPORT_DEST.TO_FACEBOOK, data);
+        	}
+        	else 
+        	{
+        		Toast.makeText(objContext, "Please select one note", Toast.LENGTH_SHORT).show();
+        	}
+       	 	return true;
+			
 		case R.id.actionEditNoteHeading:
 			if (objExplorerTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
 				MessageBoxOk("Please select only one item at a time");

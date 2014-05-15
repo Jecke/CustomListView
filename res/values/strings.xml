@@ -157,6 +157,7 @@
     <string name="title_activity_activity_subscription_search">Subscription search</string>
     <string name="title_activity_activity_view_image">ActivityViewImage</string>
     <string name="title_activity_activity_web_browser">Select Page</string>
+    <string name="title_activity_facebook_export">Export to Facebook</string>
     
     <!-- Messaging URLs -->
     <string name="url_register_user">"/api/TreeManager/LoginUser"</string>
@@ -183,5 +184,10 @@
     <string name="add_new_use_annotated_text">Use annotated</string>
     <string name="add_new_numbered_arrow_label_text">Numbered arrows:</string>
     <string name="add_new_image_annotation_text">Text</string>
+    <!-- my FB account app ID
+    <string name="app_id">547707162014596</string> -->
+    
+    <!-- TreeNote FB account app ID -->
+    <string name="app_id">1395468317406813</string>
     
 </resources>
