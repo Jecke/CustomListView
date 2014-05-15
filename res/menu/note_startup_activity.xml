@@ -123,8 +123,6 @@
     </item>
 
     <item
-<<<<<<< HEAD
-=======
         android:id="@+id/actionSendTo"
         android:title="@string/title_send_to"
         android:icon="@drawable/ic_action_check"
@@ -140,7 +138,6 @@
     </item>
     
     <item
->>>>>>> branch 'master' of https://github.com/Jecke/CustomListView
         android:id="@+id/actionShare"
         android:title="Sharing ..."
         android:icon="@drawable/ic_action_check"
