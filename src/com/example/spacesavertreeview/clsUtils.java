@@ -17,19 +17,23 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.UUID;
 import java.util.zip.CRC32;
 
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptionSearch.clsListViewStateSearch;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -41,6 +45,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.text.Html;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
@@ -588,7 +593,7 @@ public class clsUtils {
 		   return path;
 	}
 	
-	public static void UpdateImageLoadDatasForDownloads(clsNoteTreeview objNoteTreeview, 
+	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsNoteTreeview objNoteTreeview, 
 			File fileTreeNodesDir, ArrayList<clsImageLoadData> objImageLoadDatas) {
 		// Look for all images needed by note, if they already exist on client, collect all the missing ones
 		// Class that iterates
@@ -620,11 +625,20 @@ public class clsUtils {
 		
 		// Do work here
 		// Collect the items that needs to be downloaded (local file checks)
+		boolean boolAlreadyExists = false;
 		for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
 			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
+				boolAlreadyExists = true;
 				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir, objImageLoadData);	
 				objMyTreeviewIterator.Execute();
 			}
+		}
+		if (!boolAlreadyExists) {
+			clsImageLoadData objImageLoadData = objMessaging.new clsImageLoadData();
+			objImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
+			objImageLoadDatas.add(objImageLoadData);
+			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir, objImageLoadData);	
+			objMyTreeviewIterator.Execute();
 		}
 
 	}
@@ -639,7 +653,7 @@ public class clsUtils {
 			for (clsImageLoadData objClientImageLoadData: objClientImageLoadDatas ) {
 				if (objClientImageLoadData.strNoteUuid.equals(strServerNoteUuid)) {
 					// There is an entry, so overwrite with latest report from server
-					objClientImageLoadData.strImagesToBeUploaded = objServerImageLoadData.strImagesToBeUploaded;
+					objClientImageLoadData.objImageToBeUploadedDatas = objServerImageLoadData.objImageToBeUploadedDatas;
 					boolEntryExists = true;
 					break;
 				}
@@ -648,10 +662,26 @@ public class clsUtils {
 				// Does not exist, so create a new entry
 				clsImageLoadData objClientImageLoadData = objMessaging.new clsImageLoadData();
 				objClientImageLoadData.strNoteUuid = strServerNoteUuid;
-				objClientImageLoadData.strImagesToBeUploaded =  objServerImageLoadData.strImagesToBeUploaded;
+				objClientImageLoadData.objImageToBeUploadedDatas = objServerImageLoadData.objImageToBeUploadedDatas;
 				objClientImageLoadDatas.add(objClientImageLoadData);
 			}		
 		}
+	}
+	
+	public static void SendGmail(Activity activity, String subject, String text) {
+   
+	    final Intent intent = new Intent(Intent.ACTION_SEND);
+	    intent.setType("text/html");    
+	    String[] toArr = new String[] { "someone@somewhere.com" };
+	    intent.putExtra(Intent.EXTRA_EMAIL, toArr);
+	    intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+	    intent.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(text));
+	
+	    try {
+	      activity.startActivity(intent);
+	    } catch(ActivityNotFoundException ex) {
+	      // handle error
+	    }
 	}
 }
 

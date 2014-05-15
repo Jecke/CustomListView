@@ -49,6 +49,7 @@ import com.example.spacesavertreeview.sharing.subscriptions.ActivityPublications
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions.clsSubcriptionsIntentData;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -125,7 +126,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	
 	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
 	clsDownloadImageFileAsyncTask objMyDownloadImageFileAsyncTask;
-	clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
+	static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -1173,9 +1174,15 @@ public class ActivityExplorerStartup extends ListActivity {
 			Bundle objBundle = data.getExtras();
 			switch (requestCode) {
 			case ADD_NOTE:
+				String strImageLoadDatas = objBundle.getString(IMAGE_LOAD_DATAS);
+				java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
+		   	    objExplorerTreeview.getRepository().objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
 				RefreshListView();
 				break;
 			case EDIT_NOTE:
+				strImageLoadDatas = objBundle.getString(IMAGE_LOAD_DATAS);
+				collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
+		   	    objExplorerTreeview.getRepository().objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
 				boolean boolIsShortcut = objBundle.getBoolean(ActivityExplorerStartup.IS_SHORTCUT);
 				if (boolIsShortcut) {
 					finish();
@@ -1687,6 +1694,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			// TODO Auto-generated constructor stub
 			ActivityExplorerStartupSyncAsyncTask.boolDisplayResults = boolDisplayToasts;
 			ActivityExplorerStartupSyncAsyncTask.objGroupMembers = objGroupMembers;
+			((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas.clear();
 		}
 
 		@Override
@@ -1730,7 +1738,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "Note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been replaced with an updated version.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, 
+						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup)objContext).objMessaging, 
+								objNoteTreeview, fileTreeNodesDir, 
 								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
@@ -1761,7 +1770,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New shared note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, 
+						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup)objContext).objMessaging,
+								objNoteTreeview, fileTreeNodesDir, 
 								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
@@ -1790,7 +1800,7 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New subscribed note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, 
+						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup)objContext).objMessaging, objNoteTreeview, fileTreeNodesDir, 
 								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
@@ -1816,6 +1826,11 @@ public class ActivityExplorerStartup extends ListActivity {
 
 			}
 			clsUtils.MessageBox(objContext, strMessage, true);
+			
+			// Start background image syncing
+			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(objContext, ((ActivityExplorerStartup)objContext).objMessaging, 
+					true, ((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+			objImageUpDownloadAsyncTask.execute();
 		}
 	}
 

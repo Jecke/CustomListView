@@ -26,6 +26,7 @@ import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsGroupMembers.clsUser;
 import com.example.spacesavertreeview.sharing.clsMessaging.NoteSyncAsyncTask;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
+import com.example.spacesavertreeview.sharing.clsMessaging.clsImageUpDownloadAsyncTask;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsSyncResult;
 import com.google.gson.reflect.TypeToken;
@@ -98,6 +99,7 @@ public class ActivityNoteStartup extends ListActivity {
 	 
 	 // Temporarily locals
 	 ImageView myPreviewImageView;
+	 static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
 	 
 
 	 
@@ -627,6 +629,10 @@ public class ActivityNoteStartup extends ListActivity {
          case R.id.actionHiddenInactivate:
         	 objNoteTreeview.getRepository().boolIsHiddenActive = false;
         	 RefreshListView();
+        	 return true;
+         case R.id.actionSendToGmail:
+        	 String strText = "Hello, here is some <b>bold text</b> some <u>underline text</u> and <a href=\"http://www.google.com\">a link</a>.";
+        	 clsUtils.SendGmail(this, "Test", strText);
         	 return true;
          case R.id.actionMoveDown:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
@@ -1285,7 +1291,8 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	    	}
 	   	        	}
 	   	        	clsUtils.MessageBox(objContext, strMessage, true);
-	   	        	clsUtils.UpdateImageLoadDatasForDownloads(objNoteTreeview, fileTreeNodesDir, objImageLoadDatas);
+	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objContext).objMessaging,
+	   	        			objNoteTreeview, fileTreeNodesDir, objImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForUploads(((ActivityNoteStartup)objContext).objMessaging, 
 	   	        			objResult.objImageLoadDatas, objImageLoadDatas);
 	   	        		
@@ -1295,6 +1302,10 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        	}
 
 	   	        }
+	   	        // Start background image syncing
+				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objContext, ((ActivityNoteStartup)objContext).objMessaging, 
+						true, ActivityNoteStartup.objImageLoadDatas);
+				objImageUpDownloadAsyncTask.execute();
 	   	    }
 	}
         
