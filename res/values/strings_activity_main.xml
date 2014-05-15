@@ -17,7 +17,7 @@
     <string name="error_invalid_username">Username is invalid</string>
     
     <!-- Strings related to Send To menu -->
-    <string name="title_send_to">Send to ...</string>
+    <string name="title_send_to">Send to&#8230;</string>
     <string name="action_send_to_facebook">Facebook</string>
     <string name="action_send_to_gmail">Gmail</string>
     
