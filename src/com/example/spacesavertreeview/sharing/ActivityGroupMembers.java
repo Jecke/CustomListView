@@ -183,6 +183,13 @@ public class ActivityGroupMembers extends ListActivity {
                 }
         	}    		
         }
+        
+        // Enable search if in the right state
+        if (strCmnd.equals(ACTION_MANAGE_GROUPS)) {
+        	menu.findItem(R.id.actionSearchNewMember).setVisible(true);
+        } else {
+        	menu.findItem(R.id.actionSearchNewMember).setVisible(false);
+        }
                 
         handleIntent(getIntent());
         
@@ -568,7 +575,7 @@ public class ActivityGroupMembers extends ListActivity {
 	    	ActivityGroupMembers.super.onBackPressed();
 	    	return;
     	}
-    	// Queery user if save or cancel
+    	// Query user if save or cancel
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
     	builder.setTitle("Do you want to save or cancel the edits?");
     	builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
@@ -581,6 +588,7 @@ public class ActivityGroupMembers extends ListActivity {
 				Intent intent = getIntent();
 				if (strCmnd.equals(ACTION_CHOOSE_MEMBERS)) {
 					clsIntentMessaging.clsChosenMembers objResults = objGroupMembersTreeview.GetAllSelectedMembers(objGroupMembersTreeview);
+					objResults.strNoteUuid = strNoteUuid;
 					intent.putExtra(CHOOSE_MEMBERS_RESULT_GSON, clsUtils.SerializeToString(objResults));
 				}
 				setResult(RESULT_OK, intent);    	

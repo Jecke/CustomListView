@@ -74,6 +74,8 @@ public class ActivityExplorerSettings extends PreferenceActivity {
             objEditTextPreference.setSummary(getResources().getString(R.string.pref_treenotes_version) + ": " +
             		sharedPref.getString("treenotes_version", ""));
             
+            objEditTextPreference = (EditTextPreference) findPreference("treenotes_default_user_indent_tab_width");
+            
             sharedPref = null;
         }
     }
