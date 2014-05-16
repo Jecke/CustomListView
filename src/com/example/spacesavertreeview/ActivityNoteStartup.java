@@ -152,8 +152,10 @@ public class ActivityNoteStartup extends ListActivity {
 	        
 	        //---List View---
 	        int resID = R.layout.note_list_item;
-	                
-	        objListItemAdapter = new clsListItemArrayAdapter(this, resID, listItems, objNoteTreeview);
+			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+			String strTabWidthInDp = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
+			int intTabWidthInPx = clsUtils.dpToPx(this, Integer.parseInt(strTabWidthInDp));      
+	        objListItemAdapter = new clsListItemArrayAdapter(this, resID, listItems, objNoteTreeview, intTabWidthInPx);
 	        setListAdapter(objListItemAdapter);
 	        
 	        // Actionbar

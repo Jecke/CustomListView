@@ -31,7 +31,9 @@ import android.text.InputType;
 import android.annotation.TargetApi;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
+import android.preference.PreferenceManager;
 
 public class ActivityGroupMembers extends ListActivity {
 
@@ -97,7 +99,10 @@ public class ActivityGroupMembers extends ListActivity {
         // Show the Up button in the action bar.
         setupActionBar();
         
-        objGroupMembersArrayAdapter = new clsGroupMembersArrayAdapter(this, R.layout.group_members_list_item, objListItems,objGroupMembersTreeview);
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		String strTabWidthInDp = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
+		int intTabWidthInPx = clsUtils.dpToPx(this, Integer.parseInt(strTabWidthInDp));       
+        objGroupMembersArrayAdapter = new clsGroupMembersArrayAdapter(this, R.layout.group_members_list_item, objListItems,objGroupMembersTreeview, intTabWidthInPx);
         
         setListAdapter(objGroupMembersArrayAdapter);
         

@@ -4,6 +4,7 @@ package com.example.spacesavertreeview;
 import com.example.spacesavertreeview.clsTreeview.enumItemLevelRelation;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -12,6 +13,7 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -24,7 +26,8 @@ public class clsIndentableTextView extends TextView {
 	TextView objMyTextView;
 
 	private int _intTextSize;
-	private int _intIndentLevelAmount;
+	private int _intIndentLevelAmountMax;
+	private int intTabWidthInPx;
 
 	private clsListItem _objListItem;
 	
@@ -40,7 +43,7 @@ public class clsIndentableTextView extends TextView {
     super(context, attrs, defStyle);
     _context = context;
     init();
-    _intIndentLevelAmount = getResources().getInteger(R.integer.indent_amount);
+    _intIndentLevelAmountMax = getResources().getInteger(R.integer.indent_amount_max);
     this.objMyTextView  = this;
     
   }
@@ -48,14 +51,14 @@ public class clsIndentableTextView extends TextView {
     super(context);
     _context = context;
     init();
-    _intIndentLevelAmount = getResources().getInteger(R.integer.indent_amount);
+    _intIndentLevelAmountMax = getResources().getInteger(R.integer.indent_amount_max);
     this.objMyTextView  = this;
   }
   public clsIndentableTextView (Context context, AttributeSet attrs) {
     super(context, attrs);
     _context = context;
     init();
-    _intIndentLevelAmount = getResources().getInteger(R.integer.indent_amount);
+    _intIndentLevelAmountMax = getResources().getInteger(R.integer.indent_amount_max);
     this.objMyTextView  = this;
   }
   
@@ -192,7 +195,12 @@ public class clsIndentableTextView extends TextView {
 
 		  // Calculate where the tab split must occur
 		  float fltRowWidth = objRectMyViewHeightAdjusted.right - objRectMyViewHeightAdjusted.left;
-		  float fltTabWidth = fltRowWidth/_intIndentLevelAmount;
+		  float fltTabWidth;
+		  if (intTabWidthInPx == 0) {
+			  fltTabWidth = fltRowWidth/_intIndentLevelAmountMax;
+		  } else {
+			  fltTabWidth = intTabWidthInPx;
+		  }
 		  float fltIndentWidth = _objListItem.getLevel() * fltTabWidth;
 		  float fltIndentRemainWidth = fltRowWidth - fltIndentWidth;
 		  
@@ -376,6 +384,10 @@ public class clsIndentableTextView extends TextView {
 	  
 	private int GetCheckBoxWidthInPx() {
 		return this.intCheckBoxWidthInPx; 
+	}
+	
+	public void SetTabWidthInPx(int intTabWidthInPx) {
+		this.intTabWidthInPx = intTabWidthInPx; 
 	}
 	
 }

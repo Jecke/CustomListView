@@ -101,7 +101,7 @@
     <color name="select_fill_color">#FFFFFF</color>
     <color name="unselect_fill_color">#C8C8C8</color>
 
-    <integer name="indent_amount">10</integer>
+    
     <integer name="text_size">20</integer>
     <integer name="max_description_length_before_trunc">255</integer>
     <integer name="select_line_width_in_dp">2</integer>
@@ -123,6 +123,12 @@
     <string name="button_overlay_attributes_label">Overlay Attributes</string>
     <string name="menu_annotate">Annotate</string>
     <string name="button_action_delete">Delete</string>
+    
+    <integer name="indent_amount_max">10</integer>
+    <integer name="indent_width_min_dp">10</integer>
+   
+    <string name="treenotes_default_user_indent_tab_width_summary_base">Indentation width in dp</string>
+    
 
     <!-- Folder and file names -->
     <string name="treenodes_dirname">treenotes</string>

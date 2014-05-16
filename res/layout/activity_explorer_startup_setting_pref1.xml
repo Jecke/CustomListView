@@ -48,10 +48,11 @@
         
          <EditTextPreference
                 android:key="treenotes_default_user_indent_tab_width"
-                android:title="Indentation width in dp"
-                android:summary="Defines how deep the treenode indents per level"
+                android:title="Define treenode indentation width"
+                android:summary="@string/treenotes_default_user_indent_tab_width_summary_base"
                 android:defaultValue="0"
-                android:dialogTitle="Indentation width in dp" />
+                android:inputType="number"
+                android:dialogTitle="@string/treenotes_default_user_indent_tab_width_summary_base" />
         
 
 

@@ -196,6 +196,31 @@ public class clsUtils {
 	    return dp;
 	}
     
+    public static int GetDisplayWidthInDp(Activity objActivity) {
+    	DisplayMetrics dm = new DisplayMetrics();
+    	objActivity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+    	return pxToDp(objActivity, dm.widthPixels);
+    }
+    
+    public static int GetDisplayHeightInDp(Activity objActivity) {
+    	DisplayMetrics dm = new DisplayMetrics();
+    	objActivity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+    	return pxToDp(objActivity, dm.heightPixels);
+    } 
+        
+    public static int GetDisplayMaxWidthInDp(Activity objActivity) {
+    	DisplayMetrics dm = new DisplayMetrics();
+    	objActivity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+    	return pxToDp(objActivity, Math.max(dm.heightPixels, dm.widthPixels));
+    }
+    
+    public static int GetDisplayMinWidthInDp(Activity objActivity) {
+    	DisplayMetrics dm = new DisplayMetrics();
+    	objActivity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+    	return pxToDp(objActivity, Math.min(dm.heightPixels, dm.widthPixels));
+    } 
+
+    
 		public static void showErrorDialog(Context context, int textId, boolean cancelable)
 	{
 	 	AlertDialog.Builder builder = new AlertDialog.Builder(context);

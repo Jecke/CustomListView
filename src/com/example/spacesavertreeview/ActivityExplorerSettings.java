@@ -4,20 +4,33 @@ import java.util.List;
 
 import android.os.Bundle;
 import android.preference.EditTextPreference;
+import android.preference.Preference;
+import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Button;
 
 public class ActivityExplorerSettings extends PreferenceActivity {
 	
+	static Context objContext;
+	static String strSummaryBase;
+	static int intDisplayMaxWidthInDp ;
+	static int intMaxIndentAmount;
+	static int intMaxIndentValue;
+	static int intMinIndentValue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        objContext = this;
 
         // Add a button to the header list.
         if (hasHeaders()) {
@@ -75,9 +88,55 @@ public class ActivityExplorerSettings extends PreferenceActivity {
             		sharedPref.getString("treenotes_version", ""));
             
             objEditTextPreference = (EditTextPreference) findPreference("treenotes_default_user_indent_tab_width");
+            strSummaryBase = getResources().getString(R.string.treenotes_default_user_indent_tab_width_summary_base);
+            intDisplayMaxWidthInDp = clsUtils.GetDisplayMaxWidthInDp((Activity) objContext);
+			intMaxIndentAmount = getResources().getInteger(R.integer.indent_amount_max);
+			intMaxIndentValue = intDisplayMaxWidthInDp/intMaxIndentAmount;
+			intMinIndentValue = getResources().getInteger(R.integer.indent_width_min_dp);
+            String strValue = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
+			int intValue = Integer.parseInt(strValue.toString());
+			if (intValue > intMaxIndentValue) {
+				intValue = intMaxIndentValue;
+			}
+			if (intValue < intMinIndentValue) {
+				intValue = intMinIndentValue;
+			}
+			SharedPreferences.Editor editor = sharedPref.edit();
+			editor.putString("treenotes_default_user_indent_tab_width", Integer.toString(intValue));
+			editor.commit();
+		          
+            objEditTextPreference.setSummary(BuildSummaryString(strSummaryBase, intValue));          		
+            objEditTextPreference.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+				
+				@Override
+				public boolean onPreferenceChange(Preference preference, Object newValue) {
+					// TODO Auto-generated method stub
+					int intValue = Integer.parseInt(newValue.toString());		
+					if (intValue > intMaxIndentValue) {
+						clsUtils.MessageBox(objContext, "Selected value is too big. Must be less than " + intMaxIndentValue , true);
+						return false;
+					}
+					if (intValue < intMinIndentValue) {
+						clsUtils.MessageBox(objContext, "Selected value is too small. Must be larger than " + intMinIndentValue , true);
+						return false;
+					}
+					preference.setSummary(BuildSummaryString(strSummaryBase, intValue)); 
+					return true;
+				}
+			});
             
             sharedPref = null;
         }
+
+		private String BuildSummaryString(String strSummaryBase, int intValue) {
+			return strSummaryBase + " (Min: " + intMinIndentValue + ", Max: " + intMaxIndentValue + "): " + Integer.toString(intValue);
+		}
+    }
+    
+    @Override
+    protected boolean isValidFragment(String fragmentName) {
+    	// TODO Auto-generated method stub
+    	return true;
     }
 
     /**
