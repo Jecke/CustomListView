@@ -19,6 +19,7 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -28,6 +29,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -59,8 +61,10 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	clsListItemArrayAdapter objThisArrayAdapter;
 	ViewGroup.MarginLayoutParams  objMarginLayoutParamsNarrow;
 	int int2Dp;
+	private int intTabWidthInPx;
 
-	public clsListItemArrayAdapter(Context context, int _resource, List<clsListItem> objects, clsTreeview objTreeview) {
+	public clsListItemArrayAdapter(Context context, int _resource, List<clsListItem> objects, 
+			clsTreeview objTreeview, int intTabWidthInPx) {
 		super(context, _resource, objects);
  
 		this.context = context;
@@ -68,7 +72,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		this.objListItems = objects;
 		this.objTreeview = objTreeview;
 		this.objThisArrayAdapter = this;
-		
+		this.intTabWidthInPx = intTabWidthInPx;		
 		int2Dp = clsUtils.dpToPx(getContext(), 2);
 	}
 
@@ -101,6 +105,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		clsIndentableTextView myTextView = (clsIndentableTextView) todoView.findViewById(R.id.row);
 		myTextView.setListItem(objListItem);
 		myTextView.setRawTextSizeDp(todoView.getResources().getInteger(R.integer.text_size));
+		myTextView.SetTabWidthInPx(intTabWidthInPx);
 		myTextView.setTag(objListItem);
 		myTextView.setSelectColour(GetSelectColour());
 		myTextView.setOnLongClickListener(MakeOnLongClickListener());
@@ -698,5 +703,9 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	public void UpdateEnvironment(clsTreeview objTreeview) {
 		// TODO Auto-generated method stub
 		this.objTreeview = objTreeview;
+		 SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+		 String strTabWidthInPx = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
+		 intTabWidthInPx = clsUtils.dpToPx(context, Integer.parseInt(strTabWidthInPx));
+		 sharedPref= null;
 	}
 }

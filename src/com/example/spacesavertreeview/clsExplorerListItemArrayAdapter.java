@@ -19,8 +19,8 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 	Context _context;
 
 	public clsExplorerListItemArrayAdapter(Context context, int _resource, List<clsListItem> objects,
-			clsTreeview objTreeview) {
-		super(context, _resource, objects, objTreeview);
+			clsTreeview objTreeview, int intTabWidthInPx ) {
+		super(context, _resource, objects, objTreeview, intTabWidthInPx);
 		_context = context;
 	}
 

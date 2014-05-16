@@ -23,8 +23,8 @@ public class clsGroupMembersArrayAdapter extends clsListItemArrayAdapter  {
 	Context _context;
 	
 	public clsGroupMembersArrayAdapter(Context context, int _resource,
-			 List<clsListItem> objects, clsTreeview objTreeview) {
-		super(context, _resource, objects, objTreeview);
+			 List<clsListItem> objects, clsTreeview objTreeview, int intTabWidthInPx) {
+		super(context, _resource, objects, objTreeview, intTabWidthInPx);
 		_context = context;
 	}
 	
