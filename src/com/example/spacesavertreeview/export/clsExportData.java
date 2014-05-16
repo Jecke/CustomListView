@@ -1,5 +1,7 @@
 package com.example.spacesavertreeview.export;
 
+import java.util.ArrayList;
+
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 
 // Container to transport data to be exported.
@@ -7,12 +9,15 @@ import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 // required for the export should be in this class.
 public class clsExportData {
 
-	protected clsTreeNode _top;
+	protected ArrayList<clsTreeNode> _top;
+	protected String _treeNotesDir;
 	
 	// Constructor
-	public clsExportData(clsTreeNode top)
+//	public clsExportData(clsTreeNode top, String treeNotesDir)
+	public clsExportData(ArrayList<clsTreeNode> top, String treeNotesDir)
 	{
 		_top = top;
+		_treeNotesDir = treeNotesDir;
 	}
 
 	// Copyconstructor

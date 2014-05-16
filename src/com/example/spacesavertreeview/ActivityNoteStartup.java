@@ -85,7 +85,6 @@ public class ActivityNoteStartup extends ListActivity {
 	// Variables that need to be persisted
 	 public static ArrayList<clsListItem> listItems = new ArrayList<clsListItem>();
 	 public static clsNoteTreeview objNoteTreeview;
-	 public static File fileTreeNodesDir;
 	 public clsGroupMembers objGroupMembers = new clsGroupMembers(this);
 	 
 	 private clsListItemArrayAdapter objListItemAdapter;
@@ -110,11 +109,6 @@ public class ActivityNoteStartup extends ListActivity {
 	        super.onCreate(savedInstanceState);
 	        
 	        objContext = this;
-	        
-	         fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
-			 if (!fileTreeNodesDir.exists()) {
-				fileTreeNodesDir.mkdirs();				 
-			 }
 			 
 			objGroupMembers.LoadFile();
 			objMessaging.LoadFile(this);
@@ -129,7 +123,7 @@ public class ActivityNoteStartup extends ListActivity {
 			java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
 			objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
 
-			File objFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, strUuid );
+			File objFile = clsUtils.BuildNoteFilename(ActivityExplorerStartup.fileTreeNodesDir, strUuid );
 			objNoteTreeview = new clsNoteTreeview(objGroupMembers);
 			if (objFile.exists()) {
 				objNoteTreeview.DeserializeFromFile(objFile);
@@ -405,7 +399,7 @@ public class ActivityNoteStartup extends ListActivity {
     private void SaveFile() {
     	clsUtils.CustomLog("SaveFile");
     	// objNoteTreeview.SetAllIsDirty(false);
-		objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildTempNoteFilename(fileTreeNodesDir));
+		objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildTempNoteFilename(ActivityExplorerStartup.fileTreeNodesDir));
 		objGroupMembers.SaveFile();
 		objMessaging.SaveFile(this);
 		SharedPreferences sharedPref = this.getSharedPreferences("ActivityNoteStartup",Context.MODE_PRIVATE);
@@ -421,13 +415,12 @@ public class ActivityNoteStartup extends ListActivity {
 		clsUtils.CustomLog("LoadFile");
 		objNoteTreeview = new clsNoteTreeview(objGroupMembers);
 		objNoteTreeview.UpdateEnvironment(clsExplorerTreeview.enumCutCopyPasteState.INACTIVE, new ArrayList<clsTreeNode>() ); // Must be persisted at a later stage
-		objNoteTreeview.DeserializeFromFile(clsUtils.BuildTempNoteFilename(fileTreeNodesDir));
+		objNoteTreeview.DeserializeFromFile(clsUtils.BuildTempNoteFilename(ActivityExplorerStartup.fileTreeNodesDir));
 		objGroupMembers.LoadFile();
 		objGroupMembers.UpdateEnvironment(this);
     	ArrayList<clsListItem> objListItems = objNoteTreeview.getListItems();
     	objListItemAdapter.UpdateEnvironment(objNoteTreeview);
     	objListItemAdapter.clear(); objListItemAdapter.addAll(objListItems);
-    	fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
    	    objMessaging.LoadFile(this);
    	    objContext = this;
    	    SharedPreferences sharedPref = this.getSharedPreferences("ActivityNoteStartup",Context.MODE_PRIVATE);
@@ -717,7 +710,7 @@ public class ActivityNoteStartup extends ListActivity {
   		    builder.setCancelable(true);
   		    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
   	            public void onClick(DialogInterface dialog, int id) {
-  	            	File objFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,objNoteTreeview.getRepository().uuidRepository.toString());
+  	            	File objFile = clsUtils.BuildNoteFilename(ActivityExplorerStartup.fileTreeNodesDir,objNoteTreeview.getRepository().uuidRepository.toString());
   	            	objNoteTreeview.SetAllIsDirty(false);
  	 	          	objNoteTreeview.getRepository().SerializeToFile(objFile);
  	 	          	return;
@@ -894,7 +887,7 @@ public class ActivityNoteStartup extends ListActivity {
 		return new DialogInterface.OnClickListener() {
 		    public void onClick(DialogInterface dialog, int id) {
 		 	 objNoteTreeview.ClearAll();
-		 	objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildNoteFilename(fileTreeNodesDir, objNoteTreeview.getRepository().uuidRepository.toString()));
+		 	objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildNoteFilename(ActivityExplorerStartup.fileTreeNodesDir, objNoteTreeview.getRepository().uuidRepository.toString()));
 			 RefreshListView();
 		    }
 		};
@@ -1210,7 +1203,7 @@ public class ActivityNoteStartup extends ListActivity {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {			
 				// Save data first
-				objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildNoteFilename(fileTreeNodesDir, objNoteTreeview.getRepository().uuidRepository.toString()));
+				objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildNoteFilename(ActivityExplorerStartup.fileTreeNodesDir, objNoteTreeview.getRepository().uuidRepository.toString()));
 				// Return to caller
 				Intent objIntent = getIntent();
 				String strImageLoadDatas = clsUtils.SerializeToString(objImageLoadDatas);
@@ -1292,7 +1285,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        	}
 	   	        	clsUtils.MessageBox(objContext, strMessage, true);
 	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objContext).objMessaging,
-	   	        			objNoteTreeview, fileTreeNodesDir, objImageLoadDatas);
+	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForUploads(((ActivityNoteStartup)objContext).objMessaging, 
 	   	        			objResult.objImageLoadDatas, objImageLoadDatas);
 	   	        		

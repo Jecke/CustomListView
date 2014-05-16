@@ -33,7 +33,6 @@ public class clsMainExport {
 	/**
 	 * Constructor
 	 * @param context - object context
-	 * @param type - type of export determines further processing
 	 */
 	// TODO JE provide container with data to export
 	public clsMainExport(Context context)
@@ -41,6 +40,10 @@ public class clsMainExport {
 		_context = context;
 	}
 
+	/**
+	 * @param type - type of exporter
+	 * @param data - container of data to be exported
+	 */
 	public void export(EXPORT_DEST type, clsExportData data)
 	{
 		switch (type)
