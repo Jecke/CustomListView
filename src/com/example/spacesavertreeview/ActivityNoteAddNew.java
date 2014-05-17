@@ -922,7 +922,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
         	case R.id.actionAccept:
         		EditText objEditView    = (EditText)findViewById(R.id.editTextNoteName);
          		String   strDescription = objEditView.getText().toString();
-         		clsUtils.CustomLog("on Accept, resourceId = " + resourceId);
+
          		
          		// Default: Set annotationData to null. That covers the use cases when an annotated 
          		// image gets replaced by another type of node.

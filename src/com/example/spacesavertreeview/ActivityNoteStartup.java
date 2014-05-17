@@ -166,7 +166,6 @@ public class ActivityNoteStartup extends ListActivity {
 	        
 	        
 	        clsUtils.CustomLog("ActivityNoteStartup onCreate");
-	        clsUtils.CustomLog("NodeCountAtOnCreate=" + objNoteTreeview.getRepository().objRootNodes.size());
 	        if (savedInstanceState == null) {
 	        	SaveFile();
 	        } else {
@@ -459,9 +458,7 @@ public class ActivityNoteStartup extends ListActivity {
         		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
         		 return false;
         	 }
-        	     	     
-    	     clsUtils.CustomLog("NodeCountBefore=" + objNoteTreeview.getRepository().objRootNodes.size());
-        	 
+        	     	             	 
         	 intent = new Intent(this, ActivityNoteAddNew.class);
         	 intent.putExtra(DESCRIPTION, "");
         	 intent.putExtra(TREENODE_UID, "temp_uuid");
@@ -974,7 +971,6 @@ public class ActivityNoteStartup extends ListActivity {
     	    			objParentTreeNode.objChildren.add(objNewTreeNode);
     	    		}
 
-    	    		clsUtils.CustomLog("NodeCountAfter=" + objNoteTreeview.getRepository().objRootNodes.size());
     	    		objNoteTreeview.RecursiveSetParentChecked(objNewTreeNode,false);
 					objNoteTreeview.setSingleSelectedTreenode(objNewTreeNode);
 					objNoteTreeview.uuidLastAddedTreeNode = objNewTreeNode.guidTreeNode;

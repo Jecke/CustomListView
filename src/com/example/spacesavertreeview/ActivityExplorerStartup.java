@@ -353,6 +353,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
 		objMessaging.LoadFile(this);
 		objContext = this;
+		clsUtils.CustomLog("ActivityExplorerStartup LoadFile");
 	}
 
 	private void SaveFile() {
@@ -361,6 +362,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		objExplorerTreeview.SaveFile();
 		objGroupMembers.SaveFile();
 		objMessaging.SaveFile(this);
+		clsUtils.CustomLog("ActivityExplorerStartup SaveFile");
 	}
 
 	public boolean onOptionsItemSelected(MenuItem item) {

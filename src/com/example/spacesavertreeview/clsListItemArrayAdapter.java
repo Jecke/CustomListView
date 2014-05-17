@@ -16,6 +16,7 @@ import com.example.spacesavertreeview.imageannotation.clsShapeFactory.Shape;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,9 +33,15 @@ import android.graphics.drawable.LayerDrawable;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.DragEvent;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.DragShadowBuilder;
 import android.view.View.OnClickListener;
+import android.view.View.OnDragListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.ArrayAdapter;
@@ -109,7 +116,8 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		myTextView.setTag(objListItem);
 		myTextView.setSelectColour(GetSelectColour());
 		myTextView.setOnLongClickListener(MakeOnLongClickListener());
-		myTextView.setOnClickListener(MakeOnClickListener());
+		// myTextView.setOnClickListener(MakeOnClickListener());
+		myTextView.setOnTouchListener(MakeOnTouchListener());
 		// Draw background of the parent list item
 		if (objListItem.getSelected()) {
 			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
@@ -119,6 +127,8 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
 			objMarginLayoutParamsNarrow.setMargins(0, 0, 0, 0);
 		}
+
+		myTextView.setOnDragListener(new MyOnDragListener());
 		myTextView.requestLayout();
 
 		ImageView myImageView = (ImageView) todoView.findViewById(R.id.icon);
@@ -291,6 +301,51 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 		return todoView;
 	}
+	
+	class MyOnDragListener implements OnDragListener {	  
+		  @Override
+		  public boolean onDrag(View v, DragEvent event) {
+		    int action = event.getAction();
+		    switch (event.getAction()) {
+		    case DragEvent.ACTION_DRAG_STARTED:
+		      break;
+		    case DragEvent.ACTION_DRAG_ENTERED:
+		      break;
+		    case DragEvent.ACTION_DRAG_EXITED:        
+		      break;
+		    case DragEvent.ACTION_DROP:
+		    	clsListItem objListItem = (clsListItem) v.getTag();
+				String strTargetTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
+				ClipData objClipData = event.getClipData();
+				if (objClipData.getItemAt(0) != null) {
+					clsTreeview objTreeview = ActivityNoteStartup.objNoteTreeview;
+					String strSourceTreeNodeUuid = (String) objClipData.getItemAt(0).coerceToText(getContext());
+					clsTreeNode objSourceTreeNode = objTreeview.getTreeNodeFromUuid(UUID.fromString(strSourceTreeNodeUuid));
+					clsTreeNode objTargetTreeNode = objTreeview.getTreeNodeFromUuid(UUID.fromString(strTargetTreeNodeUuid));
+					clsTreeNode objSourceParentTreeNode = objTreeview.getParentTreeNode(objSourceTreeNode);
+					clsTreeNode objTargetParentTreeNode = objTreeview.getParentTreeNode(objTargetTreeNode);
+					if (!((objSourceParentTreeNode == objTargetParentTreeNode) ||
+							(objTargetTreeNode == objSourceParentTreeNode))) {
+						// Can only move if items are peers
+						clsUtils.MessageBox(context, "Items can only be moved among peers", true);
+						return true;
+					} else if (objTargetTreeNode == objSourceParentTreeNode) {
+						objTreeview.setTreeNodeItemOrder(objSourceTreeNode, 0);
+					} else if (objSourceParentTreeNode == objTargetParentTreeNode) {
+						int intTargetOrder = objTreeview.getTreeNodeItemOrder(objTargetTreeNode);
+						objTreeview.setTreeNodeItemOrder(objSourceTreeNode, intTargetOrder+1);
+					}
+					((ActivityNoteStartup)context).RefreshListView();
+				}
+	
+		      break;
+		    case DragEvent.ACTION_DRAG_ENDED:
+		      default:
+		      break;
+		    }
+		    return true;
+		  }
+		} 
 
 	public void SetCheckBoxVisibilityBasedOnSettings(boolean boolIsHideSelectionStarted, boolean boolIsCheckList,
 			CheckBox objCheckBox) {
@@ -429,7 +484,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			ImageView myImageView = (ImageView) v.findViewById(R.id.icon);
 			clsListItem objListItem = (clsListItem) myImageView.getTag();
 			clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
-			clsUtils.CustomLog("Treenode Value=" + objTreeNode.getName());
 
 			if (objTreeNode.enumItemType == enumItemType.FOLDER_COLLAPSED) {
 				objTreeNode.enumItemType = enumItemType.FOLDER_EXPANDED;
@@ -645,49 +699,108 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		}
 	}
 
-	boolean firstTouch = false;
-	long time;
+	
+	private long pressStartTime;
+	private float pressedX;
+	private float pressedY;
+	private long MAX_CLICK_DURATION = 500;
+	private float MAX_CLICK_DISTANCE = 10;
+	
 
+	private final class MyOnTouchListener implements OnTouchListener {
+		public boolean onTouch(View view, MotionEvent motionEvent) {
+
+			switch (motionEvent.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				pressStartTime = System.currentTimeMillis();
+				pressedX = motionEvent.getX();
+				pressedY = motionEvent.getY();
+				return true;
+			case MotionEvent.ACTION_UP:
+				long pressDuration = System.currentTimeMillis() - pressStartTime;
+				if (pressDuration < MAX_CLICK_DURATION
+						&& distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) < MAX_CLICK_DISTANCE) {
+					// Click event has occurred
+					NoteOnClickExec(view);
+					return false;
+				}
+				break;
+			case MotionEvent.ACTION_MOVE:
+				if (distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) > MAX_CLICK_DISTANCE) {
+					// Move event has occurred
+					// Get the nodeUuid from where the move started
+					clsListItem objListItem = (clsListItem) view.getTag();
+					String strTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
+
+					// Start the move
+					ClipData data = ClipData.newPlainText("strTreeNodeUuid", strTreeNodeUuid);
+					DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
+					view.startDrag(data, shadowBuilder, view, 0);
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	
+	public float distance(float x1, float y1, float x2, float y2) {
+	    float dx = x1 - x2;
+	    float dy = y1 - y2;
+	    float distanceInPx = (float) Math.sqrt(dx * dx + dy * dy);
+	    return pxToDp(distanceInPx);
+	}
+
+	public float pxToDp(float px) {
+	    return px / context.getResources().getDisplayMetrics().density;
+	}
+	
 	public class MyOnClickListener implements View.OnClickListener {
 
 		@Override
 		public void onClick(View v) {
-			
-			clsIndentableTextView myTextView = (clsIndentableTextView) v.findViewById(R.id.row);
-			clsListItem objListItem = (clsListItem) myTextView.getTag();
-			UUID objUuid = objListItem.getTreeNodeGuid();
-			clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
-			// Ensure item is selected first before opening by clicking
-			if (objTreeNode.getSelected() == false) {
-				objTreeview.ClearSelection();
-				objTreeNode.setSelected(true);
-				RefreshListView();
-				return;
-			}
-			
+
+			NoteOnClickExec(v);
+		}
+
+		
+	}
+	
+	public void NoteOnClickExec(View v) {
+		clsIndentableTextView myTextView = (clsIndentableTextView) v.findViewById(R.id.row);
+		clsListItem objListItem = (clsListItem) myTextView.getTag();
+		UUID objUuid = objListItem.getTreeNodeGuid();
+		clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
+
+		// Ensure item is selected first before opening by clicking
+		if (objTreeNode.getSelected() == false) {
 			objTreeview.ClearSelection();
 			objTreeNode.setSelected(true);
-
-			// Shell out to edit activity
-			Intent intent = new Intent(getContext(), ActivityNoteAddNew.class);
-			intent.putExtra(ActivityNoteStartup.DESCRIPTION, objTreeNode.getName());
-			intent.putExtra(ActivityNoteStartup.RESOURCE_ID, objTreeNode.resourceId);
-			intent.putExtra(ActivityNoteStartup.RESOURCE_PATH, objTreeNode.resourcePath);
-			intent.putExtra(ActivityNoteStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
-			intent.putExtra(ActivityNoteStartup.TREENODE_OWNERNAME, ((ActivityNoteStartup) context).objGroupMembers
-					.GetUserNameFomUuid(objTreeNode.getStrOwnerUserUuid()));
-			clsNoteItemStatus objNoteItemStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
-			((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreeNode, objNoteItemStatus,
-					((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview);
-			intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
-
-			String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
-			intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
-			intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());
-			intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
-
-			((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
+			RefreshListView();
+			return;
 		}
+		
+		objTreeview.ClearSelection();
+		objTreeNode.setSelected(true);
+
+		// Shell out to edit activity
+		Intent intent = new Intent(getContext(), ActivityNoteAddNew.class);
+		intent.putExtra(ActivityNoteStartup.DESCRIPTION, objTreeNode.getName());
+		intent.putExtra(ActivityNoteStartup.RESOURCE_ID, objTreeNode.resourceId);
+		intent.putExtra(ActivityNoteStartup.RESOURCE_PATH, objTreeNode.resourcePath);
+		intent.putExtra(ActivityNoteStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
+		intent.putExtra(ActivityNoteStartup.TREENODE_OWNERNAME, ((ActivityNoteStartup) context).objGroupMembers
+				.GetUserNameFomUuid(objTreeNode.getStrOwnerUserUuid()));
+		clsNoteItemStatus objNoteItemStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
+		((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreeNode, objNoteItemStatus,
+				((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview);
+		intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
+
+		String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
+		intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
+		intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());
+		intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
+
+		((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
 	}
 
 	// Override by other activities
@@ -698,6 +811,11 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	// Override by other activities
 	public View.OnClickListener MakeOnClickListener() {
 		return new MyOnClickListener();
+	}
+	
+	// Override by other activities
+	public View.OnTouchListener MakeOnTouchListener() {
+		return new MyOnTouchListener();
 	}
 
 	public void UpdateEnvironment(clsTreeview objTreeview) {
