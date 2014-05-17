@@ -453,7 +453,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	{
 		Resources r = context.getResources();
 		
-		String strImageFilename = ActivityNoteStartup.fileTreeNodesDir + "/" + strTreenodeUuid + ".jpg";
+		String strImageFilename = ActivityExplorerStartup.fileTreeNodesDir + "/" + strTreenodeUuid + ".jpg";
 		Bitmap bitmap = BitmapFactory.decodeFile(strImageFilename);
 
 		myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_background, new BitmapDrawable(r,
@@ -560,7 +560,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 					// Annotated, display using custom viewer
 					// ActivityViewImage generates the annotated image and displays it together with
 					// additional text information
-					File fileImageFilename  = new File(ActivityNoteStartup.fileTreeNodesDir, objTreenode.guidTreeNode + "_full.jpg");
+					File fileImageFilename  = new File(ActivityExplorerStartup.fileTreeNodesDir, objTreenode.guidTreeNode + "_full.jpg");
 					
 					Intent intentViewImage = new Intent(context, ActivityViewImage.class);
 

@@ -434,11 +434,11 @@ public class clsTreeview {
 			if (resourcePath != "") {
 				// When created and not empty implies there could be a thumbnail
 				// file for it which needs renaming
-				String strThumbnailFullFilename = ActivityNoteStartup.fileTreeNodesDir + "/" + guidTreeNode.toString()
+				String strThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/" + guidTreeNode.toString()
 						+ ".jpg";
 				File objThumbnailFile = new File(strThumbnailFullFilename);
 				if (!objThumbnailFile.exists()) {
-					String strTempThumbnailFullFilename = ActivityNoteStartup.fileTreeNodesDir + "/temp_uuid.jpg";
+					String strTempThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/temp_uuid.jpg";
 					File objTempThumbnailFile = new File(strTempThumbnailFullFilename);
 					if (objTempThumbnailFile.exists()) {
 						objTempThumbnailFile.renameTo(objThumbnailFile);
@@ -448,7 +448,7 @@ public class clsTreeview {
 					// because the annotator has no access rights for
 					// remote images.
 					{
-						String strTempAnnotateThumbnailFullFilename = ActivityNoteStartup.fileTreeNodesDir
+						String strTempAnnotateThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir
 								+ "/temp_uuid_annotate.jpg";
 						File objTempAnnotateThumbnailFile = new File(strTempAnnotateThumbnailFullFilename);
 						// Check if the annotation thumbnail exists. Note that
@@ -457,7 +457,7 @@ public class clsTreeview {
 						// rights for any external content provider to
 						// retrieve the image itself.
 						if (objTempAnnotateThumbnailFile.exists()) {
-							String strAnnotateThumbnailFullFilename = ActivityNoteStartup.fileTreeNodesDir + "/"
+							String strAnnotateThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/"
 									+ guidTreeNode.toString() + "_annotate.jpg";
 							File objAnnotateThumbnailFile = new File(strAnnotateThumbnailFullFilename);
 
@@ -467,12 +467,12 @@ public class clsTreeview {
 					// Create local version of full image for annotation if
 					// necessary
 					{
-						String strTempAnnotateFullFilename = ActivityNoteStartup.fileTreeNodesDir
+						String strTempAnnotateFullFilename = ActivityExplorerStartup.fileTreeNodesDir
 								+ "/temp_uuid_full.jpg";
 						File objTempAnnotateFile = new File(strTempAnnotateFullFilename);
 
 						if (objTempAnnotateFile.exists()) {
-							String strAnnotateFullFilename = ActivityNoteStartup.fileTreeNodesDir + "/"
+							String strAnnotateFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/"
 									+ guidTreeNode.toString() + "_full.jpg";
 							File objAnnotateThumbnailFile = new File(strAnnotateFullFilename);
 							
@@ -730,8 +730,8 @@ public class clsTreeview {
 			// Make copy of thumbnail file since the UUID is different
 			String strSourceFilename = objTreeNode.guidTreeNode.toString() + ".jpg";
 			String strDestFilename = objNewTreeNode.guidTreeNode.toString() + ".jpg";
-			File objFileSource = new File(ActivityNoteStartup.fileTreeNodesDir, strSourceFilename);
-			File objFileDest = new File(ActivityNoteStartup.fileTreeNodesDir, strDestFilename);
+			File objFileSource = new File(ActivityExplorerStartup.fileTreeNodesDir, strSourceFilename);
+			File objFileDest = new File(ActivityExplorerStartup.fileTreeNodesDir, strDestFilename);
 			try {
 				ActivityNoteStartup.copyDirectoryOneLocationToAnotherLocation(objFileSource, objFileDest);
 			} catch (IOException ex) {
@@ -1138,7 +1138,7 @@ public class clsTreeview {
 			// If there is a thumbnail, delete that first
 			if (objTreeNodeRemoveData.objTreeNode.resourcePath != "" && boolDeleteThumbnail) {
 				String strDelFilename = objTreeNodeRemoveData.objTreeNode.guidTreeNode.toString() + ".jpg";
-				File objFileDelete = new File(ActivityNoteStartup.fileTreeNodesDir, strDelFilename);
+				File objFileDelete = new File(ActivityExplorerStartup.fileTreeNodesDir, strDelFilename);
 				ActivityNoteStartup.DeleteRecursive(objFileDelete);
 			}
 			// Delete node
@@ -1164,7 +1164,7 @@ public class clsTreeview {
 		// If there is a thumbnail, delete that first
 		if (objDeletedTreeNode.resourcePath != "" && boolDeleteThumbnail) {
 			String strDelFilename = objDeletedTreeNode.guidTreeNode.toString() + ".jpg";
-			File objFileDelete = new File(ActivityNoteStartup.fileTreeNodesDir, strDelFilename);
+			File objFileDelete = new File(ActivityExplorerStartup.fileTreeNodesDir, strDelFilename);
 			ActivityNoteStartup.DeleteRecursive(objFileDelete);
 		}
 

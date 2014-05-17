@@ -44,7 +44,7 @@ public class ActivityFacebookExport extends FragmentActivity {
 	  else
 	  {
 		  mainFragment = (clsExportToFacebook)getSupportFragmentManager()
-				  .findFragmentById(android.R.id.content);
+				  			.findFragmentById(android.R.id.content);
 	  }
 	  
 	  objContext = this;
@@ -54,8 +54,7 @@ public class ActivityFacebookExport extends FragmentActivity {
 		
 	  exportData = clsUtils.DeSerializeFromString(objBundle.getString(clsMainExport.EXPORT_DATA), 
 				     						      clsExportData.class);
-		
-	  
+			  
 	  // start Facebook Login
 	  Session.openActiveSession(this, true, new Session.StatusCallback() {
 
@@ -80,6 +79,8 @@ public class ActivityFacebookExport extends FragmentActivity {
 							  // Display user name in title of Activity
 							  setTitle(getResources().getString(R.string.title_activity_facebook_export) + 
 									  " (" + user.getName() + ")");
+							  
+							  mainFragment.export(objContext, exportData);
 						  }
 					  }
 				  }).executeAsync();
