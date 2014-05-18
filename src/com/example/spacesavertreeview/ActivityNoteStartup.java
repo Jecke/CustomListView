@@ -87,7 +87,7 @@ public class ActivityNoteStartup extends ListActivity {
 	 public static clsNoteTreeview objNoteTreeview;
 	 public clsGroupMembers objGroupMembers = new clsGroupMembers(this);
 	 
-	 private clsListItemArrayAdapter objListItemAdapter;
+	 private clsNoteListItemArrayAdapter objListItemAdapter;
 	 private clsMessaging objMessaging = new clsMessaging(); 	 
 	 private boolean boolIsShortcut;
 	 boolean boolIsUserRegistered = false;
@@ -149,7 +149,7 @@ public class ActivityNoteStartup extends ListActivity {
 			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 			String strTabWidthInDp = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
 			int intTabWidthInPx = clsUtils.dpToPx(this, Integer.parseInt(strTabWidthInDp));      
-	        objListItemAdapter = new clsListItemArrayAdapter(this, resID, listItems, objNoteTreeview, intTabWidthInPx);
+	        objListItemAdapter = new clsNoteListItemArrayAdapter(this, resID, listItems, objNoteTreeview, intTabWidthInPx);
 	        setListAdapter(objListItemAdapter);
 	        
 	        // Actionbar

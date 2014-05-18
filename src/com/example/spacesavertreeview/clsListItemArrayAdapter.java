@@ -53,7 +53,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.net.Uri;
 
-public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
+public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 
 	// Environment variables
 	public clsTreeview objTreeview;
@@ -64,7 +64,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	List<clsListItem> objListItems;
 	RelativeLayout todoView;
 	private ImageView myMediaPreviewView;
-	private LayerDrawable myMediaPreviewLayerDrawable;
+	protected LayerDrawable myMediaPreviewLayerDrawable;
 	clsListItemArrayAdapter objThisArrayAdapter;
 	ViewGroup.MarginLayoutParams  objMarginLayoutParamsNarrow;
 	int int2Dp;
@@ -117,9 +117,9 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		myTextView.SetTabWidthInPx(intTabWidthInPx);
 		myTextView.setTag(objListItem);
 		myTextView.setSelectColour(GetSelectColour());
-		myTextView.setOnLongClickListener(MakeOnLongClickListener());
+		myTextView.setOnLongClickListener(new MyTextOnLongClickListener());
 		// myTextView.setOnClickListener(MakeOnClickListener());
-		myTextView.setOnTouchListener(MakeOnTouchListener());
+		myTextView.setOnTouchListener(new MyOnTouchListener());
 		// Draw background of the parent list item
 		if (objListItem.getSelected()) {
 			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
@@ -305,100 +305,10 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	}
 	
 	
-	private class MyOnDragListener implements OnDragListener {
-		@Override
-		public boolean onDrag(View v, DragEvent event) {
-			int action = event.getAction();
-			switch (event.getAction()) {
-			case DragEvent.ACTION_DRAG_STARTED:
-				break;
-			case DragEvent.ACTION_DRAG_ENTERED:
-				break;
-			case DragEvent.ACTION_DRAG_EXITED:
-				break;
-			case DragEvent.ACTION_DROP:
-				clsListItem objListItem = (clsListItem) v.getTag();
-				final String strTargetTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
-				final ClipData objClipData = event.getClipData();
-				if (objClipData.getItemAt(0) != null) {
-					// Create dialog to determine where user wants new placement
-					final CharSequence[] items = { " Below ", " Before ", " After ", " Cancel " };
-					// Creating and Building the Dialog
-					AlertDialog.Builder builder = new AlertDialog.Builder(context);
-					builder.setTitle("Where do you want to drop the item?");
-					builder.setSingleChoiceItems(items, -1, new DialogInterface.OnClickListener() {
+	
 
-						@Override
-						public void onClick(DialogInterface dialog, int item) {
-							// TODO Auto-generated method stub
-							String strSourceTreeNodeUuid = (String) objClipData.getItemAt(0).coerceToText(getContext());
-							clsTreeNode objSourceTreeNode = objTreeview.getTreeNodeFromUuid(UUID
-									.fromString(strSourceTreeNodeUuid));
-							clsTreeNode objTargetTreeNode = objTreeview.getTreeNodeFromUuid(UUID
-									.fromString(strTargetTreeNodeUuid));
-							boolean boolIsTargetChildOfSource = objTreeview.IsTargetChildOfSource(objSourceTreeNode,
-									objTargetTreeNode);
-
-							if (item != 3 && boolIsTargetChildOfSource) {
-								// Can only move if items are peers
-								clsUtils.MessageBox(context, "Cannot move paragraph into own paragraphs", true);
-							} else {
-								switch (item) {
-								case 0:
-									// Below
-									boolean boolIsSourceDropable = objTreeview.IsSourceDropableOnTarget(objSourceTreeNode,
-											objTargetTreeNode);
-									if (boolIsSourceDropable) {
-										objTreeview.addSourceTreeNodeBelowTarget(objSourceTreeNode, objTargetTreeNode);
-									} else {
-										clsUtils.MessageBox(context, "A folder cannot reside below a note", true);
-									}
-									break;
-								case 1:
-									// Before
-									objTreeview.addSourceTreeNodeBeforeOrAfterTarget(objSourceTreeNode,
-											objTargetTreeNode, true);
-									break;
-								case 2:
-									// After
-									objTreeview.addSourceTreeNodeBeforeOrAfterTarget(objSourceTreeNode,
-											objTargetTreeNode, false);
-									break;
-								case 3:
-									// Cancel
-									break;
-								}
-							}
-							levelDialog.dismiss();
-							RefreshListView();
-						}
-					});
-					levelDialog = builder.create();
-					levelDialog.show();
-				}
-				break;
-			case DragEvent.ACTION_DRAG_ENDED:
-			default:
-				break;
-			}
-			return true;
-		}
-	}
-
-	public void SetCheckBoxVisibilityBasedOnSettings(boolean boolIsHideSelectionStarted, boolean boolIsCheckList,
-			CheckBox objCheckBox) {
-		// Override by other activities
-		objCheckBox.setVisibility(View.GONE);
-		if (boolIsHideSelectionStarted) {
-			objCheckBox.setVisibility(View.VISIBLE);
-			objCheckBox.setButtonDrawable(R.drawable.custom_check_box_red);
-			return;
-		}
-		if (boolIsCheckList) {
-			objCheckBox.setVisibility(View.VISIBLE);
-			objCheckBox.setButtonDrawable(R.drawable.custom_check_box_black);
-		}
-	}
+	public abstract void SetCheckBoxVisibilityBasedOnSettings(boolean boolIsHideSelectionStarted, boolean boolIsCheckList,
+			CheckBox objCheckBox);
 
 	public void ProvideThumbnailSizeToCustomView(clsIndentableTextView myTextView) {
 		// Sizing of the custom list item
@@ -425,26 +335,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		}
 	}
 
-	public void SelectItemTypeFolder(clsListItem objListItem, ImageView myImageView) {
-		// This is NOTE specific, override by other activities using treeviews
-		clsTreeNode objTreenode = ActivityNoteStartup.objNoteTreeview
-				.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
-		if (ActivityNoteStartup.objNoteTreeview.getRepository().boolHiddenSelectionIsActive == false) {
-			if (!((objListItem.getFolderHasHiddenItems() == true) && objTreeview.getRepository().boolIsHiddenActive)) {
-				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode,
-						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-						false,objTreenode.boolIsNew);
-			} else {
-				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
-						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-						true,objTreenode.boolIsNew);
-			}
-		} else {
-			DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
-					((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-					false,objTreenode.boolIsNew);
-		}
-	}
+	public abstract void SelectItemTypeFolder(clsListItem objListItem, ImageView myImageView);
 	
 	public void DrawIcon (ImageView myImageView, int intBackgroundIconRid, boolean boolIsHidden, boolean boolIsNew  ) {
 		int intLayerCount = 1;
@@ -470,51 +361,12 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		myImageView.setImageDrawable(layerDrawable);
 	}
 
-	public int GetSelectColour() {
-		// Override by other activities
-		return (context.getResources().getColor(R.color.select_outline_color_notes));
-	}
+	public abstract int GetSelectColour();
 
-	public int GetBackgroundResource(boolean boolIsSelected) {
-		// Override by other activities
-		if (boolIsSelected) {
-			// Note: There is another one in MyTextView.java that does that view
-			// only because it has higher z-order
-			return R.drawable.listitem_selected_shape_notes;
-		} else {
-			return R.drawable.listitem_unselected_shape;
-		}
-	}
-
-	private void createThumbnailFromImage(String strTreenodeUuid, boolean boolIsAnnotated, int intResourceId)
-	// Override by other activities
-	{
-		Resources r = context.getResources();
-		
-		String strImageFilename = ActivityExplorerStartup.fileTreeNodesDir + "/" + strTreenodeUuid + ".jpg";
-		Bitmap bitmap = BitmapFactory.decodeFile(strImageFilename);
-
-		myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_background, new BitmapDrawable(r,
-				bitmap));
-		if (intResourceId != clsTreeview.WEB_RESOURCE) {
-			if (boolIsAnnotated) {
-				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground,
-						r.getDrawable(R.drawable.annotation));
-			} else {
-				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, new ColorDrawable(
-						Color.TRANSPARENT));
-			}		
-		} else {
-			if (boolIsAnnotated) {
-				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground,
-						r.getDrawable(R.drawable.annotation_www));
-			} else {
-				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, r.getDrawable(R.drawable.www));
-			}
-		}
-
-
-	}
+	public abstract int GetBackgroundResource(boolean boolIsSelected);
+	
+	
+	public abstract void createThumbnailFromImage(String strTreenodeUuid, boolean boolIsAnnotated, int intResourceId);
 
 	private class MyImageOnClickListener implements View.OnClickListener {
 		@Override
@@ -713,7 +565,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		}
 	}
 
-	private void RefreshListView() {
+	protected void RefreshListView() {
 		List<clsListItem> objListItems = objTreeview.getListItems();
 		clear();
 		addAll(objListItems);
@@ -745,7 +597,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	private float MAX_CLICK_DISTANCE = 10;
 	
 
-	private final class MyOnTouchListener implements OnTouchListener {
+	public final class MyOnTouchListener implements OnTouchListener {
 		public boolean onTouch(View view, MotionEvent motionEvent) {
 
 			switch (motionEvent.getAction()) {
@@ -759,7 +611,25 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 				if (pressDuration < MAX_CLICK_DURATION
 						&& distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) < MAX_CLICK_DISTANCE) {
 					// Click event has occurred
-					NoteOnClickExec(view);
+					// Make sure event is fired if already selected
+					clsIndentableTextView myTextView = (clsIndentableTextView) view.findViewById(R.id.row);
+					clsListItem objListItem = (clsListItem) myTextView.getTag();
+					UUID objUuid = objListItem.getTreeNodeGuid();
+					clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
+
+					// Ensure item is selected first before opening by clicking
+					if (objTreeNode.getSelected() == false) {
+						objTreeview.ClearSelection();
+						objTreeNode.setSelected(true);
+						RefreshListView();
+						return false;
+					}
+					
+					objTreeview.ClearSelection();
+					objTreeNode.setSelected(true);
+					
+					// Now fire event
+					OnClickExec  (view);
 					return false;
 				}
 				break;
@@ -781,6 +651,88 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		}
 	}
 	
+	public class MyOnDragListener implements OnDragListener {
+		@Override
+		public boolean onDrag(View v, DragEvent event) {
+			int action = event.getAction();
+			switch (event.getAction()) {
+			case DragEvent.ACTION_DRAG_STARTED:
+				break;
+			case DragEvent.ACTION_DRAG_ENTERED:
+				break;
+			case DragEvent.ACTION_DRAG_EXITED:
+				break;
+			case DragEvent.ACTION_DROP:
+				clsListItem objListItem = (clsListItem) v.getTag();
+				final String strTargetTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
+				final ClipData objClipData = event.getClipData();
+				if (objClipData.getItemAt(0) != null) {
+					// Create dialog to determine where user wants new placement
+					final CharSequence[] items = { " Below ", " Before ", " After ", " Cancel " };
+					// Creating and Building the Dialog
+					AlertDialog.Builder builder = new AlertDialog.Builder(context);
+					builder.setTitle("Where do you want to drop the item?");
+					builder.setSingleChoiceItems(items, -1, new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int item) {
+							// TODO Auto-generated method stub
+							String strSourceTreeNodeUuid = (String) objClipData.getItemAt(0).coerceToText(getContext());
+							clsTreeNode objSourceTreeNode = objTreeview.getTreeNodeFromUuid(UUID
+									.fromString(strSourceTreeNodeUuid));
+							clsTreeNode objTargetTreeNode = objTreeview.getTreeNodeFromUuid(UUID
+									.fromString(strTargetTreeNodeUuid));
+							boolean boolIsTargetChildOfSource = objTreeview.IsTargetChildOfSource(objSourceTreeNode,
+									objTargetTreeNode);
+
+							if (item != 3 && boolIsTargetChildOfSource) {
+								// Can only move if items are peers
+								clsUtils.MessageBox(context, "Cannot move item into own child items", true);
+							} else {
+								switch (item) {
+								case 0:
+									// Below
+									boolean boolIsSourceDropable = objTreeview.IsSourceDropableOnTarget(objSourceTreeNode,
+											objTargetTreeNode);
+									if (boolIsSourceDropable) {
+										objTreeview.addSourceTreeNodeBelowTarget(objSourceTreeNode, objTargetTreeNode);
+									} else {
+										clsUtils.MessageBox(context, "A folder cannot reside below a note", true);
+									}
+									break;
+								case 1:
+									// Before
+									objTreeview.addSourceTreeNodeBeforeOrAfterTarget(objSourceTreeNode,
+											objTargetTreeNode, true);
+									break;
+								case 2:
+									// After
+									objTreeview.addSourceTreeNodeBeforeOrAfterTarget(objSourceTreeNode,
+											objTargetTreeNode, false);
+									break;
+								case 3:
+									// Cancel
+									break;
+								}
+							}
+							levelDialog.dismiss();
+							RefreshListView();
+						}
+					});
+					levelDialog = builder.create();
+					levelDialog.show();
+				}
+				break;
+			case DragEvent.ACTION_DRAG_ENDED:
+			default:
+				break;
+			}
+			return true;
+		}
+	}
+	
+	
+	
 	public float distance(float x1, float y1, float x2, float y2) {
 	    float dx = x1 - x2;
 	    float dy = y1 - y2;
@@ -792,74 +744,9 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	    return px / context.getResources().getDisplayMetrics().density;
 	}
 	
-	public class MyOnClickListener implements View.OnClickListener {
-
-		@Override
-		public void onClick(View v) {
-
-			NoteOnClickExec(v);
-		}
-
-		
-	}
+	// Override by other activities
+	public abstract void OnClickExec(View v);
 	
-	public void NoteOnClickExec(View v) {
-		clsIndentableTextView myTextView = (clsIndentableTextView) v.findViewById(R.id.row);
-		clsListItem objListItem = (clsListItem) myTextView.getTag();
-		UUID objUuid = objListItem.getTreeNodeGuid();
-		clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
-
-		// Ensure item is selected first before opening by clicking
-		if (objTreeNode.getSelected() == false) {
-			objTreeview.ClearSelection();
-			objTreeNode.setSelected(true);
-			RefreshListView();
-			return;
-		}
-		
-		objTreeview.ClearSelection();
-		objTreeNode.setSelected(true);
-
-		// Shell out to edit activity
-		Intent intent = new Intent(getContext(), ActivityNoteAddNew.class);
-		intent.putExtra(ActivityNoteStartup.DESCRIPTION, objTreeNode.getName());
-		intent.putExtra(ActivityNoteStartup.RESOURCE_ID, objTreeNode.resourceId);
-		intent.putExtra(ActivityNoteStartup.RESOURCE_PATH, objTreeNode.resourcePath);
-		intent.putExtra(ActivityNoteStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
-		intent.putExtra(ActivityNoteStartup.TREENODE_OWNERNAME, ((ActivityNoteStartup) context).objGroupMembers
-				.GetUserNameFomUuid(objTreeNode.getStrOwnerUserUuid()));
-		clsNoteItemStatus objNoteItemStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
-		((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreeNode, objNoteItemStatus,
-				((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview);
-		intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
-
-		String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
-		intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
-		intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());
-		intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
-
-		((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
-	}
-
-	// Override by other activities
-	public View.OnLongClickListener MakeOnLongClickListener() {
-		return new MyTextOnLongClickListener();
-	}
-
-	// Override by other activities
-	public View.OnClickListener MakeOnClickListener() {
-		return new MyOnClickListener();
-	}
-	
-	// Override by other activities
-	public View.OnTouchListener MakeOnTouchListener() {
-		return new MyOnTouchListener();
-	}
-	
-	// Override by other activities
-	public View.OnDragListener MakeOnDragListener() {
-		return new MyOnDragListener();
-	}
 
 	public void UpdateEnvironment(clsTreeview objTreeview) {
 		// TODO Auto-generated method stub
@@ -869,4 +756,6 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		 intTabWidthInPx = clsUtils.dpToPx(context, Integer.parseInt(strTabWidthInPx));
 		 sharedPref= null;
 	}
+	
+
 }

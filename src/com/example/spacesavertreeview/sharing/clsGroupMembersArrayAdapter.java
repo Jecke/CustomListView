@@ -14,6 +14,8 @@ import com.example.spacesavertreeview.clsUtils;
 
 import android.content.Context;
 import android.view.View;
+import android.view.View.OnDragListener;
+import android.view.View.OnTouchListener;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -84,64 +86,15 @@ public class clsGroupMembersArrayAdapter extends clsListItemArrayAdapter  {
 		}
 	}
 	
-	
-	boolean firstTouch = false;
-	long time;
-	private class MyOnClickListener implements View.OnClickListener {
 
-		@Override
-		public void onClick(View v) {
-			
-			
-			if(firstTouch && (clsUtils.getCurrentTimeInMilliSeconds() - time) <= 300) {
-                // Do stuff here for double tap
-                firstTouch = false;
-                EditSelectedItem(v);
-            } else {
-            	// Do stuff here for single tap
-                firstTouch = true;
-                time = clsUtils.getCurrentTimeInMilliSeconds();
-
-                // Set single selection
-                clsIndentableTextView myTextView = (clsIndentableTextView)v.findViewById(R.id.row);
-        		clsListItem objListItem = (clsListItem)myTextView.getTag();
-        		UUID objUuid = objListItem.getTreeNodeGuid();
-        		clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
-        		
-        		// Remove any multi selection and change selection to clicked item
-        		objTreeview.ClearSelection();
-        		objTreeNode.setSelected(true);
-        		((ActivityGroupMembers)_context).RefreshListView();  			
-            }
-
-		}
-	}
-	
-	private class MyTextOnLongClickListener implements View.OnLongClickListener {
-
-		@Override
-		public boolean onLongClick(View v) {
-			// Selection
-			TextView myTextView = (TextView)v.findViewById(R.id.row);
-	        clsListItem objListItem = (clsListItem)myTextView.getTag();
-	    	clsTreeNode objNewSelectedTreeNode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
-    		objTreeview.setMultipleSelectedTreenodes(objNewSelectedTreeNode);
-    	    
-    	    // Refresh view
-    		((ActivityGroupMembers)_context).RefreshListView();
-
-			return true;
-		}
-	}
-	
 	@Override
-	public View.OnLongClickListener MakeOnLongClickListener() { return new MyTextOnLongClickListener();}
-	
+	public void createThumbnailFromImage(String strTreenodeUuid, boolean boolIsAnnotated, int intResourceId) {
+		// Do nothing	
+	}
+
+
 	@Override
-	public View.OnClickListener MakeOnClickListener() { return new MyOnClickListener();}
-
-
-	private void EditSelectedItem(View v) {
+	public void OnClickExec(View v) {
 		clsIndentableTextView myTextView = (clsIndentableTextView)v.findViewById(R.id.row);
 		clsListItem objListItem = (clsListItem)myTextView.getTag();
 		UUID objUuid = objListItem.getTreeNodeGuid();
