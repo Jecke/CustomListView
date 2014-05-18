@@ -52,6 +52,7 @@ public class clsNoteTreeview extends clsTreeview {
 		return true;
 	}
 
+	@Override
 	public void UpdateItemTypes() {
 		// Correct possible mistakes due to pasting
 		for (clsTreeNode objTreeNode: this.getRepository().objRootNodes) {
@@ -155,5 +156,8 @@ public class clsNoteTreeview extends clsTreeview {
 		return R.drawable.ic_launcher;
 	}
 	
-	
+	@Override
+	public boolean IsSourceDropableOnTarget(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode) {
+		return true;
+	}
 }

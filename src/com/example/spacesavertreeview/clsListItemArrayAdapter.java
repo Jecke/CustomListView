@@ -69,6 +69,8 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	ViewGroup.MarginLayoutParams  objMarginLayoutParamsNarrow;
 	int int2Dp;
 	private int intTabWidthInPx;
+	
+	AlertDialog levelDialog;
 
 	public clsListItemArrayAdapter(Context context, int _resource, List<clsListItem> objects, 
 			clsTreeview objTreeview, int intTabWidthInPx) {
@@ -127,8 +129,8 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
 			objMarginLayoutParamsNarrow.setMargins(0, 0, 0, 0);
 		}
-
 		myTextView.setOnDragListener(new MyOnDragListener());
+		// myTextView.setOnDragListener(MakeOnDragListener()); 
 		myTextView.requestLayout();
 
 		ImageView myImageView = (ImageView) todoView.findViewById(R.id.icon);
@@ -302,50 +304,86 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 		return todoView;
 	}
 	
-	class MyOnDragListener implements OnDragListener {	  
-		  @Override
-		  public boolean onDrag(View v, DragEvent event) {
-		    int action = event.getAction();
-		    switch (event.getAction()) {
-		    case DragEvent.ACTION_DRAG_STARTED:
-		      break;
-		    case DragEvent.ACTION_DRAG_ENTERED:
-		      break;
-		    case DragEvent.ACTION_DRAG_EXITED:        
-		      break;
-		    case DragEvent.ACTION_DROP:
-		    	clsListItem objListItem = (clsListItem) v.getTag();
-				String strTargetTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
-				ClipData objClipData = event.getClipData();
-				if (objClipData.getItemAt(0) != null) {
-					clsTreeview objTreeview = ActivityNoteStartup.objNoteTreeview;
-					String strSourceTreeNodeUuid = (String) objClipData.getItemAt(0).coerceToText(getContext());
-					clsTreeNode objSourceTreeNode = objTreeview.getTreeNodeFromUuid(UUID.fromString(strSourceTreeNodeUuid));
-					clsTreeNode objTargetTreeNode = objTreeview.getTreeNodeFromUuid(UUID.fromString(strTargetTreeNodeUuid));
-					clsTreeNode objSourceParentTreeNode = objTreeview.getParentTreeNode(objSourceTreeNode);
-					clsTreeNode objTargetParentTreeNode = objTreeview.getParentTreeNode(objTargetTreeNode);
-					if (!((objSourceParentTreeNode == objTargetParentTreeNode) ||
-							(objTargetTreeNode == objSourceParentTreeNode))) {
-						// Can only move if items are peers
-						clsUtils.MessageBox(context, "Items can only be moved among peers", true);
-						return true;
-					} else if (objTargetTreeNode == objSourceParentTreeNode) {
-						objTreeview.setTreeNodeItemOrder(objSourceTreeNode, 0);
-					} else if (objSourceParentTreeNode == objTargetParentTreeNode) {
-						int intTargetOrder = objTreeview.getTreeNodeItemOrder(objTargetTreeNode);
-						objTreeview.setTreeNodeItemOrder(objSourceTreeNode, intTargetOrder+1);
-					}
-					((ActivityNoteStartup)context).RefreshListView();
-				}
 	
-		      break;
-		    case DragEvent.ACTION_DRAG_ENDED:
-		      default:
-		      break;
-		    }
-		    return true;
-		  }
-		} 
+	private class MyOnDragListener implements OnDragListener {
+		@Override
+		public boolean onDrag(View v, DragEvent event) {
+			int action = event.getAction();
+			switch (event.getAction()) {
+			case DragEvent.ACTION_DRAG_STARTED:
+				break;
+			case DragEvent.ACTION_DRAG_ENTERED:
+				break;
+			case DragEvent.ACTION_DRAG_EXITED:
+				break;
+			case DragEvent.ACTION_DROP:
+				clsListItem objListItem = (clsListItem) v.getTag();
+				final String strTargetTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
+				final ClipData objClipData = event.getClipData();
+				if (objClipData.getItemAt(0) != null) {
+					// Create dialog to determine where user wants new placement
+					final CharSequence[] items = { " Below ", " Before ", " After ", " Cancel " };
+					// Creating and Building the Dialog
+					AlertDialog.Builder builder = new AlertDialog.Builder(context);
+					builder.setTitle("Where do you want to drop the item?");
+					builder.setSingleChoiceItems(items, -1, new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int item) {
+							// TODO Auto-generated method stub
+							String strSourceTreeNodeUuid = (String) objClipData.getItemAt(0).coerceToText(getContext());
+							clsTreeNode objSourceTreeNode = objTreeview.getTreeNodeFromUuid(UUID
+									.fromString(strSourceTreeNodeUuid));
+							clsTreeNode objTargetTreeNode = objTreeview.getTreeNodeFromUuid(UUID
+									.fromString(strTargetTreeNodeUuid));
+							boolean boolIsTargetChildOfSource = objTreeview.IsTargetChildOfSource(objSourceTreeNode,
+									objTargetTreeNode);
+
+							if (item != 3 && boolIsTargetChildOfSource) {
+								// Can only move if items are peers
+								clsUtils.MessageBox(context, "Cannot move paragraph into own paragraphs", true);
+							} else {
+								switch (item) {
+								case 0:
+									// Below
+									boolean boolIsSourceDropable = objTreeview.IsSourceDropableOnTarget(objSourceTreeNode,
+											objTargetTreeNode);
+									if (boolIsSourceDropable) {
+										objTreeview.addSourceTreeNodeBelowTarget(objSourceTreeNode, objTargetTreeNode);
+									} else {
+										clsUtils.MessageBox(context, "A folder cannot reside below a note", true);
+									}
+									break;
+								case 1:
+									// Before
+									objTreeview.addSourceTreeNodeBeforeOrAfterTarget(objSourceTreeNode,
+											objTargetTreeNode, true);
+									break;
+								case 2:
+									// After
+									objTreeview.addSourceTreeNodeBeforeOrAfterTarget(objSourceTreeNode,
+											objTargetTreeNode, false);
+									break;
+								case 3:
+									// Cancel
+									break;
+								}
+							}
+							levelDialog.dismiss();
+							RefreshListView();
+						}
+					});
+					levelDialog = builder.create();
+					levelDialog.show();
+				}
+				break;
+			case DragEvent.ACTION_DRAG_ENDED:
+			default:
+				break;
+			}
+			return true;
+		}
+	}
 
 	public void SetCheckBoxVisibilityBasedOnSettings(boolean boolIsHideSelectionStarted, boolean boolIsCheckList,
 			CheckBox objCheckBox) {
@@ -715,7 +753,7 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 				pressStartTime = System.currentTimeMillis();
 				pressedX = motionEvent.getX();
 				pressedY = motionEvent.getY();
-				return true;
+				break;
 			case MotionEvent.ACTION_UP:
 				long pressDuration = System.currentTimeMillis() - pressStartTime;
 				if (pressDuration < MAX_CLICK_DURATION
@@ -816,6 +854,11 @@ public class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> {
 	// Override by other activities
 	public View.OnTouchListener MakeOnTouchListener() {
 		return new MyOnTouchListener();
+	}
+	
+	// Override by other activities
+	public View.OnDragListener MakeOnDragListener() {
+		return new MyOnDragListener();
 	}
 
 	public void UpdateEnvironment(clsTreeview objTreeview) {

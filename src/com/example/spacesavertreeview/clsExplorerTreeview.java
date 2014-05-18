@@ -321,6 +321,7 @@ public class clsExplorerTreeview extends clsTreeview {
 	
 	}
 
+	@Override
 	public void UpdateItemTypes() {
 		// Correct possible mistakes due to pasting
 		for (clsTreeNode objTreeNode: this.getRepository().objRootNodes) {
@@ -337,10 +338,12 @@ public class clsExplorerTreeview extends clsTreeview {
 				if (objTreeNode.objChildren.size() == 0) {
 					objTreeNode.enumItemType = enumItemType.FOLDER_EMPTY;
 				}
+				break;
 			case FOLDER_EMPTY:
 				if (objTreeNode.objChildren.size() != 0) {
 					objTreeNode.enumItemType = enumItemType.FOLDER_COLLAPSED;
 				}
+				break;
 			case OTHER:
 		}
 		for (clsTreeNode objChildTreeNode: objTreeNode.objChildren) {
@@ -396,8 +399,12 @@ public class clsExplorerTreeview extends clsTreeview {
 	}
 
 
-
 	
+	@Override
+	public boolean IsSourceDropableOnTarget(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode) {
+		if (objTargetTreeNode.enumItemType == enumItemType.OTHER) return false;
+		return true;
+	}
 
 	
 

@@ -10,9 +10,11 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
+import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.DragShadowBuilder;
+import android.view.View.OnDragListener;
 import android.view.View.OnTouchListener;
 import android.widget.CheckBox;
 import android.widget.ImageView;
@@ -160,13 +162,12 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 		public boolean onTouch(View view, MotionEvent motionEvent) {
 
 			switch (motionEvent.getAction()) {
-				case MotionEvent.ACTION_DOWN: {
+				case MotionEvent.ACTION_DOWN:
 					pressStartTime = System.currentTimeMillis();
 					pressedX = motionEvent.getX();
 					pressedY = motionEvent.getY();
 					break;
-				}
-				case MotionEvent.ACTION_UP: {
+				case MotionEvent.ACTION_UP:
 					long pressDuration = System.currentTimeMillis() - pressStartTime;
 					if (pressDuration < MAX_CLICK_DURATION
 							&& distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) < MAX_CLICK_DISTANCE) {
@@ -175,19 +176,21 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 						return false;
 					}
 					break;
-				}
-			}
+				case MotionEvent.ACTION_MOVE:
+					if (distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) > MAX_CLICK_DISTANCE) {
+						// Move event has occurred
+						// Get the nodeUuid from where the move started
+						clsListItem objListItem = (clsListItem) view.getTag();
+						String strTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
 
-			if (motionEvent.getAction() == MotionEvent.ACTION_MOVE) {
-				if (distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) > MAX_CLICK_DISTANCE) {
-					// Move event has occurred
-					ClipData data = ClipData.newPlainText("", "");
-					DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
-					view.startDrag(data, shadowBuilder, view, 0);
-					return true;
+						// Start the move
+						ClipData data = ClipData.newPlainText("strTreeNodeUuid", strTreeNodeUuid);
+						DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
+						view.startDrag(data, shadowBuilder, view, 0);
+						return true;
+					}
 				}
-			}
-			return false;
+				return false;
 		}
 	}
 	
@@ -201,6 +204,52 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 	public float pxToDp(float px) {
 	    return px / context.getResources().getDisplayMetrics().density;
 	}
+	
+	private class MyOnDragListener implements OnDragListener {	  
+		  @Override
+		  public boolean onDrag(View v, DragEvent event) {
+		    int action = event.getAction();
+		    switch (event.getAction()) {
+		    case DragEvent.ACTION_DRAG_STARTED:
+		      break;
+		    case DragEvent.ACTION_DRAG_ENTERED:
+		      break;
+		    case DragEvent.ACTION_DRAG_EXITED:        
+		      break;
+		    case DragEvent.ACTION_DROP:
+		    	clsListItem objListItem = (clsListItem) v.getTag();
+				String strTargetTreeNodeUuid = objListItem.getTreeNodeGuid().toString();
+				ClipData objClipData = event.getClipData();
+				if (objClipData.getItemAt(0) != null) {
+					clsTreeview objTreeview = ((ActivityExplorerStartup)context).objExplorerTreeview;
+					String strSourceTreeNodeUuid = (String) objClipData.getItemAt(0).coerceToText(getContext());
+					clsTreeNode objSourceTreeNode = objTreeview.getTreeNodeFromUuid(UUID.fromString(strSourceTreeNodeUuid));
+					clsTreeNode objTargetTreeNode = objTreeview.getTreeNodeFromUuid(UUID.fromString(strTargetTreeNodeUuid));
+					clsTreeNode objSourceParentTreeNode = objTreeview.getParentTreeNode(objSourceTreeNode);
+					clsTreeNode objTargetParentTreeNode = objTreeview.getParentTreeNode(objTargetTreeNode);
+					if (!((objSourceParentTreeNode == objTargetParentTreeNode) ||
+							(objTargetTreeNode == objSourceParentTreeNode))) {
+						// Can only move if items are peers
+						clsUtils.MessageBox(context, "Items can only be moved among peers", true);
+						return true;
+					} else if (objTargetTreeNode == objSourceParentTreeNode) {
+						objTreeview.setTreeNodeItemOrder(objSourceTreeNode, 0);
+					} else if (objSourceParentTreeNode == objTargetParentTreeNode) {
+						int intTargetOrder = objTreeview.getTreeNodeItemOrder(objTargetTreeNode);
+						objTreeview.setTreeNodeItemOrder(objSourceTreeNode, intTargetOrder+1);
+					}
+					((ActivityExplorerStartup)context).RefreshListView();
+				}
+	
+		      break;
+		    case DragEvent.ACTION_DRAG_ENDED:
+		      default:
+		      break;
+		    }
+		    return true;
+		  }
+		} 
+
 
 	@Override
 	public View.OnLongClickListener MakeOnLongClickListener() {
@@ -215,5 +264,10 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 	@Override
 	public View.OnTouchListener MakeOnTouchListener() {
 		return new MyOnTouchListener();
+	}
+	
+	@Override
+	public View.OnDragListener MakeOnDragListener() {
+		return new MyOnDragListener();
 	}
 }

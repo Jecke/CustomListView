@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import android.util.Log;
 
+import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.imageannotation.clsAnnotationData;
 import com.example.spacesavertreeview.sharing.clsGroupMembers;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
@@ -1428,6 +1429,71 @@ public class clsTreeview {
 		default:
 			return clsAnnotationData.INVALID;
 		}
+	}
+
+	public boolean IsTargetChildOfSource(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode) {
+		// TODO Auto-generated method stub
+		if (objSourceTreeNode.equals(objTargetTreeNode)) {
+			return true;
+		}
+		for (clsTreeNode objChildTreeNode: objSourceTreeNode.objChildren ) {
+			if (IsTargetChildOfSource(objChildTreeNode,objTargetTreeNode)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void addSourceTreeNodeBelowTarget(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode) {
+		// TODO Auto-generated method stub
+		// Remove from where its at this stage
+		clsTreeNode objSourceParentTreeNode = getParentTreeNode(objSourceTreeNode);
+		if (objSourceParentTreeNode == null) {
+			getRepository().objRootNodes.remove(objSourceTreeNode);
+		} else {
+			objSourceParentTreeNode.objChildren.remove(objSourceTreeNode);
+		}
+		// Add as first item to target
+		objTargetTreeNode.objChildren.add(objSourceTreeNode);
+		setTreeNodeItemOrder(objSourceTreeNode,0);
+		objSourceTreeNode.setIsDirty(true);
+		objTargetTreeNode.enumItemType = enumItemType.FOLDER_EXPANDED;
+		UpdateItemTypes();
+	}
+	
+	public void addSourceTreeNodeBeforeOrAfterTarget(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode, boolean boolIsBefore) {
+		// TODO Auto-generated method stub
+		// Remove from where its at this stage
+		clsTreeNode objSourceParentTreeNode = getParentTreeNode(objSourceTreeNode);
+		if (objSourceParentTreeNode == null) {
+			getRepository().objRootNodes.remove(objSourceTreeNode);
+		} else {
+			objSourceParentTreeNode.objChildren.remove(objSourceTreeNode);
+		}
+		// Add as item before target
+		clsTreeNode objTargetParentTreeNode = getParentTreeNode(objTargetTreeNode);
+		int intTargetOrder = getTreeNodeItemOrder(objTargetTreeNode);
+		int intSourceOrder  = (boolIsBefore)?intTargetOrder-1:intTargetOrder + 1;
+		if (objTargetParentTreeNode ==  null) {
+			getRepository().objRootNodes.add(objSourceTreeNode);
+			setTreeNodeItemOrder(objSourceTreeNode,intSourceOrder);
+		} else {
+			objTargetParentTreeNode.objChildren.add(objSourceTreeNode);
+			setTreeNodeItemOrder(objSourceTreeNode,intSourceOrder);
+		}
+		objSourceTreeNode.setIsDirty(true);
+		UpdateItemTypes();
+	}
+	
+	// Must be overridden
+	public void UpdateItemTypes() {
+		clsUtils.CustomLog("UpdateItemTypes unimplemented");
+	}
+
+	// Must be overridden
+	public boolean IsSourceDropableOnTarget(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode) {
+		clsUtils.CustomLog("IsSourceDropableOnTarget unimplemented");
+		return false;
 	}
 
 }
