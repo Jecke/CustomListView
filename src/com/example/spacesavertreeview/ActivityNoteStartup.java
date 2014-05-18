@@ -399,7 +399,6 @@ public class ActivityNoteStartup extends ListActivity {
     
     private void SaveFile() {
     	clsUtils.CustomLog("SaveFile");
-    	// objNoteTreeview.SetAllIsDirty(false);
 		objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildTempNoteFilename(ActivityExplorerStartup.fileTreeNodesDir));
 		objGroupMembers.SaveFile();
 		objMessaging.SaveFile(this);

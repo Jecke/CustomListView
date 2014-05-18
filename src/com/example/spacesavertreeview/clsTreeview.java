@@ -123,6 +123,9 @@ public class clsTreeview {
 
 		// Data for deletion
 		private boolean boolIsDeleted = false;
+		
+		// Data to determine if changes took place and there is a need to save
+		public boolean boolIsDirty = false;
 
 		public boolean getBoolIsDeleted() {
 			return boolIsDeleted;
@@ -390,6 +393,7 @@ public class clsTreeview {
 
 		public void setIsDeleted(boolean boolIsDeleted) {
 			this.boolIsDeleted = boolIsDeleted;
+			this.setIsDirty(true);
 			// Mark all children as deleted
 			for (clsTreeNode objChildTreeNode : this.objChildren) {
 				objChildTreeNode.setIsDeleted(boolIsDeleted);
@@ -1145,6 +1149,9 @@ public class clsTreeview {
 			// Delete node
 			objTreeNodeRemoveData.objParentChildren.remove(objTreeNodeRemoveData.objTreeNode);
 		}
+		
+		// Set treeview as dirty so it can be prompted for save
+		SetAllIsDirty(true);
 
 	}
 
@@ -1365,6 +1372,7 @@ public class clsTreeview {
 		for (clsTreeNode objChildTreeNode : getRepository().objRootNodes) {
 			SetIsDirtyRecursively(objChildTreeNode, boolIsDirty);
 		}
+		getRepository().boolIsDirty = boolIsDirty;
 	}
 
 	private void SetIsDirtyRecursively(clsTreeNode objParentTreeNode, boolean boolIsDirty) {
@@ -1375,6 +1383,7 @@ public class clsTreeview {
 	}
 
 	public boolean GetAllIsDirty() {
+		if (getRepository().boolIsDirty) return true; // Overrides
 		boolean boolIsDirty = false;
 		for (clsTreeNode objChildTreeNode : getRepository().objRootNodes) {
 			boolIsDirty = GetIsDirtyRecursively(objChildTreeNode);
