@@ -179,6 +179,8 @@
     <string name="url_clear_webservice_repository">"/api/TreeManager/ClearRepository"</string>
     <string name="url_upload_image_file">"/api/TreeManager/UploadImageFile"</string>
     <string name="url_download_image_file">"/api/TreeManager/DownloadImageFile"</string>
+    <string name="url_upload_webpage_html">"/api/TreeManager/UploadWebPageHtml"</string>
+    
     
     
 

@@ -1595,8 +1595,6 @@ public class ActivityExplorerStartup extends ListActivity {
 						} else {
 							MessageBoxOk("Selected note could not be read from file");
 						}
-					} else {
-						MessageBoxOk("Selected note does not exist");
 					}
 				}
 				RefreshListView();
