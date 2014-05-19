@@ -708,5 +708,20 @@ public class clsUtils {
 	      // handle error
 	    }
 	}
+
+	public static int GetDefaultTabWidthInDp(Context objContext) {
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
+		String strMaxIndentValue = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
+		if (strMaxIndentValue.isEmpty()) {
+			int intDisplayMaxWidthInDp = clsUtils.GetDisplayMaxWidthInDp((Activity) objContext);
+			int intMaxIndentAmount = ((Activity) objContext).getResources().getInteger(R.integer.indent_amount_max);
+			int intMaxIndentValue = intDisplayMaxWidthInDp/intMaxIndentAmount;
+			SharedPreferences.Editor objEditor = sharedPref.edit();
+			objEditor.putString("treenotes_default_user_indent_tab_width", Integer.toString(intMaxIndentValue));
+			objEditor.commit();
+			return intMaxIndentValue;
+		}
+		return Integer.parseInt(strMaxIndentValue);
+	}
 }
 

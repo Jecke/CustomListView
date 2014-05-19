@@ -69,6 +69,8 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 	ViewGroup.MarginLayoutParams  objMarginLayoutParamsNarrow;
 	int int2Dp;
 	private int intTabWidthInPx;
+	private static final int MAX_CLICK_DISTANCE = 2;
+	private float fltMaxClickDistance = MAX_CLICK_DISTANCE;
 	
 	AlertDialog levelDialog;
 
@@ -122,8 +124,7 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 		myTextView.setOnTouchListener(new MyOnTouchListener());
 		// Draw background of the parent list item
 		if (objListItem.getSelected()) {
-			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
-			
+			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();		
 			objMarginLayoutParamsNarrow.setMargins(0, int2Dp, int2Dp, int2Dp);
 		} else {
 			objMarginLayoutParamsNarrow = (MarginLayoutParams) myTextView.getLayoutParams();
@@ -146,7 +147,7 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 				.getDrawable(R.drawable.media_preview_layer);
 		myMediaPreviewView.setImageDrawable(myMediaPreviewLayerDrawable);
 		
-
+		fltMaxClickDistance = clsUtils.pxToDp(getContext(), myMediaPreviewView.getLayoutParams().height/10); // This is to detect a drag
 
 		// draw content of preview ImageView if resource is image or video
 		switch (objListItem.getResourceId()) {
@@ -594,7 +595,7 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 	private float pressedX;
 	private float pressedY;
 	private long MAX_CLICK_DURATION = 500;
-	private float MAX_CLICK_DISTANCE = 10;
+	
 	
 
 	public final class MyOnTouchListener implements OnTouchListener {
@@ -609,9 +610,9 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 			case MotionEvent.ACTION_UP:
 				long pressDuration = System.currentTimeMillis() - pressStartTime;
 				if (pressDuration < MAX_CLICK_DURATION
-						&& distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) < MAX_CLICK_DISTANCE) {
+						&& distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) < fltMaxClickDistance) {
 					// Click event has occurred
-					// Make sure event is fired if already selected
+					// Make sure event is fired, if already selected
 					clsIndentableTextView myTextView = (clsIndentableTextView) view.findViewById(R.id.row);
 					clsListItem objListItem = (clsListItem) myTextView.getTag();
 					UUID objUuid = objListItem.getTreeNodeGuid();
@@ -619,6 +620,14 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 
 					// Ensure item is selected first before opening by clicking
 					if (objTreeNode.getSelected() == false) {
+						objTreeview.ClearSelection();
+						objTreeNode.setSelected(true);
+						RefreshListView();
+						return false;
+					}
+					
+					// Ensure if there is a multiselect, only a single select happens, no fire of event
+					if (objTreeview.getSelectedTreenodes().size() > 1) {
 						objTreeview.ClearSelection();
 						objTreeNode.setSelected(true);
 						RefreshListView();
@@ -634,7 +643,9 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 				}
 				break;
 			case MotionEvent.ACTION_MOVE:
-				if (distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY()) > MAX_CLICK_DISTANCE) {
+				float fltDistance = distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY());
+				clsUtils.CustomLog("fltDistance =: " + fltDistance);
+				if (fltDistance > fltMaxClickDistance) {
 					// Move event has occurred
 					// Get the nodeUuid from where the move started
 					clsListItem objListItem = (clsListItem) view.getTag();

@@ -146,9 +146,8 @@ public class ActivityNoteStartup extends ListActivity {
 	        
 	        //---List View---
 	        int resID = R.layout.note_list_item;
-			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-			String strTabWidthInDp = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
-			int intTabWidthInPx = clsUtils.dpToPx(this, Integer.parseInt(strTabWidthInDp));      
+			int intTabWidthInDp = clsUtils.GetDefaultTabWidthInDp(this);			
+			int intTabWidthInPx = clsUtils.dpToPx(this, intTabWidthInDp);     
 	        objListItemAdapter = new clsNoteListItemArrayAdapter(this, resID, listItems, objNoteTreeview, intTabWidthInPx);
 	        setListAdapter(objListItemAdapter);
 	        
@@ -621,9 +620,12 @@ public class ActivityNoteStartup extends ListActivity {
         	 objNoteTreeview.getRepository().boolIsHiddenActive = false;
         	 RefreshListView();
         	 return true;
-         case R.id.actionSendToGmail:
-        	 String strText = "Hello, here is some <b>bold text</b> some <u>underline text</u> and <a href=\"http://www.google.com\">a link</a>.";
+         case R.id.actionSendToMail:
+        	 String strText = "Hello, here is some <b>bold text</b> some <u>underline text</u> and <a href=\"http://www.google.com\">a link</a>." +
+        			 "<img src=\"http://treenotes.azurewebsites.net/TreeNotesSave/Images/Bank%20Check.png\" alt=\"Red dot\" />";
+        	 strText = "<img src=\"http://treenotes.azurewebsites.net/TreeNotesSave/Images/Bank%20Check.png\" alt=\"Red dot\" />";
         	 clsUtils.SendGmail(this, "Test", strText);
+        	 
         	 return true;
          case R.id.actionMoveDown:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {

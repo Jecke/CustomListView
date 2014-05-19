@@ -155,10 +155,9 @@ public class ActivityExplorerStartup extends ListActivity {
 		setContentView(R.layout.activity_explorer_startup);
 
 		// ---List View---
-		int resID = R.layout.note_list_item;
-		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-		String strTabWidthInDp = sharedPref.getString("treenotes_default_user_indent_tab_width", "");
-		int intTabWidthInPx = clsUtils.dpToPx(this, Integer.parseInt(strTabWidthInDp));
+		int resID = R.layout.note_list_item;	
+		int intTabWidthInDp = clsUtils.GetDefaultTabWidthInDp(this);			
+		int intTabWidthInPx = clsUtils.dpToPx(this, intTabWidthInDp);
 		objListItemAdapter = new clsExplorerListItemArrayAdapter(this, resID, listItems, objExplorerTreeview,
 				intTabWidthInPx);
 		setListAdapter(objListItemAdapter);
@@ -193,7 +192,8 @@ public class ActivityExplorerStartup extends ListActivity {
 				}
 			}
 		}
-
+		
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 		if (sharedPref.getString("treenotes_root_folder_name", "").isEmpty()) {
 			SharedPreferences.Editor editor = sharedPref.edit();
 			editor.putString("treenotes_root_folder_name",
