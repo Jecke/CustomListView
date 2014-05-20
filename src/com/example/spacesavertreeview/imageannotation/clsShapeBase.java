@@ -56,7 +56,8 @@ public class clsShapeBase
 		this.type    = type;
 		this.context = context;
 		
-		attr = attributes;
+		clsAnnotationData data = new clsAnnotationData("");
+		attr = data.new AttributeContainer(attributes);
 
 		// compute dimension of text
 		TEXT_SIZE  = Math.min(maxWidth,  maxHeight) * TEXT_SIZE_DEFAULT / minScreenDim;
@@ -109,7 +110,8 @@ public class clsShapeBase
 
 	protected void changeAttributes(clsAnnotationData.AttributeContainer attributes)
 	{
-		attr = attributes;
+		// Copy Attributes
+		attr.setAttributes(attributes);
 
 		paint.setColor(attr.lineColor);
 		paint.setStrokeWidth(attr.lineWidth);

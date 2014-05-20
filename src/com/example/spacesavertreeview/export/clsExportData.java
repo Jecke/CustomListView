@@ -13,7 +13,6 @@ public class clsExportData {
 	protected String _treeNotesDir;
 	
 	// Constructor
-//	public clsExportData(clsTreeNode top, String treeNotesDir)
 	public clsExportData(ArrayList<clsTreeNode> top, String treeNotesDir)
 	{
 		_top = top;

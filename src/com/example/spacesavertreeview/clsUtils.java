@@ -219,9 +219,8 @@ public class clsUtils {
     	objActivity.getWindowManager().getDefaultDisplay().getMetrics(dm);
     	return pxToDp(objActivity, Math.min(dm.heightPixels, dm.widthPixels));
     } 
-
     
-		public static void showErrorDialog(Context context, int textId, boolean cancelable)
+	public static void showErrorDialog(Context context, int textId, boolean cancelable)
 	{
 	 	AlertDialog.Builder builder = new AlertDialog.Builder(context);
 	 	
