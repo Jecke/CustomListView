@@ -1,11 +1,14 @@
 package com.example.spacesavertreeview.export;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.example.spacesavertreeview.R;
 import com.example.spacesavertreeview.clsUtils;
 import com.example.spacesavertreeview.imageannotation.clsAnnotationData;
 import com.facebook.*;
+import com.facebook.Session.OpenRequest;
 import com.facebook.model.*;
 
 import android.app.Activity;
@@ -56,19 +59,26 @@ public class ActivityFacebookExport extends FragmentActivity {
 				     						      clsExportData.class);
 			  
 	  // start Facebook Login
-	  Session.openActiveSession(this, true, new Session.StatusCallback() {
+//	  Session.openActiveSession(this, true, Arrays.asList("publish_actions"), new Session.StatusCallback() {
+		  Session.openActiveSession(this, true, new Session.StatusCallback() {
 
 		  // callback when session changes state
 		  @Override
 		  public void call(Session session, SessionState state, Exception exception) {
 			  if (session.isOpened()) {
-
+Log.d(">>>call", "<<<");
 // 				generates a infinity loop 				  
 //				  Session.NewPermissionsRequest newPermissionsRequest = new Session
 //					      .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions"));
 //					    session.requestNewPublishPermissions(newPermissionsRequest);
 
-					    
+				  
+//				  OpenRequest op = new Session.OpenRequest((Activity)objContext);
+//				  List<String> permissions = new ArrayList<String>();
+//				  permissions.add("publish_actions");
+//				  op.setPermissions(permissions);
+//				  session.openForPublish(op);
+
 				  // make request to the /me API
 				  Request.newMeRequest(session, new Request.GraphUserCallback() {
 
@@ -79,11 +89,21 @@ public class ActivityFacebookExport extends FragmentActivity {
 							  // Display user name in title of Activity
 							  setTitle(getResources().getString(R.string.title_activity_facebook_export) + 
 									  " (" + user.getName() + ")");
-							  
-							  mainFragment.export(objContext, exportData);
 						  }
 					  }
 				  }).executeAsync();
+				  
+				  // Start export if the necessary permissions are granted, otherwise request permissions first.
+				  if(session.isPermissionGranted("publish_actions"))
+				  {
+					  mainFragment.export(objContext, exportData);
+				  }
+				  else
+				  {
+					  Session.NewPermissionsRequest newPermissionsRequest = new Session
+						      .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions"));
+					  session.requestNewPublishPermissions(newPermissionsRequest);
+				  }
 			  }
 			  else
 			  {

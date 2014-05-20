@@ -55,7 +55,7 @@ public class clsCombineAnnotateImage {
 	{
 		annotatedFile = original;
 		
-		Log.d("combine", "max: "+String.valueOf(maxWidth)+"/"+String.valueOf(maxHeight));
+		//Log.d("combine", "max: "+String.valueOf(maxWidth)+"/"+String.valueOf(maxHeight));
 		
 		this.maxWidth  = maxWidth;
 		this.maxHeight = maxHeight;
