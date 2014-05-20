@@ -634,7 +634,7 @@ public class clsUtils {
 			}
 
 			@Override
-			public void ProcessTreeNode(clsTreeNode objTreeNode) {
+			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
 				// TODO Auto-generated method stub
 				if (!objTreeNode.resourcePath.isEmpty()) {
 					File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");

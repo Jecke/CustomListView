@@ -18,6 +18,7 @@ import com.example.spacesavertreeview.clsTreeview.clsSyncRepository;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.clsTreeview.enumCutCopyPasteState;
 import com.example.spacesavertreeview.export.clsExportData;
+import com.example.spacesavertreeview.export.clsExportToMail;
 import com.example.spacesavertreeview.export.clsMainExport;
 import com.example.spacesavertreeview.imageannotation.clsAnnotationData;
 import com.example.spacesavertreeview.sharing.ActivityGroupMembers;
@@ -99,6 +100,7 @@ public class ActivityNoteStartup extends ListActivity {
 	 // Temporarily locals
 	 ImageView myPreviewImageView;
 	 static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
+	 private clsExportToMail objExportToMail;
 	 
 
 	 
@@ -621,11 +623,8 @@ public class ActivityNoteStartup extends ListActivity {
         	 RefreshListView();
         	 return true;
          case R.id.actionSendToMail:
-        	 String strText = "Hello, here is some <b>bold text</b> some <u>underline text</u> and <a href=\"http://www.google.com\">a link</a>." +
-        			 "<img src=\"http://treenotes.azurewebsites.net/TreeNotesSave/Images/Bank%20Check.png\" alt=\"Red dot\" />";
-        	 strText = "<img src=\"http://treenotes.azurewebsites.net/TreeNotesSave/Images/Bank%20Check.png\" alt=\"Red dot\" />";
-        	 clsUtils.SendGmail(this, "Test", strText);
-        	 
+        	 objExportToMail = new clsExportToMail(this, objNoteTreeview, objMessaging);
+        	 objExportToMail.Execute();
         	 return true;
          case R.id.actionMoveDown:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {

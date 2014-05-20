@@ -13,21 +13,24 @@ public abstract class clsTreeviewIterator {
 	}
 	
 	public void Execute() {
+		int intLevel;
 		for (clsTreeNode objTreeNode : objTreeview.getRepository().objRootNodes) {
-			TouchTreeNodesRecursively(objTreeNode);
+			intLevel = 0;
+			TouchTreeNodesRecursively(objTreeNode, intLevel);
 		}	
 	}
 	
 	
-	private void TouchTreeNodesRecursively(clsTreeNode objTreeNode) {
-		ProcessTreeNode(objTreeNode);
+	private void TouchTreeNodesRecursively(clsTreeNode objTreeNode, int intLevel) {
+		intLevel += 1;
+		ProcessTreeNode(objTreeNode, intLevel-1);
 		for(clsTreeNode objChildTreeNode : objTreeNode.objChildren) {
-			TouchTreeNodesRecursively(objChildTreeNode);
+			TouchTreeNodesRecursively(objChildTreeNode, intLevel);
 		}
 		
 	}
 
 
-	public abstract void ProcessTreeNode(clsTreeNode objTreeNode);
+	public abstract void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel);
 
 }
