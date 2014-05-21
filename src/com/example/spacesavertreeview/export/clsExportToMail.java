@@ -1,27 +1,21 @@
 package com.example.spacesavertreeview.export;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.Activity;
-import android.app.ProgressDialog;
-import android.os.AsyncTask;
-
 import com.example.spacesavertreeview.R;
 import com.example.spacesavertreeview.clsTreeview;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.clsTreeviewIterator;
 import com.example.spacesavertreeview.clsUtils;
+import com.example.spacesavertreeview.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
+import com.example.spacesavertreeview.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageCommand;
+import com.example.spacesavertreeview.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
 import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageUpDownloadAsyncTask;
-import com.google.gson.Gson;
 
 public class clsExportToMail {
 	
@@ -45,7 +39,7 @@ public class clsExportToMail {
 	public void Execute() {
 		try {
 			GenerateWebPageHtml();
-			PostWebPageToServer();
+			PostWebPageHtmlToServer();
 			UploadRequiredImages();
 		} catch (Exception e) {
 			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, true);
@@ -87,10 +81,10 @@ public class clsExportToMail {
 
 
 
-	private void PostWebPageToServer() {
+	private void PostWebPageHtmlToServer() {
 		
-		class clsMyPostWebPageOnServerAsyncTask extends clsPostWebPageOnServerAsyncTask {
-			private clsMyPostWebPageOnServerAsyncTask (Activity objActivity, URL urlFeed, clsPostWebPageOnServerCommand objCommand, clsPostWebPageOnServerResponse objResponse) {
+		class clsMyExportNoteAsWebPageAsyncTask extends clsExportNoteAsWebPageAsyncTask {
+			private clsMyExportNoteAsWebPageAsyncTask (Activity objActivity, URL urlFeed, clsExportNoteAsWebPageCommand objCommand, clsExportNoteAsWebPageResponse objResponse) {
 				super(objActivity, urlFeed, objCommand, objResponse);
 			}	
 		}
@@ -112,15 +106,16 @@ public class clsExportToMail {
 			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, true);
 			return;
 		}
-		clsPostWebPageOnServerCommand objCommand = new clsPostWebPageOnServerCommand();
+		clsExportNoteAsWebPageCommand objCommand = new clsExportNoteAsWebPageCommand();
 		objCommand.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
 		objCommand.strWebPageHtml = strWebPageHtml;
-		clsPostWebPageOnServerResponse objResponse = new clsPostWebPageOnServerResponse();
-		clsMyPostWebPageOnServerAsyncTask objAsyncTask = new clsMyPostWebPageOnServerAsyncTask(objActivity, url,objCommand, objResponse);
-		objAsyncTask.SetOnPostExecTrigger(new com.example.spacesavertreeview.export.clsExportToMail.clsPostWebPageOnServerAsyncTask.OnPostExecTrigger() {			
+		clsExportNoteAsWebPageResponse objResponse = new clsExportNoteAsWebPageResponse();
+		clsMyExportNoteAsWebPageAsyncTask objAsyncTask = new clsMyExportNoteAsWebPageAsyncTask(objActivity, url,objCommand, objResponse);
+		objAsyncTask.SetOnWebPagePostedListener(new clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener() {			
 			@Override
-			public void Trigger(clsPostWebPageOnServerResponse objResponse) {
-				if (objResponse.intErrorCode == clsPostWebPageOnServerResponse.ERROR_NONE) {
+			public void onPosted(clsExportNoteAsWebPageResponse objResponse) {
+				if (objResponse.intErrorCode == clsExportNoteAsWebPageResponse.ERROR_NONE) {
+					// Do work here ...
 					// Open mail with message
 					String strSubject = objTreeview.getRepository().getName();
 					String strBody = "<font face='verdana' size='3'>Please press <a href='<<TREENOTES:WEB_PAGE_URL>>'>here</a> for the message.</font><br><br><font face='verdana' size='2' color='blue'>Message sent using <a src='" + strServerUrl + "'>TreeNotes</a></font>";
@@ -164,106 +159,6 @@ public class clsExportToMail {
 	
 	// ---------------------- Utilities --------------------------
 	
-	private class clsPostWebPageOnServerCommand{
-		public String strNoteUuid;
-		public String strWebPageHtml;
-	}
-	
-	private class clsPostWebPageOnServerResponse {
-		public static final int ERROR_NONE = 0;
-    	public static final int ERROR_NETWORK = 1;
-		public int intErrorCode;
-		public String strErrorMessage = "";
-	}
-	
-	private static class clsPostWebPageOnServerAsyncTask extends AsyncTask<Void, Void, clsPostWebPageOnServerResponse> {
-		static clsPostWebPageOnServerCommand objCommand;
-		static clsPostWebPageOnServerResponse objResponse;
-		static URL urlFeed;
-		ProgressDialog objProgressDialog;
-		public OnPostExecTrigger objOnPostExecTrigger;
-		
-		private clsPostWebPageOnServerAsyncTask (Activity objActivity, URL urlFeed, clsPostWebPageOnServerCommand objCommand, clsPostWebPageOnServerResponse objResponse) {
-			clsPostWebPageOnServerAsyncTask.urlFeed = urlFeed;
-			clsPostWebPageOnServerAsyncTask.objCommand =objCommand;
-			clsPostWebPageOnServerAsyncTask.objResponse = objResponse;
-			objProgressDialog = new ProgressDialog(objActivity);
-		}
-		
-		public void SetOnPostExecTrigger (OnPostExecTrigger objOnPostExecTrigger) {
-			this.objOnPostExecTrigger = objOnPostExecTrigger;
-		}
-		
-		@Override
-	    protected void onPreExecute()
-	    {
-	        super.onPreExecute();
-	        objProgressDialog.setMessage("Processing..., please wait.");
-		    objProgressDialog.show();
-	    }
-
-		@Override
-		protected clsPostWebPageOnServerResponse doInBackground(Void... arg0) {
-			// TODO Auto-generated method stub
-   			Gson gson = new Gson();
-   			JSONObject objJsonResult = null;
-   			
-   			try {
-   	            InputStream stream = null;
-   	            String strJsonCommand = gson.toJson(objCommand);
-
-   	            try {
-   	                stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-   	                objJsonResult = clsMessaging.updateLocalFeedData(stream);
-   	                // Makes sure that the InputStream is closed after finished using it.
-   				} catch (JSONException e) {
-   					// TODO Auto-generated catch block
-   					objResponse.intErrorCode=clsPostWebPageOnServerResponse.ERROR_NETWORK;
-   					objResponse.strErrorMessage = "JSON exception. " + e;
-   		            return objResponse;
-   				} finally {
-   	                if (stream != null) {
-   	                    stream.close();
-   	                }
-   	            }
-   	        } catch (MalformedURLException e) {
-   	        	objResponse.intErrorCode=clsPostWebPageOnServerResponse.ERROR_NETWORK;
-   	        	objResponse.strErrorMessage = "Feed URL is malformed. " + e;
-		        return objResponse;
-   	        } catch (IOException e) {
-   	        	objResponse.intErrorCode=clsPostWebPageOnServerResponse.ERROR_NETWORK;
-   	        	objResponse.strErrorMessage = "IO Exception from network. " + e;
-		        return objResponse;
-   	        }
-   			// Analyze data from server	
-   			clsPostWebPageOnServerResponse objResponse = gson.fromJson(objJsonResult.toString(),clsPostWebPageOnServerResponse.class);
-   	        return objResponse;
-		}
-		
-		@Override
-   		protected void onPostExecute(clsPostWebPageOnServerResponse objResponse) {
-   			// TODO Auto-generated method stub
-   			super.onPostExecute(objResponse);
-   			if (objProgressDialog.isShowing()) {
-	        	objProgressDialog.dismiss();
-	        }
-   			objOnPostExecTrigger.Trigger(objResponse);
-   		}
-		
-		public interface OnPostExecTrigger {
-			public void Trigger(clsPostWebPageOnServerResponse objResponse);
-		}
-   		
-   		@Override
-		protected void onCancelled() {
-			super.onCancelled();
-			
-			if (objProgressDialog.isShowing()) {
-				objProgressDialog.dismiss();
-			}
-		}
-		
-	}
 	
 	private int GetLevelAmount(clsTreeview objTreeview) {
 		// TODO Auto-generated method stub
