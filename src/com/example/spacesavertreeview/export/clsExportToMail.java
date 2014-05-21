@@ -42,7 +42,7 @@ public class clsExportToMail {
 			PostWebPageHtmlToServer();
 			UploadRequiredImages();
 		} catch (Exception e) {
-			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, true);
+			clsUtils.MessageBox(objActivity, "Error exporting the note as webpage: " + e, true);
 			return;
 		}
 	}
@@ -187,6 +187,7 @@ public class clsExportToMail {
 		
 		String strImageUrl = "";
 		
+		// Get image urls
 		if ((objTreeNode.resourceId == clsTreeview.IMAGE_RESOURCE) || 
 				(objTreeNode.resourceId == clsTreeview.ANNOTATION_RESOURCE) ||
 				(objTreeNode.resourceId == clsTreeview.WEB_RESOURCE)){
@@ -196,7 +197,12 @@ public class clsExportToMail {
 				strImageUrl = "../Images/" + objTreeNode.guidTreeNode + "_full.jpg";
 			}	
 		}
+				
+		// Determine how many columns required
+		int intExtraColumns = ((strImageUrl.isEmpty())?0:1) + ((objTreeview.getRepository().IsCheckList())?1:0);
 		
+		
+		// Build the table
 		String strRowHtml;
 		if (boolIsAltRow) {
 			strRowHtml = "<tr class='alt'>";
@@ -204,6 +210,16 @@ public class clsExportToMail {
 		} else {
 			strRowHtml = "<tr>";
 			boolIsAltRow = true;
+		}
+		
+		if(objTreeview.getRepository().IsCheckList()) {
+			strRowHtml += "<td>";
+			if (objTreeNode.boolIsChecked) {
+				strRowHtml += "<img src='./images/cb_chk_black.png'>";
+			} else {
+				strRowHtml += "<img src='./images/cb_unchk_black.png'>";
+			}			
+			strRowHtml += "</td>";
 		}
 
 		for (int intCol = 0; intCol < intLevelAmount + 1; intCol++ ){					
