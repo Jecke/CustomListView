@@ -11,12 +11,14 @@ public class clsExportData {
 
 	protected ArrayList<clsTreeNode> _top;
 	protected String _treeNotesDir;
+	protected String _topNodeName;
 	
 	// Constructor
-	public clsExportData(ArrayList<clsTreeNode> top, String treeNotesDir)
+	public clsExportData(ArrayList<clsTreeNode> top, String treeNotesDir, String noteName)
 	{
 		_top = top;
 		_treeNotesDir = treeNotesDir;
+		_topNodeName = noteName;
 	}
 
 	// Copyconstructor

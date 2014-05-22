@@ -50,6 +50,9 @@ public class clsExportToFacebook extends Fragment {
 
 	private ProgressDialog pd;
 	
+	// 
+	private String albumId = new String();
+	
 	private void imageNodeExportResult(boolean success, String exportID, ExportInputContainer node)
 	{
 		if(success)
@@ -68,7 +71,7 @@ public class clsExportToFacebook extends Fragment {
 			// Export annotation texts if necessary.
 			if(!node.annotationText.isEmpty())
 			{
-				exportComment(exportID, node, node.annotationText);
+				exportComment(exportID, node, node.annotationText, true);
 			}
 			else
 			{
@@ -261,8 +264,16 @@ public class clsExportToFacebook extends Fragment {
 		_data = data;
 		_context = context;
 		
+		// Gather the data necessary to do the export.
 		createListToExport(_data._top, level);
 
+		// Each export goes to a photo album (due to lack of another structure like a folder on FB).
+		// The below method checks if the album still exists.
+    	requestCreateAlbum();
+	}
+
+	private void requestUserConfirmationAndStart()
+	{
 		// Create a dialog showing the number and types of notes in that export to let the user decide
 		// whether he still wants to start the export.
 		int countImages = countImage + countWeb;
@@ -270,15 +281,35 @@ public class clsExportToFacebook extends Fragment {
 		msg = ((countText  > 0)?(msg + "\t"+String.valueOf(countText)  + " text note(s)\n"):msg);
 		msg = ((countVideo > 0)?(msg + "\t"+String.valueOf(countVideo) + " video note(s)\n"):msg);
 		msg = ((countImages > 0)?(msg + "\t"+String.valueOf(countImages) + " image note(s)\n"):msg);
+		msg = msg + "\n";
+		
+		if(albumId.isEmpty())
+		{
+			msg = msg + "The Facebook album >" + _data._topNodeName + "< will be created.\n"; 
+		}
+		else
+		{
+			msg = msg + "Note will be exported to Facebook album >" + _data._topNodeName + "<.\n"; 
+		}
+		
 		msg = msg + "\nStart Export?";
 		
-    	AlertDialog.Builder builder = new AlertDialog.Builder(context);
+    	AlertDialog.Builder builder = new AlertDialog.Builder(_context);
 	    builder.setMessage(msg);
 	    builder.setCancelable(true);
 	    
 	    builder.setPositiveButton("Export", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-            	startExport();
+            	// It is not possible to delete an album so we create it if it does not 
+            	// exist and use it, otherwise.
+            	if(albumId.isEmpty())
+            	{
+            		createAlbum();
+            	}
+            	else
+            	{
+            		startExport();
+            	}
             }
         });
 	    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -289,7 +320,58 @@ public class clsExportToFacebook extends Fragment {
 	    AlertDialog dialog = builder.create();
 	    dialog.show();
 	}
+	
+	private void requestCreateAlbum()
+	{
+		Bundle params = new Bundle();
+		params.putString("fields", "id,name");
 
+		new Request(Session.getActiveSession(), "/me/albums", params, HttpMethod.GET, 
+				new Request.Callback() {
+					
+					@Override
+					public void onCompleted(Response response) {
+//						Log.d(">>>FBresp", response.toString());
+						FacebookRequestError fbError = response.getError();
+
+						if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+						{
+							GraphObject responseGraphObject = response.getGraphObject();
+							JSONObject json = responseGraphObject.getInnerJSONObject();
+
+							String id;
+							String name;
+
+							JSONArray jArray = null;
+				           
+							try {
+								jArray = json.getJSONArray("data");
+								for(int i =0;i<jArray.length();i++){
+									id = jArray.getJSONObject(i).getString("id");
+									name = jArray.getJSONObject(i).getString("name");
+
+									if(0 == name.compareTo(_data._topNodeName))
+									{
+										albumId = id;
+									}
+								}
+								
+								requestUserConfirmationAndStart();
+								
+							} catch (JSONException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+						}
+					}
+				}).executeAsync();
+	}
+	
+	private void createAlbum()
+	{
+		
+	}
+	
 //	private void export()
 //	{
 //		// Processing: Act on each element of list and all children of each list
@@ -374,7 +456,7 @@ public class clsExportToFacebook extends Fragment {
 				break;
 			
 			case clsTreeview.TEXT_RESOURCE:
-				exportComment(getFbIdOfParent(node), node, node.strName);
+				exportComment(getFbIdOfParent(node), node, node.strName, false);
 
 				//Toast.makeText(_context, "clsExportToFacebook:TEXT_RESOURCE not implemented", Toast.LENGTH_SHORT).show();
 				break;
@@ -392,7 +474,7 @@ public class clsExportToFacebook extends Fragment {
 	
 	private void exportImage(ExportInputContainer node, String parentID, String file)
 	{
-		String target;
+		String target = new String();
 		
 		//clsTreeNode _node = node;
 
@@ -412,19 +494,49 @@ public class clsExportToFacebook extends Fragment {
 			params.putString("caption", node.strName);
 			params.putByteArray("picture", data);
 			
-			target = "/photos";
+			// Upload to album
+			if(albumId.isEmpty()) // should never happen
+			{
+				target = "/photos";
+			}
+			else
+			{
+				target = "/" + albumId + "/photos";
+			}
+
 		}
 		else
 		{
-			Log.d(">>", "PhotoComment");
-			params.putString("message", node.strName);
-//			params.putByteArray("source", data);
-			params.putParcelable("source", bi);
-			// source
-						
-			target = "/" + parentID + "/comments";
-			Log.d(">>", "target: " + target);
+			// Upload to album
+			if(albumId.isEmpty()) // should never happen
+			{
+				
+			}
+			else
+			{
+				if(node.level > 0)
+				{
+					Log.d(">>TODO", "pictures on sublevel ignored");
+					// TODO That does not work because image need to be encoded as
+					// multipart/form-encoded
+//					Log.d(">>", "PhotoComment");
+//					params.putString("message", node.strName);
+//					params.putParcelable("source", bi);
+//					// source
+//								
+//					target = "/" + parentID + "/comments";
+				}
+				else
+				{
+					params.putString("caption", node.strName);
+					params.putByteArray("picture", data);
+					
+					target = parentID + "/photos";
+					
+				}
+			}
 		}
+		Log.d(">>img", "target: " + target);
 
 		// test test 
 //		textNodeExportResult(true, "42", node);
@@ -433,7 +545,7 @@ public class clsExportToFacebook extends Fragment {
 			.executeAsync();
 	}
 	
-	private void exportComment(String parentID, ExportInputContainer node, String message)
+	private void exportComment(String parentID, ExportInputContainer node, String message, boolean isAnnotation)
 	{
 		String target;
 
@@ -442,12 +554,29 @@ public class clsExportToFacebook extends Fragment {
 
 		if(parentID.isEmpty())
 		{
-			target = "/feed";
+			// TODO add comments to new photoalbum
+			if(albumId.isEmpty()) // should never happen
+			{
+				target = "/feed";
+			}
+			else
+			{
+				target = "/" + albumId + "/comments";
+			}
 		}
 		else
 		{
-			target = "/" + parentID + "/comments";
+			if(isAnnotation)
+			{
+				target = "/" + parentID + "/comments";
+			}
+			else
+			{
+				target = "/" + parentID + "/comments";
+				
+			}
 		}
+		Log.d(">>cmt", "target: " + target);
 
 // test test 
 //		textNodeExportResult(true, "23", node);

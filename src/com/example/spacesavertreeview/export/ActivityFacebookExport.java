@@ -94,14 +94,17 @@ Log.d(">>>call", "<<<");
 				  }).executeAsync();
 				  
 				  // Start export if the necessary permissions are granted, otherwise request permissions first.
-				  if(session.isPermissionGranted("publish_actions"))
+				  // publish_actions is needed to upload content to FB
+				  // user_photos is used to request information about the photo albums
+				  if(session.isPermissionGranted("publish_actions") &&
+				     session.isPermissionGranted("user_photos"))
 				  {
 					  mainFragment.export(objContext, exportData);
 				  }
 				  else
 				  {
 					  Session.NewPermissionsRequest newPermissionsRequest = new Session
-						      .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions"));
+						      .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions", "user_photos"));
 					  session.requestNewPublishPermissions(newPermissionsRequest);
 				  }
 			  }

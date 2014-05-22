@@ -625,7 +625,8 @@ public class ActivityExplorerStartup extends ListActivity {
         		else
         		{
             		clsExportData data = new clsExportData(objNoteRepository.objRootNodes, 
-            												fileTreeNodesDir.getAbsolutePath());
+            												fileTreeNodesDir.getAbsolutePath(),
+            												objSelectedTreeNodes.get(0).getName());
 
             		clsMainExport export = new clsMainExport(objContext);
             		export.export(clsMainExport.EXPORT_DEST.TO_FACEBOOK, data);
