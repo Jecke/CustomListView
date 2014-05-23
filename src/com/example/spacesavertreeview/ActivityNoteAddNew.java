@@ -34,6 +34,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView.ScaleType;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -179,14 +180,40 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			}
 		}
 
+		// Hide items when in readonly mode
 		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
+		if (boolIsReadOnly) {
+			rg.setVisibility(View.INVISIBLE);
+		}
+		
+		RelativeLayout rl = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
+		if (boolIsReadOnly) {
+			rl.setVisibility(View.INVISIBLE);
+		}
+		
+		LinearLayout ll = (LinearLayout)findViewById(R.id.my_image_button);
+		if (boolIsReadOnly) {
+			ll.setVisibility(View.INVISIBLE);
+		}
+		
+		TextView tv = (TextView)findViewById(R.id.textViewURLNote);
+		if (boolIsReadOnly) {
+			tv.setVisibility(View.INVISIBLE);
+		}
+		
 		
 		//urlText = (TextView)findViewById(R.id.textViewURLNote);
 		
 		// set description field
 		EditText objEditText = (EditText)findViewById(R.id.editTextNoteName);
 		if (boolIsReadOnly) {
-			objEditText.setText(strDescription + " - Comment by " + strTreeNodeOwnername);
+			strDescription = strDescription.trim();
+			if(clsUtils.IsLastCharacterFullstop(strDescription)) {
+				objEditText.setText(strDescription + " Comment by " + strTreeNodeOwnername);
+			} else {
+				objEditText.setText(strDescription + ". Comment by " + strTreeNodeOwnername);
+			}
+			
 		} else {
 			objEditText.setText(strDescription);
 		}

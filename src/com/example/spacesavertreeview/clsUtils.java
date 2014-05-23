@@ -722,5 +722,13 @@ public class clsUtils {
 		}
 		return Integer.parseInt(strMaxIndentValue);
 	}
+
+	public static boolean IsLastCharacterFullstop(String strVal) {
+
+		if (strVal.charAt(strVal.length()-1) == '.') {
+			return true;
+		}
+		return false;
+	}
 }
 
