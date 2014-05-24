@@ -623,7 +623,7 @@ public class ActivityNoteStartup extends ListActivity {
         	 RefreshListView();
         	 return true;
          case R.id.actionSendToMail:
-        	 objExportToMail = new clsExportToMail(this, objNoteTreeview, objMessaging);
+        	 objExportToMail = new clsExportToMail(this, objNoteTreeview, objMessaging, objGroupMembers);
         	 objExportToMail.Execute();
         	 return true;
          case R.id.actionMoveDown:

@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import android.app.Activity;
+
 import com.example.spacesavertreeview.R;
 import com.example.spacesavertreeview.clsTreeview;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
@@ -13,6 +14,7 @@ import com.example.spacesavertreeview.clsUtils;
 import com.example.spacesavertreeview.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
 import com.example.spacesavertreeview.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageCommand;
 import com.example.spacesavertreeview.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
+import com.example.spacesavertreeview.sharing.clsGroupMembers;
 import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageUpDownloadAsyncTask;
@@ -27,13 +29,15 @@ public class clsExportToMail {
 	private int intLevelAmount;
 	private ArrayList<clsImageLoadData> objImageLoadDatas;
 	private clsImageLoadData objImageLoadData;
+	private clsGroupMembers objGroupMembers;
 	
 	
 	
-	public clsExportToMail(Activity objActivity, clsTreeview objTreeview, clsMessaging objMessaging) {
+	public clsExportToMail(Activity objActivity, clsTreeview objTreeview, clsMessaging objMessaging, clsGroupMembers objGroupMembers) {
 		this.objTreeview = objTreeview;
 		this.objActivity = objActivity;
 		this.objMessaging = objMessaging;
+		this.objGroupMembers=objGroupMembers;
 	}
 	
 	public void Execute() {
@@ -57,7 +61,7 @@ public class clsExportToMail {
 		else {
 			strServerUrl =  clsMessaging.SERVER_URL_AZURE;
 		}
-		return strServerUrl + "/TreeNotesSave/Pages/" + objTreeview.getRepository().uuidRepository.toString()+ ".html";
+		return strServerUrl + "/Views/Pages/Messages/" + objTreeview.getRepository().uuidRepository.toString()+ ".html";
 	}
 	
 	public void GenerateWebPageHtml() {
@@ -109,6 +113,7 @@ public class clsExportToMail {
 		clsExportNoteAsWebPageCommand objCommand = new clsExportNoteAsWebPageCommand();
 		objCommand.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
 		objCommand.strWebPageHtml = strWebPageHtml;
+		objCommand.strSenderName = objGroupMembers.GetRegisteredUser().strUserName;
 		clsExportNoteAsWebPageResponse objResponse = new clsExportNoteAsWebPageResponse();
 		clsMyExportNoteAsWebPageAsyncTask objAsyncTask = new clsMyExportNoteAsWebPageAsyncTask(objActivity, url,objCommand, objResponse);
 		objAsyncTask.SetOnWebPagePostedListener(new clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener() {			
@@ -192,9 +197,9 @@ public class clsExportToMail {
 				(objTreeNode.resourceId == clsTreeview.ANNOTATION_RESOURCE) ||
 				(objTreeNode.resourceId == clsTreeview.WEB_RESOURCE)){
 			if (objTreeNode.annotation != null) {
-				strImageUrl = "../Images/" + objTreeNode.guidTreeNode + "_annotate.jpg";
+				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_annotate.jpg";
 			} else {
-				strImageUrl = "../Images/" + objTreeNode.guidTreeNode + "_full.jpg";
+				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_full.jpg";
 			}	
 		}
 				
@@ -215,9 +220,9 @@ public class clsExportToMail {
 		if(objTreeview.getRepository().IsCheckList()) {
 			strRowHtml += "<td>";
 			if (objTreeNode.boolIsChecked) {
-				strRowHtml += "<img src='./images/cb_chk_black.png'>";
+				strRowHtml += "<img src='../images/cb_chk_black.png'>";
 			} else {
-				strRowHtml += "<img src='./images/cb_unchk_black.png'>";
+				strRowHtml += "<img src='../images/cb_unchk_black.png'>";
 			}			
 			strRowHtml += "</td>";
 		}
@@ -226,7 +231,7 @@ public class clsExportToMail {
 			if (intCol < intLevel-1) {
 				strRowHtml += "<td></td>";
 			} else if (intCol == intLevel-1) {
-				strRowHtml += "<td><img src='./images/empty.gif'></td>";
+				strRowHtml += "<td><img src='../images/empty.gif'></td>";
 			} else if (intCol == intLevel) {
 				int intColSpan = intLevelAmount - intCol;
 				strRowHtml += "<td width='100%' colspan='" + intColSpan + "'>" + objTreeNode.getName() + "</td>";

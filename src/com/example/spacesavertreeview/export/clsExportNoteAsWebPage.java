@@ -21,6 +21,7 @@ public class clsExportNoteAsWebPage {
 	public static class clsExportNoteAsWebPageCommand {
 		public String strNoteUuid;
 		public String strWebPageHtml;
+		public String strSenderName;
 	}
 
 	// Output from async task
