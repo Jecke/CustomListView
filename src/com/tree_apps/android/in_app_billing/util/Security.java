@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.tree_apps.android.inter_app_billing.util;
+package com.tree_apps.android.in_app_billing.util;
 
 import android.text.TextUtils;
 import android.util.Log;
@@ -21,6 +21,7 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.example.spacesavertreeview.BuildConfig;
 
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -56,14 +57,31 @@ public class Security {
      * @param signature the signature for the data, signed with the private key
      */
     public static boolean verifyPurchase(String base64PublicKey, String signedData, String signature) {
-        if (TextUtils.isEmpty(signedData) || TextUtils.isEmpty(base64PublicKey) ||
-                TextUtils.isEmpty(signature)) {
-            Log.e(TAG, "Purchase verification failed: missing data.");
-            return false;
-        }
+//        if (TextUtils.isEmpty(signedData) || TextUtils.isEmpty(base64PublicKey) ||
+//                TextUtils.isEmpty(signature)) {
+//            Log.e(TAG, "Purchase verification failed: missing data.");
+//            return false;
+//        }
+//
+//        PublicKey key = Security.generatePublicKey(base64PublicKey);
+//        return Security.verify(key, signedData, signature);
+    	
+    	// HB: Below is temporary code based on response: http://stackoverflow.com/questions/19732025/android-in-app-billing-purchase-verification-failed
+    	 if (signedData == null) {
+             Log.e(TAG, "data is null");
+             return false;
+         }
 
-        PublicKey key = Security.generatePublicKey(base64PublicKey);
-        return Security.verify(key, signedData, signature);
+         boolean verified = false;
+         if (!TextUtils.isEmpty(signature)) {
+             PublicKey key = Security.generatePublicKey(base64PublicKey);
+             verified = Security.verify(key, signedData, signature);
+             if (!verified) {
+                 Log.w(TAG, "signature does not match data.");
+                 return false;
+             }
+         }
+         return true;
     }
 
     /**

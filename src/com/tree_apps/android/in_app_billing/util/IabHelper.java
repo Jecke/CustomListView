@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.tree_apps.android.inter_app_billing.util;
+package com.tree_apps.android.in_app_billing.util;
 
 import android.app.Activity;
 import android.app.PendingIntent;

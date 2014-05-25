@@ -50,6 +50,10 @@ import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscription
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions.clsSubcriptionsIntentData;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.tree_apps.android.in_app_billing.util.IabHelper;
+import com.tree_apps.android.in_app_billing.util.IabResult;
+import com.tree_apps.android.in_app_billing.util.Inventory;
+import com.tree_apps.android.in_app_billing.util.Purchase;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -72,6 +76,7 @@ import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -127,6 +132,27 @@ public class ActivityExplorerStartup extends ListActivity {
 	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
 	clsDownloadImageFileAsyncTask objMyDownloadImageFileAsyncTask;
 	static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
+	
+	// Billing data
+	// To be persisted
+	public static class clsIabLocalData {
+		boolean boolIsAdsDisabledA; // True to be without adverts
+		boolean boolIsAdsDisabledB; // False to be without adverts
+	}
+	private clsIabLocalData objIabLocalData;
+	
+	// Not to be persisted
+	static final String base64EncodedPublicKeyPartScrambled ="IBIIMjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAll/DlC6c6lQ/7CZEkxRpW0WlIMcKENjbFKO+VzDY8gXkRr7q+BOqSETVdod1pcp50hZC+PsMgGK+anc4afbJcDe3q8U12vMieFZLYV1NgYvgBxqPeUzSIx2qmGGoR6eR8aqIFVGCvDHxbHOMs/W8OHihhb7WSgqX7Khm/KTmY5FFY0wXmGdYr3D9TON6g5ZdK/vo2e73PM2EHKBex0oZG8eKdCwwSZW3K2S0sE2NvwDqt0LyiNAHQH8xwLwtf2dw1z8eyYAtDaSitHtv3o0emWC7U6B9W/keahmK4N5+n+CTNksMt7mPEgZ+Kqi9VnVhBr4PX7sznICF589xVJlbzQIDAQAB";
+	static final String TAG = "TreeNotesIab";
+	static final String SKU_ADVERTS_REMOVED = "android.test.purchased"; 	// adverts_removed OR 
+																			// android.test.purchased OR 
+																			// android.test.canceled OR
+																			// android.test.refunded
+																			// android.test.item_unavailable
+	static final int RC_REQUEST = 10001; // (arbitrary) request code for the purchase flow	
+    IabHelper mHelper; // The helper object
+	
+	// End of billing data
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -200,6 +226,9 @@ public class ActivityExplorerStartup extends ListActivity {
 					getResources().getString(R.string.pref_default_root_folder_name));
 			editor.commit();
 		}
+		
+		SetupInAppBilling();
+
 
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
 		if (savedInstanceState == null) {
@@ -209,6 +238,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		}
 
 	}
+
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
@@ -298,7 +328,14 @@ public class ActivityExplorerStartup extends ListActivity {
 		// TODO Auto-generated method stub
 		SaveFile();
 		super.onDestroy();
+		// very important:
+        Log.d(TAG, "Destroying helper.");
+        if (mHelper != null) {
+            mHelper.dispose();
+            mHelper = null;
+        }
 	}
+	
 
 	@Override
 	protected void onStart() {
@@ -353,8 +390,12 @@ public class ActivityExplorerStartup extends ListActivity {
 		fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
 		objMessaging.LoadFile(this);
 		objContext = this;
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
+		objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
 		clsUtils.CustomLog("ActivityExplorerStartup LoadFile");
 	}
+	
+	
 
 	private void SaveFile() {
 		if (boolDoNotSaveFile)
@@ -362,9 +403,11 @@ public class ActivityExplorerStartup extends ListActivity {
 		objExplorerTreeview.SaveFile();
 		objGroupMembers.SaveFile();
 		objMessaging.SaveFile(this);
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
+		clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
 		clsUtils.CustomLog("ActivityExplorerStartup SaveFile");
 	}
-
+	
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// TODO Auto-generated method stub
 		Intent intent;
@@ -1020,88 +1063,9 @@ public class ActivityExplorerStartup extends ListActivity {
 			boolDoNotSaveFile = true;
 			finish();
 			return true;
-		case R.id.actionImageUploadTest:
-			clsUploadImageFileCommandMsg objCommand = objMessaging.new clsUploadImageFileCommandMsg();
-			objCommand.strImageUuid = "f3e902a5-6499-411d-9280-b2eafd0a8c6b";
-			objCommand.strFileExtentionWithoutDot ="jpg";
-			objCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/f3e902a5-6499-411d-9280-b2eafd0a8c6b.jpg";
-			clsUploadImageFileResponseMsg objResponse = objMessaging.new clsUploadImageFileResponseMsg();
-			final boolean boolDisplayProgress = true;
-			class clsMyUploadImageFileAsyncTask extends clsUploadImageFileAsyncTask {
-
-				public clsMyUploadImageFileAsyncTask(Activity objActivity, boolean boolDisplayProgress, String strUrl,
-						clsUploadImageFileCommandMsg objCommand, clsUploadImageFileResponseMsg objResponse) {
-					super(objActivity, boolDisplayProgress, strUrl, objCommand, objResponse);
-					// TODO Auto-generated constructor stub
-				}
-				
-				
-				@Override
-				protected void onPostExecute(clsUploadImageFileResponseMsg objResponse) {
-					// TODO Auto-generated method stub
-					super.onPostExecute(objResponse);
-					if (objResponse.intErrorCode == clsMessaging.ERROR_NONE) {
-							Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
-						} else {
-							Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
-						}
-				}
-			}
-			String strServerUrl;
-			if(objMessaging.objRepository.boolIsServerIisExpress) {
-				strServerUrl =  clsMessaging.SERVER_URL_IIS_EXPRESS;
-			}
-			else {
-				strServerUrl =  clsMessaging.SERVER_URL_AZURE;
-			}
-			String strUrl = strServerUrl + getResources().getString(R.string.url_upload_image_file);
-			objMyUploadImageFileAsyncTask = new clsMyUploadImageFileAsyncTask(this, boolDisplayProgress, strUrl, objCommand, objResponse);
-			objMyUploadImageFileAsyncTask.execute("");
+		case R.id.actionConsumePurchases:
+			mHelper.queryInventoryAsync(mGotInventoryForReversalListener);
 			return true;	
-	
-		case R.id.actionImageDownloadTest:
-			clsDownloadImageFileCommandMsg objDownloadCommand = objMessaging.new clsDownloadImageFileCommandMsg();
-			objDownloadCommand.strImageUuid = "BarCode";
-			objDownloadCommand.strFileExtentionWithoutDot ="jpg";
-			objDownloadCommand.strImageLocalFullPathName = "/storage/emulated/0/treenotes_user_1/f3e902a5-6499-411d-9280-b2eafd0a8c6b.jpg";
-			clsDownloadImageFileResponseMsg objDownloadResponse = objMessaging.new clsDownloadImageFileResponseMsg();
-			final boolean boolDisplayDownloadProgress = true;
-			class clsMyDownloadImageFileAsyncTask extends clsDownloadImageFileAsyncTask {
-
-				public clsMyDownloadImageFileAsyncTask(Activity objActivity, boolean boolDisplayProgress, String strUrl,
-						clsDownloadImageFileCommandMsg objCommand, clsDownloadImageFileResponseMsg objResponse) {
-					super(objActivity, boolDisplayProgress, strUrl, objCommand, objResponse);
-					// TODO Auto-generated constructor stub
-				}
-				
-				
-				@Override
-				protected void onPostExecute(clsDownloadImageFileResponseMsg objResponse) {
-					// TODO Auto-generated method stub
-					super.onPostExecute(objResponse);
-					if (objResponse.intErrorCode == clsMessaging.ERROR_NONE) {
-						Toast.makeText(objContext, "File successfully transferred", Toast.LENGTH_SHORT).show();
-					} else {
-						Toast.makeText(objContext, "File unsuccessfully transferred. " + objResponse.strErrorMessage, Toast.LENGTH_SHORT).show();
-					}
-				}
-			}
-
-			if(objMessaging.objRepository.boolIsServerIisExpress) {
-				strServerUrl =  clsMessaging.SERVER_URL_IIS_EXPRESS;
-			}
-			else {
-				strServerUrl =  clsMessaging.SERVER_URL_AZURE;
-			}
-			strUrl = strServerUrl + getResources().getString(R.string.url_download_image_file);
-			objMyDownloadImageFileAsyncTask = new clsMyDownloadImageFileAsyncTask(this, boolDisplayDownloadProgress, strUrl, objDownloadCommand, objDownloadResponse);
-			objMyDownloadImageFileAsyncTask.execute("");
-			return true;
-		case R.id.actionImageUpDownloadTest:
-			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(this, objMessaging, true,
-					objExplorerTreeview.getRepository().objImageLoadDatas);
-			objImageUpDownloadAsyncTask.execute();
-			return true;
 		case R.id.actionClearWebServiceRepository:
 			builder = new AlertDialog.Builder(this);
 			builder.setMessage("Are you sure you weant to clear the webservice repository?");
@@ -1978,5 +1942,190 @@ public class ActivityExplorerStartup extends ListActivity {
 		}
 	}
 
+	//------------------------------ In App Billing ------------------------------
+	 public void SetupInAppBilling() {
+
+
+	        /* base64EncodedPublicKey should be YOUR APPLICATION'S PUBLIC KEY
+	         * (that you got from the Google Play developer console). This is not your
+	         * developer public key, it's the *app-specific* public key.
+	         *
+	         * Instead of just storing the entire literal string here embedded in the
+	         * program,  construct the key at runtime from pieces or
+	         * use bit manipulation (for example, XOR with some other string) to hide
+	         * the actual key.  The key itself is not secret information, but we don't
+	         * want to make it easy for an attacker to replace the public key with one
+	         * of their own and then fake messages from the server.
+	         */
+
+	        // Create the helper, passing it our context and the public key to verify signatures with
+	        Log.d(TAG, "Creating IAB helper.");
+	        mHelper = new IabHelper(this, clsUtils.Unscramble(base64EncodedPublicKeyPartScrambled));
+
+	        // enable debug logging (for a production application, you should set this to false).
+	        mHelper.enableDebugLogging(true);
+
+	        // Start setup. This is asynchronous and the specified listener
+	        // will be called once setup completes.
+	        Log.d(TAG, "Starting setup.");
+	        mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+	            public void onIabSetupFinished(IabResult result) {
+	                Log.d(TAG, "Setup finished.");
+
+	                if (!result.isSuccess()) {
+	                    // There was a problem.
+	                    clsUtils.MessageBox(objContext, "Problem setting up in-app billing: " + result, true);
+	                    return;
+	                }
+
+	                // Have we been disposed of in the meantime? If so, quit.
+	                if (mHelper == null) return;
+
+	                // IAB is fully set up. Now, let's get an inventory of stuff we own.
+	                Log.d(TAG, "Setup successful. Querying inventory.");
+	                mHelper.queryInventoryAsync(mGotInventoryListener);
+	            }
+	        });
+	    }
+	 
+	    // Listener that's called when we finish querying the items and subscriptions we own
+	    IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
+	        public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
+	            Log.d(TAG, "Query inventory finished.");
+
+	            // Have we been disposed of in the meantime? If so, quit.
+	            if (mHelper == null) return;
+	            
+	            // Is it a failure?
+	            if (result.isFailure()) {
+	            	 clsUtils.MessageBox(objContext, "Failed to query inventory: " + result,true );
+	                return;
+	            }
+
+	            Log.d(TAG, "Query inventory was successful.");
+
+	            /*
+	             * Check for items we own. Notice that for each purchase, we check
+	             * the developer payload to see if it's correct! See
+	             * verifyDeveloperPayload().
+	             */
+
+	            // Do we have the premium upgrade?
+	            Purchase objAdvertsDisabledPurchase = inventory.getPurchase(SKU_ADVERTS_REMOVED);
+	            boolean boolIsAdsDisabled = (objAdvertsDisabledPurchase != null && verifyDeveloperPayload(objAdvertsDisabledPurchase));
+	            clsIabLocalData objIabLocalData = new clsIabLocalData();
+	            objIabLocalData.boolIsAdsDisabledA = boolIsAdsDisabled;
+	            objIabLocalData.boolIsAdsDisabledB = !boolIsAdsDisabled;
+	            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
+	            clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
+	            
+	            Log.d(TAG, "User is " + (boolIsAdsDisabled ? "WITHOUT ADVERTS" : "WITH_ADVERTS"));
+
+	            setWaitScreen(false);
+	            Log.d(TAG, "Initial inventory query finished; enabling main UI.");
+	        }
+	    };
+	    
+	 // Listener that's called when we finish querying the items and subscriptions we own
+	    IabHelper.QueryInventoryFinishedListener mGotInventoryForReversalListener = new IabHelper.QueryInventoryFinishedListener() {
+	        public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
+	            Log.d(TAG, "Query inventory finished.");
+
+	            // Have we been disposed of in the meantime? If so, quit.
+	            if (mHelper == null) return;
+	            
+	            // Is it a failure?
+	            if (result.isFailure()) {
+	            	 clsUtils.MessageBox(objContext, "Failed to query inventory: " + result,true );
+	                return;
+	            }
+
+	            Log.d(TAG, "Query inventory was successful.");
+
+	            if (inventory.hasPurchase(SKU_ADVERTS_REMOVED)) {
+	                mHelper.consumeAsync(inventory.getPurchase(SKU_ADVERTS_REMOVED), mConsumeForReversalFinishedListener);
+	            }
+
+	            setWaitScreen(false);
+	            Log.d(TAG, "Inventory reversal completed");
+	        }
+	    };
+	    
+	 // Called when consumption is complete
+	    IabHelper.OnConsumeFinishedListener mConsumeForReversalFinishedListener = new IabHelper.OnConsumeFinishedListener() {
+	        public void onConsumeFinished(Purchase purchase, IabResult result) {
+	            Log.d(ActivityExplorerStartup.TAG, "Consumption finished. Purchase: " + purchase + ", result: " + result);
+
+	            // if we were disposed of in the meantime, quit.
+	            if (mHelper == null) return;
+
+	            // We know this is the "remove_adverts" sku because it's the only one we consume,
+	            // so we don't check which sku was consumed. If you have more than one
+	            // sku, you probably should check...
+	            if (result.isSuccess()) {
+	                // successfully consumed, so we apply the effects of the item in our
+	                // world's logic, which in our case means updating the local values
+	            	SharedPreferences objSharedPreferences = PreferenceManager.getDefaultSharedPreferences(objContext);
+	            	objIabLocalData.boolIsAdsDisabledA = false;
+	            	objIabLocalData.boolIsAdsDisabledB = true;
+	                clsUtils.SaveIabLocalValues(objSharedPreferences, objIabLocalData);
+	                clsUtils.MessageBox(objContext, "You have successfully added adverts again", true);
+	            }
+	            else {
+	            	clsUtils.MessageBox(objContext, "Error while consuming: " + result, true);
+	            }
+	            setWaitScreen(false);
+	            Log.d(ActivityExplorerStartup.TAG, "End of consumption flow.");
+	        }
+	    };
+
+	    /** Verifies the developer payload of a purchase. */
+	    boolean verifyDeveloperPayload(Purchase p) {
+	        String payload = p.getDeveloperPayload();
+
+	        /*
+	         * TODO: verify that the developer payload of the purchase is correct. It will be
+	         * the same one that you sent when initiating the purchase.
+	         *
+	         * WARNING: Locally generating a random string when starting a purchase and
+	         * verifying it here might seem like a good approach, but this will fail in the
+	         * case where the user purchases an item on one device and then uses your app on
+	         * a different device, because on the other device you will not have access to the
+	         * random string you originally generated.
+	         *
+	         * So a good developer payload has these characteristics:
+	         *
+	         * 1. If two different users purchase an item, the payload is different between them,
+	         *    so that one user's purchase can't be replayed to another user.
+	         *
+	         * 2. The payload must be such that you can verify it even when the app wasn't the
+	         *    one who initiated the purchase flow (so that items purchased by the user on
+	         *    one device work on other devices owned by the user).
+	         *
+	         * Using your own server to store and verify developer payloads across app
+	         * installations is recommended.
+	         */
+
+	        return true;
+	    }
+	    
+	    // Enables or disables the "please wait" screen.
+ 		ProgressDialog objProgressDialog;
+
+ 		void setWaitScreen(boolean set) {
+ 			if (objProgressDialog == null) {
+ 				objProgressDialog = new ProgressDialog(this);
+ 				objProgressDialog.setMessage("Processing..., please wait.");
+ 			}
+ 			if (set) {
+ 				if (!objProgressDialog.isShowing()) {
+ 					objProgressDialog.show();
+ 				}
+ 			} else {
+ 				if (objProgressDialog.isShowing()) {
+ 					objProgressDialog.dismiss();
+ 				}
+ 			}
+ 		}
 
 }

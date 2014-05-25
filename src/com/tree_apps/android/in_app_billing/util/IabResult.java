@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.tree_apps.android.inter_app_billing.util;
+package com.tree_apps.android.in_app_billing.util;
 
 /**
  * Represents the result of an in-app billing operation.

@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+
 <PreferenceScreen
         xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory
-            android:title="Cat 1">
+   <PreferenceCategory
+            android:title="Buy">
 
-        <CheckBoxPreference
-                android:key="checkbox_preference"
-                android:title="Check 1"
-                android:summary="Check 1 Summary" />
-
+        <Preference 
+	      android:key="button_remove_advertisements" 
+	      android:title="Remove advertisements ..."></Preference>
+        
+        <Preference 
+	      android:key="button_allow_time_travel" 
+	      android:title="Allow time travel ..."></Preference>
+      
+        
     </PreferenceCategory>
 
     <PreferenceCategory
             android:title="Cat 2">
+      
 
         <EditTextPreference
                 android:key="edittext_preference"

@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.zip.CRC32;
 
+import com.example.spacesavertreeview.ActivityExplorerStartup.clsIabLocalData;
 import com.example.spacesavertreeview.clsTreeview.clsTreeNode;
 import com.example.spacesavertreeview.sharing.clsMessaging;
 import com.example.spacesavertreeview.sharing.clsMessaging.clsImageLoadData;
@@ -730,5 +731,39 @@ public class clsUtils {
 		}
 		return false;
 	}
+
+	public static String Unscramble(String base64EncodedPublicKeyScrambled) {
+		// For now, just flip the first "NUMBER" of bits around
+		final int NUMBER = 5;
+		String strBefore = base64EncodedPublicKeyScrambled.substring(0, NUMBER);
+		String strAfter = "";
+		for (int intCharPos = strBefore.length()-1; intCharPos >= 0; intCharPos-- ) {
+			strAfter += strBefore.charAt(intCharPos);
+		}
+		return base64EncodedPublicKeyScrambled.replaceFirst(strBefore, strAfter);
+	}
+	
+	public static clsIabLocalData LoadIabLocalValues(SharedPreferences sharedPref, clsIabLocalData objIabLocalData) {
+		if (objIabLocalData == null) {
+			objIabLocalData = new clsIabLocalData();
+		}
+		objIabLocalData.boolIsAdsDisabledA = sharedPref.getBoolean("treenotes_avalue", false);
+		objIabLocalData.boolIsAdsDisabledB = sharedPref.getBoolean("treenotes_bvalue", true);
+		return objIabLocalData;
+	}
+	
+	public static void SaveIabLocalValues(SharedPreferences sharedPref, clsIabLocalData objIabLocalData) {
+		/*
+         * WARNING: on a real application, we recommend you save data in a secure way to
+         * prevent tampering. For simplicity in this sample, we simply store the data using a
+         * SharedPreferences.
+         */
+		if (objIabLocalData == null) return;
+		SharedPreferences.Editor objEditor = sharedPref.edit();
+		objEditor.putBoolean("treenotes_avalue", objIabLocalData.boolIsAdsDisabledA);
+		objEditor.putBoolean("treenotes_bvalue", objIabLocalData.boolIsAdsDisabledB);
+		objEditor.commit();
+	}
+	
 }
 
