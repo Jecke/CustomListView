@@ -244,6 +244,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			AdRequest adRequest = new AdRequest.Builder()
 	        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
 	        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
+	        .addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
 	        .build();
 			adView.loadAd(adRequest);
 		} else {
@@ -259,11 +260,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		} else {
 			LoadFile();
 		}
-		
-		
-
 	}
-
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {

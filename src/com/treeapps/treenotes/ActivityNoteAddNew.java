@@ -19,9 +19,11 @@ import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.ActivityAllMembers.clsAllMembersListViewState;
 
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.app.Activity;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.DisplayMetrics;
@@ -104,6 +106,10 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	private File strImageFilename, strImageFilenameBackup;
 	private File strThumbnailFilename, strThumbnailFilenameBackup;
 	private File strFullFilename, strFullFilenameBackup;
+	
+	// If the user selects the camera to get a picture then the result must be handled differently
+	// than a picture from the gallery.
+	private Uri mPhotoUri;
 	
 	// interface from  implements clsResourceLoader.TaskCompletedInterface 
 	public void loadTaskComplete(Bitmap bm, Bitmap bmFull, Uri uri)
@@ -489,6 +495,10 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 					// create an intent to capture image by camera and add it to the array which
 					// gets later added to the chooser
 					cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+					mPhotoUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, 
+				            								new ContentValues());
+					cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mPhotoUri);
+					
 					intentArray[0] = cameraIntent;
 					
 					// create the app chooser and add the image intent to it
@@ -730,7 +740,19 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			switch (requestCode) {
 			case clsTreeview.IMAGE_RESOURCE:
 			case clsTreeview.VIDEO_RESOURCE:
-				origUri = data.getData();
+				
+				if(data == null)
+				{
+					// Image comes from camera. mPhotoUri has been provided to the camera intent
+					// earlier and points now to the image taken.
+					origUri = mPhotoUri;
+
+				}
+				else
+				{
+					origUri = data.getData();
+				}
+				
 				if(origUri != null)
 				{
 					resourcePath = origUri.toString();
