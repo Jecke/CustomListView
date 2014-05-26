@@ -9,12 +9,12 @@ import android.graphics.PointF;
 // The interface class which is used to exchange data between the main activity and the image annotation classes.
 public class clsAnnotationData {
 
-	public static final String DESCRIPTION   = "com.example.spacesavertreeview.imageannotation.description";
-	public static final String RESOURCE_PATH = "com.example.spacesavertreeview.imageannotation.resource_path";
-	public static final String TREENODE_UID  = "com.example.spacesavertreeview.imageannotation.treenode_uuid";
+	public static final String DESCRIPTION   = "com.treeapps.treenotes.imageannotation.description";
+	public static final String RESOURCE_PATH = "com.treeapps.treenotes.imageannotation.resource_path";
+	public static final String TREENODE_UID  = "com.treeapps.treenotes.imageannotation.treenode_uuid";
 	
-	public static final String DATA          = "com.example.spacesavertreeview.imageannotation.data";
-	public static final String CHANGED       = "com.example.spacesavertreeview.imageannotation.changed";
+	public static final String DATA          = "com.treeapps.treenotes.imageannotation.data";
+	public static final String CHANGED       = "com.treeapps.treenotes.imageannotation.changed";
 
 	public static final int INVALID = -1;
 	public static final int EDIT_ANNOTATION_TEXT = 0;

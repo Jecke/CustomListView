@@ -15,9 +15,12 @@ import java.util.UUID;
 
 
 
+
+
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.gson.reflect.TypeToken;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsIabLocalData;
 import com.treeapps.treenotes.clsTreeview.clsShareUser;
 import com.treeapps.treenotes.clsTreeview.clsSyncRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
@@ -57,21 +60,22 @@ import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class ActivityNoteStartup extends ListActivity {
 
 	// keys to share between activities via Intents
-	public static final String DESCRIPTION   = "com.example.spacesavertreeview.description";
-	public static final String RESOURCE_ID   = "com.example.spacesavertreeview.resource_id";
-	public static final String RESOURCE_PATH = "com.example.spacesavertreeview.resource_path";
-	public static final String TREENODE_URL = "com.example.spacesavertreeview.treenode_url";
-	public static final String TREENODE_UID = "com.example.spacesavertreeview.treenode_uuid";
-	public static final String TREENODE_OWNERNAME = "com.example.spacesavertreeview.treenode_ownername";
-	public static final String ANNOTATION_DATA_GSON = "com.example.spacesavertreeview.annotation_data";
-	public static final String READONLY = "com.example.spacesavertreeview.read_only";
-	public static final String USE_ANNOTATED_IMAGE = "com.example.spacesavertreeview.use_annotated_image";
-	public static final String ISDIRTY = "com.example.spacesavertreeview.is_dirty";
+	public static final String DESCRIPTION   = "com.treeapps.treenotes.description";
+	public static final String RESOURCE_ID   = "com.treeapps.treenotes.resource_id";
+	public static final String RESOURCE_PATH = "com.treeapps.treenotes.resource_path";
+	public static final String TREENODE_URL = "com.treeapps.treenotes.treenode_url";
+	public static final String TREENODE_UID = "com.treeapps.treenotes.treenode_uuid";
+	public static final String TREENODE_OWNERNAME = "com.treeapps.treenotes.treenode_ownername";
+	public static final String ANNOTATION_DATA_GSON = "com.treeapps.treenotes.annotation_data";
+	public static final String READONLY = "com.treeapps.treenotes.read_only";
+	public static final String USE_ANNOTATED_IMAGE = "com.treeapps.treenotes.use_annotated_image";
+	public static final String ISDIRTY = "com.treeapps.treenotes.is_dirty";
 
 	private static final int GET_DESCRIPTION_ADD_SAME_LEVEL = 0;
 	private static final int GET_DESCRIPTION_ADD_NEXT_LEVEL = 1;
@@ -105,6 +109,7 @@ public class ActivityNoteStartup extends ListActivity {
 	 ImageView myPreviewImageView;
 	 static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
 	 private clsExportToMail objExportToMail;
+	 private clsIabLocalData objIabLocalData;
 	 
 
 	 
@@ -164,13 +169,22 @@ public class ActivityNoteStartup extends ListActivity {
 	        getOverflowMenu(); 
 	        
 	        // AdMob
-			// Look up the AdView as a resource and load a request.
-			AdView adView = (AdView)this.findViewById(R.id.adViewNote);
-			AdRequest adRequest = new AdRequest.Builder()
-	        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-	        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
-	        .build();
-			adView.loadAd(adRequest);
+			// AdMob, only when advert removal has not been purchased
+			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
+			objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
+			if (!(objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB)) {
+				// Look up the AdView as a resource and load a request.
+				AdView adView = (AdView)this.findViewById(R.id.adViewNote);
+				AdRequest adRequest = new AdRequest.Builder()
+		        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+		        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
+		        .build();
+				adView.loadAd(adRequest);
+			} else {
+				RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.note_relative_layout);
+				View admobAds = (View) findViewById(R.id.adViewNote);
+				adscontainer.removeView(admobAds);
+			}
 			
 			// Session Management
 	        clsUtils.CustomLog("ActivityNoteStartup onCreate");

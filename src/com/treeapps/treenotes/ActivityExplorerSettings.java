@@ -26,6 +26,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class ActivityExplorerSettings extends PreferenceActivity {
@@ -181,17 +182,16 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 
 			// In-app billing
 			objProgressDialog = new ProgressDialog(objActivity);
-			SetupInAppBilling();
+			SetupInAppBilling(); // Also update UI
 			
 			// Check local Iab values
 			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objActivity);			
 			objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
-			boolean boolIsAdvertsRemoved = objIabLocalData.boolIsAdsDisabledA || (!objIabLocalData.boolIsAdsDisabledB);
+			boolean boolIsAdvertsRemoved = objIabLocalData.boolIsAdsDisabledA && (!objIabLocalData.boolIsAdsDisabledB);
 			
-			// Update UI
-			Preference pref = findPreference("button_remove_advertisements");
-			pref.setEnabled(!boolIsAdvertsRemoved);
-			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+			// Setup UI
+			Preference prefRemoveAds = findPreference("button_remove_advertisements");
+			prefRemoveAds.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 
 				@Override
 				public boolean onPreferenceClick(Preference preference) {
@@ -214,7 +214,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 				}
 			});
 
-			pref = findPreference("button_allow_time_travel");
+			Preference pref = findPreference("button_allow_time_travel");
 			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 
 				@Override
@@ -327,7 +327,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 	            clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
 	            
 				Preference pref = findPreference("button_remove_advertisements");
-				pref.setEnabled(true);
+				pref.setEnabled(!boolIsAdsDisabled);
 				
 				Log.d(ActivityExplorerStartup.TAG, "User is "
 						+ (boolIsAdsDisabled ? "WITHOUT ADVERTS" : "WITH_ADVERTS"));
@@ -389,9 +389,8 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 	                setWaitScreen(false);
 	                return;
 	            }
-
 	            Log.d(ActivityExplorerStartup.TAG, "Purchase successful.");
-
+	            
 	            if (purchase.getSku().equals(ActivityExplorerStartup.SKU_ADVERTS_REMOVED)) {
 	            	SharedPreferences objSharedPreferences = PreferenceManager.getDefaultSharedPreferences(objActivity);
 	            	objIabLocalData.boolIsAdsDisabledA = true;

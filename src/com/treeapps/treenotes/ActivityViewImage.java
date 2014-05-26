@@ -55,12 +55,12 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 		String strArrowDescription;
 	}
 
-	public static final String FILE_FULLFILENAME = "com.example.spacesavertreeview.strFileFullFilename";
-	public static final String URL               = "com.example.spacesavertreeview.strWebPageURL";
+	public static final String FILE_FULLFILENAME = "com.treeapps.treenotes.strFileFullFilename";
+	public static final String URL               = "com.treeapps.treenotes.strWebPageURL";
 
-	public static final String LISTVIEWSTATES_GSON = "com.example.spacesavertreeview.listviewstates_gson";
+	public static final String LISTVIEWSTATES_GSON = "com.treeapps.treenotes.listviewstates_gson";
 
-	public static final String DESCRIPTION = "com.example.spacesavertreeview.strDescription";
+	public static final String DESCRIPTION = "com.treeapps.treenotes.strDescription";
 
 	clsSession objSession = new clsSession();
 	Context context;

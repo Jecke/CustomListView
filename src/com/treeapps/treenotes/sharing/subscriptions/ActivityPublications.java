@@ -80,7 +80,7 @@ public class ActivityPublications extends ListActivity {
 		boolean boolIsChecked = false;
 	}
 
-	public static final String INTENT_DATA = "com.example.spacesavertreeview.sharing.subscriptions_intentdata";
+	public static final String INTENT_DATA = "com.treeapps.treenotes.sharing.subscriptions_intentdata";
 	private static final int SEARCH = 0;
 	
 	static Context objContext;

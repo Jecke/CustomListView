@@ -3,13 +3,13 @@
     <!-- These settings headers are only used on tablets. -->
 
     <header
-        android:fragment="com.example.spacesavertreeview.NoteSettingsActivity$GeneralPreferenceFragment"
+        android:fragment="com.treeapps.treenotes.ActivityNoteSettings$GeneralPreferenceFragment"
         android:title="@string/pref_header_general" />
     <header
-        android:fragment="com.example.spacesavertreeview.NoteSettingsActivity$NotificationPreferenceFragment"
+        android:fragment="com.treeapps.treenotes.ActivityNoteSettings$NotificationPreferenceFragment"
         android:title="@string/pref_header_notifications" />
     <header
-        android:fragment="com.example.spacesavertreeview.NoteSettingsActivity$DataSyncPreferenceFragment"
+        android:fragment="com.treeapps.treenotes.ActivityNoteSettings$DataSyncPreferenceFragment"
         android:title="@string/pref_header_data_sync" />
 
 </preference-headers>

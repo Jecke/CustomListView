@@ -42,8 +42,8 @@ public class ActivityGetUserForGroups extends ListActivity {
 	// Messaging
 	clsMessaging objMessaging = new clsMessaging();
 
-	public static final String WEBSERVER_URL = "com.example.spacesavertreeview.WEBSERVER_URL";
-	public static final String REGISTERED_USER_UUID = "com.example.spacesavertreeview.REGISTERED_USER_UUID";;
+	public static final String WEBSERVER_URL = "com.treeapps.treenotes.WEBSERVER_URL";
+	public static final String REGISTERED_USER_UUID = "com.treeapps.treenotes.REGISTERED_USER_UUID";;
 
 	public class clsGetUsersForGroupsListViewState {
 		clsMessaging.clsMsgUser objMsgUser;

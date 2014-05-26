@@ -37,10 +37,10 @@ import android.widget.TextView;
  */
 public class ActivityRegister extends Activity {
 
-    public static final String USERNAME = "com.example.spacesavertreeview.USERNAME";
-    public static final String USERUUID = "com.example.spacesavertreeview.USERUUID";
-    public static final String USER_EXISTS = "com.example.spacesavertreeview.USER_EXISTS";
-	public static final String WEBSERVER_URL = "com.example.spacesavertreeview.WEBSERVER_URL";
+    public static final String USERNAME = "com.treeapps.treenotes.USERNAME";
+    public static final String USERUUID = "com.treeapps.treenotes.USERUUID";
+    public static final String USER_EXISTS = "com.treeapps.treenotes.USER_EXISTS";
+	public static final String WEBSERVER_URL = "com.treeapps.treenotes.WEBSERVER_URL";
 
     /**
      * Keep track of the login task to ensure we can cancel it if requested.

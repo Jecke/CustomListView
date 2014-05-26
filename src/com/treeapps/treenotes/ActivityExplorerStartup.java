@@ -92,20 +92,20 @@ public class ActivityExplorerStartup extends ListActivity {
 	// This is startup activity. First activity the user sees
 
 	// keys to share between activities via Intents
-	public static final String DESCRIPTION = "com.example.spacesavertreeview.description";
-	public static final String RESOURCE_ID = "com.example.spacesavertreeview.resource_id";
-	public static final String RESOURCE_PATH = "com.example.spacesavertreeview.resource_path";
-	public static final String TREENODE_UID = "com.example.spacesavertreeview.treenode_uuid";
-	public static final String PATH = "com.example.spacesavertreeview.treenode_path";
-	public static final String NEW_FILE_PROMPT = "com.example.spacesavertreeview.new_file_prompt";
-	public static final String APP_PREFERENCE = "com.example.spacesavertreeview.app_preference";
-	public static final String IS_ICON_CREATED = "com.example.spacesavertreeview.is_icon_created";
-	public static final String SHORTCUT_ACTIVE = "com.example.spacesavertreeview.is_running_from_shortcut";
-	public static final String SHORTCUT_NOTE_UUID = "com.example.spacesavertreeview.shortcut_note_uuid";
-	public static final String TREENODE_NAME = "com.example.spacesavertreeview.treenote_name";
-	public static final String SHORTCUT_NAME = "com.example.spacesavertreeview.shortcut_name";
-	public static final String IS_SHORTCUT = "com.example.spacesavertreeview.is_shortcut";
-	public static final String IMAGE_LOAD_DATAS = "com.example.spacesavertreeview.image_load_datas";
+	public static final String DESCRIPTION = "com.treeapps.treenotes.description";
+	public static final String RESOURCE_ID = "com.treeapps.treenotes.resource_id";
+	public static final String RESOURCE_PATH = "com.treeapps.treenotes.resource_path";
+	public static final String TREENODE_UID = "com.treeapps.treenotes.treenode_uuid";
+	public static final String PATH = "com.treeapps.treenotes.treenode_path";
+	public static final String NEW_FILE_PROMPT = "com.treeapps.treenotes.new_file_prompt";
+	public static final String APP_PREFERENCE = "com.treeapps.treenotes.app_preference";
+	public static final String IS_ICON_CREATED = "com.treeapps.treenotes.is_icon_created";
+	public static final String SHORTCUT_ACTIVE = "com.treeapps.treenotes.is_running_from_shortcut";
+	public static final String SHORTCUT_NOTE_UUID = "com.treeapps.treenotes.shortcut_note_uuid";
+	public static final String TREENODE_NAME = "com.treeapps.treenotes.treenote_name";
+	public static final String SHORTCUT_NAME = "com.treeapps.treenotes.shortcut_name";
+	public static final String IS_SHORTCUT = "com.treeapps.treenotes.is_shortcut";
+	public static final String IMAGE_LOAD_DATAS = "com.treeapps.treenotes.image_load_datas";
 
 	public static final int GET_DESCRIPTION_ADD_SAME_LEVEL = 0;
 	public static final int GET_DESCRIPTION_ADD_NEXT_LEVEL = 1;
@@ -232,17 +232,25 @@ public class ActivityExplorerStartup extends ListActivity {
 			editor.commit();
 		}
 		
+
 		// In-app billing
 		SetupInAppBilling();
 		
-		// AdMob
-		// Look up the AdView as a resource and load a request.
-		AdView adView = (AdView)this.findViewById(R.id.adViewExplorer);
-		AdRequest adRequest = new AdRequest.Builder()
-        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
-        .build();
-		adView.loadAd(adRequest);
+		// AdMob, only when advert removal has not been purchased
+		objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
+		if (!(objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB)) {
+			// Look up the AdView as a resource and load a request.
+			AdView adView = (AdView)this.findViewById(R.id.adViewExplorer);
+			AdRequest adRequest = new AdRequest.Builder()
+	        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+	        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
+	        .build();
+			adView.loadAd(adRequest);
+		} else {
+			RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.explorer_relative_layout);
+			View admobAds = (View) findViewById(R.id.adViewExplorer);
+			adscontainer.removeView(admobAds);
+		}
 
 		// Session management
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
@@ -251,6 +259,8 @@ public class ActivityExplorerStartup extends ListActivity {
 		} else {
 			LoadFile();
 		}
+		
+		
 
 	}
 
@@ -1329,6 +1339,16 @@ public class ActivityExplorerStartup extends ListActivity {
 			case EDIT_SETTINGS:
 				SharedPreferences mySharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 				boolean my_checkbox_preference = mySharedPreferences.getBoolean("checkbox_preference", false);
+				
+				// Admob
+				objIabLocalData = clsUtils.LoadIabLocalValues(mySharedPreferences, objIabLocalData);
+				if (objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB) {
+					RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.explorer_relative_layout);
+					View admobAds = (View) adscontainer.findViewById(R.id.adViewExplorer);
+					if (admobAds != null) {
+						adscontainer.removeView(admobAds);				
+					}
+				}
 				break;
 
 			}

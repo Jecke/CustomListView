@@ -48,10 +48,10 @@ public class ActivitySubscriptionSearch  extends ListActivity {
 	
 	static Context objContext;
 	
-	public static final String SEARCH_RESULTS = "com.example.spacesavertreeview.sharing.subscriptions_searchresults";
-	public static final String AUTHOR_SEARCHTERM = "com.example.spacesavertreeview.sharing.subscriptions_searchresults_author_searchterm";
-	public static final String NOTENAME_SEARCHTERM = "com.example.spacesavertreeview.sharing.subscriptions_searchresults_notename_searchterm";
-	public static final String URL = "com.example.spacesavertreeview.sharing.subscriptions_searchresults_url";
+	public static final String SEARCH_RESULTS = "com.treeapps.treenotes.sharing.subscriptions_searchresults";
+	public static final String AUTHOR_SEARCHTERM = "com.treeapps.treenotes.sharing.subscriptions_searchresults_author_searchterm";
+	public static final String NOTENAME_SEARCHTERM = "com.treeapps.treenotes.sharing.subscriptions_searchresults_notename_searchterm";
+	public static final String URL = "com.treeapps.treenotes.sharing.subscriptions_searchresults_url";
 	
 	public static ArrayList<clsListViewStateSearch> objListViewStates = new ArrayList<clsListViewStateSearch>();
 	public static clsActivitySubscriptionSearchArrayAdapter objArrayAdapter;

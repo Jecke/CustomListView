@@ -14,9 +14,9 @@ import android.view.Menu;
 
 public class ActivityAllMembers extends ListActivity {
 
-	public static final String ACTION = "com.example.spacesavertreeview.sharing.action";
-	public static final String ACTION_CHOOSE_MEMBER = "com.example.spacesavertreeview.sharing.action_choose_member";
-	public static final String ACTION_CHOOSE_MEMBER_RESP_GSON = "com.example.spacesavertreeview.sharing.action_choose_member";
+	public static final String ACTION = "com.treeapps.treenotes.sharing.action";
+	public static final String ACTION_CHOOSE_MEMBER = "com.treeapps.treenotes.sharing.action_choose_member";
+	public static final String ACTION_CHOOSE_MEMBER_RESP_GSON = "com.treeapps.treenotes.sharing.action_choose_member";
 
 	
     public class clsAllMembersListViewState 

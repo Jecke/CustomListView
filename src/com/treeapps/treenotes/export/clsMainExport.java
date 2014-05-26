@@ -19,7 +19,7 @@ import android.widget.Toast;
 // The entry point to the export functionality
 public class clsMainExport {
 
-    public static final String EXPORT_DATA = "com.example.spacesavertreeview.export.DATA";
+    public static final String EXPORT_DATA = "com.treeapps.treenotes.export.DATA";
 	
 	public enum EXPORT_DEST
 	{

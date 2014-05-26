@@ -67,8 +67,6 @@
             android:name="com.treeapps.treenotes.ActivityFileChooser"
             android:label="Choose File"
             android:theme="@android:style/Theme.Holo" >
-            <action android:name="com.example.spacesavertreeview.FileChooser" />
-
             <category android:name="android.intent.category.DEFAULT" />
         </activity>
         <activity
@@ -107,10 +105,6 @@
             android:label="@string/title_activity_activity_all_members" >
         </activity>
         <activity
-            android:name="com.example.spacesavertreeview.Annotator.ActivityAnnotator"
-            android:label="@string/title_activity_activity_annotator" >
-        </activity>
-        <activity
             android:name="com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions"
             android:label="@string/title_activity_activity_subscriptions" >
         </activity>
@@ -118,9 +112,6 @@
             android:name="com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptionSearch"
             android:label="@string/title_activity_activity_subscription_search"
             android:parentActivityName="com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions" />
         </activity>
         <activity
             android:name="com.treeapps.treenotes.sharing.subscriptions.ActivityPublications"

@@ -56,8 +56,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	public static final int EDIT_ANNOTATION_IMAGE = 10;
 	public static final int EDIT_ANNOTATION_TEXT  = 11;
 	
-	public static final String WEB_VIEW_URL   = "com.example.spacesavertreeview.url";
-	public static final String WEB_VIEW_IMAGE = "com.example.spacesavertreeview.web_image";
+	public static final String WEB_VIEW_URL   = "com.treeapps.treenotes.url";
+	public static final String WEB_VIEW_IMAGE = "com.treeapps.treenotes.web_image";
 	
 	public class clsArrowsListViewState 
 	{

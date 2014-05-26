@@ -35,7 +35,7 @@ import android.widget.TextView;
 
 public class ActivitySearchUsersForGroups extends ListActivity {
 
-	public static final String WEBSERVER_URL = "com.example.spacesavertreeview.WEBSERVER_URL";
+	public static final String WEBSERVER_URL = "com.treeapps.treenotes.WEBSERVER_URL";
 	
 	// Messaging
     clsMessaging objMessaging = new clsMessaging();

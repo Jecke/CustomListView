@@ -39,12 +39,12 @@ import android.preference.PreferenceManager;
 
 public class ActivityGroupMembers extends ListActivity {
 
-	public static final String ACTION = "com.example.spacesavertreeview.ActivityExplorerStartup.action";
-	public static final String ACTION_MANAGE_GROUPS = "com.example.spacesavertreeview.ActivityExplorerStartup.action_manage_groups";
-	public static final String ACTION_CHOOSE_MEMBERS = "com.example.spacesavertreeview.ActivityExplorerStartup.action_choose_members";
-	public static final String CHOOSE_MEMBERS_RESULT_GSON = "com.example.spacesavertreeview.ActivityExplorerStartup.action_choose_members_result";
-	public static final String SHARE_SHARED_USERS = "com.example.spacesavertreeview.ActivityExplorerStartup.action_share_shared_users";
-	public static final String WEBSERVER_URL = "com.example.spacesavertreeview.WEBSERVER_URL";
+	public static final String ACTION = "com.treeapps.treenotes.ActivityExplorerStartup.action";
+	public static final String ACTION_MANAGE_GROUPS = "com.treeapps.treenotes.ActivityExplorerStartup.action_manage_groups";
+	public static final String ACTION_CHOOSE_MEMBERS = "com.treeapps.treenotes.ActivityExplorerStartup.action_choose_members";
+	public static final String CHOOSE_MEMBERS_RESULT_GSON = "com.treeapps.treenotes.ActivityExplorerStartup.action_choose_members_result";
+	public static final String SHARE_SHARED_USERS = "com.treeapps.treenotes.ActivityExplorerStartup.action_share_shared_users";
+	public static final String WEBSERVER_URL = "com.treeapps.treenotes.WEBSERVER_URL";
 	
 	
 	private static final int GET_MEMBERS_FROM_ALL = 0;
