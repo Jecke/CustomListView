@@ -45,7 +45,7 @@
              preferences.  If running in a large screen, they can be embedded
              inside of the overall preferences UI. -->
         <PreferenceScreen
-                android:fragment="com.example.spacesavertreeview.ActivitySettings$Prefs1FragmentInner"
+                android:fragment="com.treeapps.treenotes.ActivitySettings$Prefs1FragmentInner"
                 android:title="Pref21"
                 android:summary="Pref21 summary">
             <!-- Arbitrary key/value pairs can be included for fragment arguments -->

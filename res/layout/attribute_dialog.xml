@@ -36,7 +36,7 @@
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <!-- ImageView -->
-    <view class="com.example.spacesavertreeview.imageannotation.ActivityEditAnnotationImage$LineStyleImageView"
+    <view class="com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage$LineStyleImageView"
         android:id="@+id/imageViewLineStyle"
         android:layout_width="70dp"
         android:layout_height="30dp"
@@ -64,7 +64,7 @@
         android:text="@string/layout_linestyle_label"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-    <view class="com.example.spacesavertreeview.imageannotation.ActivityEditAnnotationImage$LineColorImageView"
+    <view class="com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage$LineColorImageView"
         android:id="@+id/imageViewLineColor"
         android:layout_width="70dp"
         android:layout_height="30dp"

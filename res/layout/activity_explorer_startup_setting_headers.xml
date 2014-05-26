@@ -2,12 +2,12 @@
 <preference-headers
         xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <header android:fragment="com.example.spacesavertreeview.ActivityExplorerSettings$Prefs1Fragment"
+    <header android:fragment="com.treeapps.treenotes.ActivityExplorerSettings$Prefs1Fragment"
             android:icon="@drawable/ic_action_settings_dark"
             android:title="General settings"
             android:summary="Some general settings for the application" />
 
-    <header android:fragment="com.example.spacesavertreeview.ActivityExplorerSettings$Prefs2Fragment"
+    <header android:fragment="com.treeapps.treenotes.ActivityExplorerSettings$Prefs2Fragment"
             android:icon="@drawable/ic_action_accounts"
             android:title="Purchases"
             android:summary="Enable additional functionality">
