@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.zip.CRC32;
 
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.treeapps.treenotes.ActivityExplorerStartup.clsIabLocalData;
