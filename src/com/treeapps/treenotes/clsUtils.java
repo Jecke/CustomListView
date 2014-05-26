@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.zip.CRC32;
 
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.treeapps.treenotes.ActivityExplorerStartup.clsIabLocalData;
@@ -734,14 +733,16 @@ public class clsUtils {
 	}
 
 	public static String Unscramble(String base64EncodedPublicKeyScrambled) {
-		// For now, just flip the first "NUMBER" of bits around
-		final int NUMBER = 5;
-		String strBefore = base64EncodedPublicKeyScrambled.substring(0, NUMBER);
-		String strAfter = "";
-		for (int intCharPos = strBefore.length()-1; intCharPos >= 0; intCharPos-- ) {
-			strAfter += strBefore.charAt(intCharPos);
-		}
-		return base64EncodedPublicKeyScrambled.replaceFirst(strBefore, strAfter);
+//		// For now, just flip the first "NUMBER" of bits around
+//		final int NUMBER = 5;
+//		String strBefore = base64EncodedPublicKeyScrambled.substring(0, NUMBER);
+//		String strAfter = "";
+//		for (int intCharPos = strBefore.length()-1; intCharPos >= 0; intCharPos-- ) {
+//			strAfter += strBefore.charAt(intCharPos);
+//		}
+//		return base64EncodedPublicKeyScrambled.replaceFirst(strBefore, strAfter);
+		// Do nothing for now
+		return base64EncodedPublicKeyScrambled;
 	}
 	
 	public static clsIabLocalData LoadIabLocalValues(SharedPreferences sharedPref, clsIabLocalData objIabLocalData) {
