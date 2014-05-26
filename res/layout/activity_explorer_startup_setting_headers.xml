@@ -9,7 +9,7 @@
 
     <header android:fragment="com.example.spacesavertreeview.ActivityExplorerSettings$Prefs2Fragment"
             android:icon="@drawable/ic_action_accounts"
-            android:title="Purchasing"
+            android:title="Purchases"
             android:summary="Enable additional functionality">
 	        <!-- Arbitrary key/value pairs can be included with a header as
 	             arguments to its fragment. -->

@@ -5,15 +5,15 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
    <PreferenceCategory
-            android:title="Buy">
+            android:title="Purchase">
 
         <Preference 
 	      android:key="button_remove_advertisements" 
-	      android:title="Remove advertisements ..."></Preference>
+	      android:title="Removal of advertisements ..."></Preference>
         
         <Preference 
 	      android:key="button_allow_time_travel" 
-	      android:title="Allow time travel ..."></Preference>
+	      android:title="Unlimited time travel ..."></Preference>
       
         
     </PreferenceCategory>

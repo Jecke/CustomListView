@@ -48,6 +48,9 @@ import com.example.spacesavertreeview.sharing.subscriptions.ActivityPublications
 import com.example.spacesavertreeview.sharing.subscriptions.ActivityPublications.clsSelectedNoteData;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions;
 import com.example.spacesavertreeview.sharing.subscriptions.ActivitySubscriptions.clsSubcriptionsIntentData;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.tree_apps.android.in_app_billing.util.IabHelper;
@@ -81,6 +84,7 @@ import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class ActivityExplorerStartup extends ListActivity {
@@ -151,6 +155,7 @@ public class ActivityExplorerStartup extends ListActivity {
 																			// android.test.item_unavailable
 	static final int RC_REQUEST = 10001; // (arbitrary) request code for the purchase flow	
     IabHelper mHelper; // The helper object
+    private AdView adView;
 	
 	// End of billing data
 
@@ -227,9 +232,19 @@ public class ActivityExplorerStartup extends ListActivity {
 			editor.commit();
 		}
 		
+		// In-app billing
 		SetupInAppBilling();
+		
+		// AdMob
+		// Look up the AdView as a resource and load a request.
+		AdView adView = (AdView)this.findViewById(R.id.adView);
+		AdRequest adRequest = new AdRequest.Builder()
+        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
+        .build();
+		adView.loadAd(adRequest);
 
-
+		// Session management
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
 		if (savedInstanceState == null) {
 			SaveFile();
@@ -327,21 +342,23 @@ public class ActivityExplorerStartup extends ListActivity {
 	protected void onDestroy() {
 		// TODO Auto-generated method stub
 		SaveFile();
-		super.onDestroy();
 		// very important:
         Log.d(TAG, "Destroying helper.");
         if (mHelper != null) {
             mHelper.dispose();
             mHelper = null;
         }
+        if (adView != null) {
+	        adView.destroy();
+	      }
+		super.onDestroy();
 	}
 	
 
 	@Override
 	protected void onStart() {
-		// TODO Auto-generated method stub
-		LoadFile();
 		super.onStart();
+		LoadFile();
 	}
 
 	@Override
@@ -358,14 +375,24 @@ public class ActivityExplorerStartup extends ListActivity {
 
 	@Override
 	protected void onResume() {
-		LoadFile();
 		super.onResume();
+		LoadFile();
+		if (adView != null) {
+		      adView.resume();
+		}
+		
+//		if (isGooglePlayServicesAvailable()) {
+//			
+//		}
 	}
 
 	@Override
 	protected void onPause() {
 		// TODO Auto-generated method stub
 		SaveFile();
+		if (adView != null) {
+	      adView.pause();
+	    }
 		super.onPause();
 	}
 
