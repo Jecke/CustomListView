@@ -146,9 +146,9 @@ public class ActivityExplorerStartup extends ListActivity {
 	private clsIabLocalData objIabLocalData;
 	
 	// Not to be persisted
-	static final String base64EncodedPublicKeyPartScrambled ="IBIIMjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAll/DlC6c6lQ/7CZEkxRpW0WlIMcKENjbFKO+VzDY8gXkRr7q+BOqSETVdod1pcp50hZC+PsMgGK+anc4afbJcDe3q8U12vMieFZLYV1NgYvgBxqPeUzSIx2qmGGoR6eR8aqIFVGCvDHxbHOMs/W8OHihhb7WSgqX7Khm/KTmY5FFY0wXmGdYr3D9TON6g5ZdK/vo2e73PM2EHKBex0oZG8eKdCwwSZW3K2S0sE2NvwDqt0LyiNAHQH8xwLwtf2dw1z8eyYAtDaSitHtv3o0emWC7U6B9W/keahmK4N5+n+CTNksMt7mPEgZ+Kqi9VnVhBr4PX7sznICF589xVJlbzQIDAQAB";
+	static final String base64EncodedPublicKeyPartScrambled ="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiE1fPh+RVPFVjromhOMZCUAmkaPqrnOogfaWMBuijs4SgdlNrq74VQSm3Ud3UV9r5k41ZUN/CXU5tePvyrSCpUL16w0utVS2uDnch4OGGaHaBcI+Z5arfvlqZ9Oaoi6E9/bbAdrCleS0vRnD3ZFPvgWnCQzV9P6Nkv69jyXAtYzwrMtYwiZJyh/17TfltBPS5tnO1tnOgxphXElbWZ4lWl133YMkGcXBsItn9vLXUkKDjoMp3NcpcmFjf6M9n0isj+tvoENMQwfhOxZwuamvRarjsLGuZRFaKeGurIv3re7ZX3tmlEzQREsfmK1CaEHCY9LFd1krKJdiAhRLEzOTkQIDAQAB";
 	static final String TAG = "TreeNotesIab";
-	static final String SKU_ADVERTS_REMOVED = "android.test.purchased"; 	// adverts_removed OR 
+	static final String SKU_ADVERTS_REMOVED = "android.test.purchased"; 	// treeapps.treenotes.remove_adverts OR 
 																			// android.test.purchased OR 
 																			// android.test.canceled OR
 																			// android.test.refunded
@@ -244,6 +244,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			AdRequest adRequest = new AdRequest.Builder()
 	        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
 	        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
+	        .addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
 	        .build();
 			adView.loadAd(adRequest);
 		} else {
