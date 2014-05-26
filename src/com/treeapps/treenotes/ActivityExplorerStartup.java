@@ -260,11 +260,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		} else {
 			LoadFile();
 		}
-		
-		
-
 	}
-
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
