@@ -1,3 +1,7 @@
+// NEXT:
+// create web page and post as caption
+// create dialog when export failed and finished
+
 package com.treeapps.treenotes.export;
 
 import java.io.ByteArrayOutputStream;
@@ -31,6 +35,8 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -51,9 +57,11 @@ public class clsExportToFacebook extends Fragment {
 	private Context _context;
 
 	private ProgressDialog pd;
-	
+	private String appVersion;
+
 	// 
 	private String albumId = new String();
+	private String coverId = new String();
 	
 	private void imageNodeExportResult(boolean success, String exportID, ExportInputContainer node)
 	{
@@ -239,15 +247,19 @@ public class clsExportToFacebook extends Fragment {
 
 	private void startExport()
 	{
-		if(!exportInput.isEmpty())
-		{
-			pd = ProgressDialog.show(_context, "Processing...", "Please wait", 
-					true, true, null);
-			
-			exportPendingId = 0;
-			
-			exportNode(exportInput.get(exportPendingId));
-		}
+		// TODO JE create webpage and add URL as caption to coverId
+		
+		return;
+		
+//		if(!exportInput.isEmpty())
+//		{
+//			pd = ProgressDialog.show(_context, "Processing...", "Please wait", 
+//					true, true, null);
+//			
+//			exportPendingId = 0;
+//			
+//			exportNode(exportInput.get(exportPendingId));
+//		}
 	}
 	
 	private void exportNode(ExportInputContainer node)
@@ -266,6 +278,16 @@ public class clsExportToFacebook extends Fragment {
 		_data = data;
 		_context = context;
 		
+		PackageInfo pInfo;
+		try {
+			pInfo = _context.getPackageManager().getPackageInfo(_context.getPackageName(), 0);
+			appVersion = " version " + pInfo.versionName;
+		} catch (NameNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			appVersion = " ";
+		}
+
 		// Gather the data necessary to do the export.
 		createListToExport(_data._top, level);
 
@@ -310,7 +332,7 @@ public class clsExportToFacebook extends Fragment {
             	}
             	else
             	{
-            		startExport();
+            		exportDefaultCoverImage();
             	}
             }
         });
@@ -371,7 +393,89 @@ public class clsExportToFacebook extends Fragment {
 	
 	private void createAlbum()
 	{
+		Bundle params = new Bundle();
+
+		params.putString("name", _data._topNodeName);
+		params.putString("description", "Created by TreeNotes" + appVersion);
+
+		new Request(Session.getActiveSession(), "/me/albums/", params, HttpMethod.POST, new Request.Callback() {
+			
+			@Override
+			public void onCompleted(Response response) {
+				
+				FacebookRequestError fbError = response.getError();
+
+				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+				{
+					GraphObject responseGraphObject = response.getGraphObject();
+					JSONObject json = responseGraphObject.getInnerJSONObject();
+
+					String id;
+					
+					try {
+						id = json.getString("id");
+						
+						albumId = id;
+						
+						exportDefaultCoverImage();
+	            		
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				else
+				{
+					// TODO JE create dialog that album could not be created and export aborted
+				}
+			}
+		})
+		.executeAsync();
+	}
+	
+	private void exportDefaultCoverImage()
+	{
+		byte[] data = null;
+		Bitmap bi = BitmapFactory.decodeResource(_context.getResources(), R.drawable.fb_album_icon);
+Log.d(">>BITMAP", "CREATED");
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		bi.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+		data = baos.toByteArray();
+
+		Bundle params = new Bundle();
+		//params.putString("caption", node.strName);
+		params.putByteArray("picture", data);
+
+		String target = "/" + albumId + "/photos";
 		
+		new Request(Session.getActiveSession(), target, params, HttpMethod.POST, 
+				new Request.Callback() {
+			
+			@Override
+			public void onCompleted(Response response) {
+//				Log.d(">>>FBresp", response.toString());
+				FacebookRequestError fbError = response.getError();
+
+				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+				{
+					GraphObject responseGraphObject = response.getGraphObject();
+					JSONObject json = responseGraphObject.getInnerJSONObject();
+
+					String id;
+					try
+					{
+						id = json.getString("id");
+						coverId = id;
+						
+					} catch (JSONException e1) {
+						e1.printStackTrace();
+					}
+				}
+				
+				// Start export no matter whether the image upload succeeded.
+				startExport();
+			}
+		}).executeAsync();
 	}
 	
 //	private void export()
