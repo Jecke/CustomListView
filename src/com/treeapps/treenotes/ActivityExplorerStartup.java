@@ -148,7 +148,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	// Not to be persisted
 	static final String base64EncodedPublicKeyPartScrambled ="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiE1fPh+RVPFVjromhOMZCUAmkaPqrnOogfaWMBuijs4SgdlNrq74VQSm3Ud3UV9r5k41ZUN/CXU5tePvyrSCpUL16w0utVS2uDnch4OGGaHaBcI+Z5arfvlqZ9Oaoi6E9/bbAdrCleS0vRnD3ZFPvgWnCQzV9P6Nkv69jyXAtYzwrMtYwiZJyh/17TfltBPS5tnO1tnOgxphXElbWZ4lWl133YMkGcXBsItn9vLXUkKDjoMp3NcpcmFjf6M9n0isj+tvoENMQwfhOxZwuamvRarjsLGuZRFaKeGurIv3re7ZX3tmlEzQREsfmK1CaEHCY9LFd1krKJdiAhRLEzOTkQIDAQAB";
 	static final String TAG = "TreeNotesIab";
-	static final String SKU_ADVERTS_REMOVED = "android.test.purchased"; 	// treeapps.treenotes.remove_adverts OR 
+	static final String SKU_ADVERTS_REMOVED = "treeapps.treenotes.remove_adverts"; 	// treeapps.treenotes.remove_adverts OR 
 																			// android.test.purchased OR 
 																			// android.test.canceled OR
 																			// android.test.refunded
