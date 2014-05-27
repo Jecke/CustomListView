@@ -212,6 +212,9 @@
             <item android:id="@+id/actionConsumePurchases"
                   android:icon="@drawable/ic_action_share"
                   android:title="Consume all purchases"/>
+            <item android:id="@+id/actionUnregisterGcm"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="Unregister GCM"/>
             <item android:id="@+id/actionClearWebServiceRepository"
                   android:icon="@drawable/ic_action_share"
                   android:title="Clear webservice repository"/>

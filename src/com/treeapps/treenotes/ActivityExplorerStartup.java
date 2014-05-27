@@ -12,6 +12,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,6 +20,9 @@ import org.json.JSONObject;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.treeapps.android.in_app_billing.util.IabHelper;
@@ -45,9 +49,11 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileCommandMs
 import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageUpDownloadAsyncTask;
+import com.treeapps.treenotes.sharing.clsMessaging.clsMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncMembersCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteCommandMsg;
+import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileAsyncTask;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileCommandMsg;
@@ -60,12 +66,17 @@ import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions.clsSub
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.IntentService;
 import android.app.ListActivity;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -75,6 +86,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources.NotFoundException;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.WakefulBroadcastReceiver;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
@@ -125,6 +138,8 @@ public class ActivityExplorerStartup extends ListActivity {
 	private static final int SHARE_SUBSCRIPTIONS = 15;
 	
 
+	
+
 	public clsExplorerTreeview objExplorerTreeview;
 	public static File fileTreeNodesDir;
 	private clsExplorerListItemArrayAdapter objListItemAdapter;
@@ -147,7 +162,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	
 	// Not to be persisted
 	static final String base64EncodedPublicKeyPartScrambled ="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiE1fPh+RVPFVjromhOMZCUAmkaPqrnOogfaWMBuijs4SgdlNrq74VQSm3Ud3UV9r5k41ZUN/CXU5tePvyrSCpUL16w0utVS2uDnch4OGGaHaBcI+Z5arfvlqZ9Oaoi6E9/bbAdrCleS0vRnD3ZFPvgWnCQzV9P6Nkv69jyXAtYzwrMtYwiZJyh/17TfltBPS5tnO1tnOgxphXElbWZ4lWl133YMkGcXBsItn9vLXUkKDjoMp3NcpcmFjf6M9n0isj+tvoENMQwfhOxZwuamvRarjsLGuZRFaKeGurIv3re7ZX3tmlEzQREsfmK1CaEHCY9LFd1krKJdiAhRLEzOTkQIDAQAB";
-	static final String TAG = "TreeNotesIab";
+	static final String TAG_IAB = "TreeNotesIab";
 	static final String SKU_ADVERTS_REMOVED = "treeapps.treenotes.remove_adverts"; 	// treeapps.treenotes.remove_adverts OR 
 																			// android.test.purchased OR 
 																			// android.test.canceled OR
@@ -158,6 +173,22 @@ public class ActivityExplorerStartup extends ListActivity {
     private AdView adView;
 	
 	// End of billing data
+    
+    // GCM Data
+    static final String TAG_GCM = "GCM";
+	private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+	private static final String PROPERTY_REG_ID = "com.treeapps.treenotes.gcm_registration_id";
+	private static final String PROPERTY_APP_VERSION = "com.treeapps.treenotes.gcm_application_version";
+	public static final String EXTRA_MESSAGE = "com.treeapps.treenotes.message";
+    GoogleCloudMessaging gcm;
+    AtomicInteger msgId = new AtomicInteger();
+    String regid;
+    /**
+     * Substitute you own sender ID here. This is the project number you got
+     * from the API Console, as described in "Getting Started."
+     */
+    String SENDER_ID = "543138772701";
+    // End of GCM data
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -252,6 +283,21 @@ public class ActivityExplorerStartup extends ListActivity {
 			View admobAds = (View) findViewById(R.id.adViewExplorer);
 			adscontainer.removeView(admobAds);
 		}
+		
+		// Push notification (Google Cloud Messaging - GCM)
+		if (checkPlayServices()) {
+	        // If this check succeeds, proceed with normal processing.
+			gcm = GoogleCloudMessaging.getInstance(this);
+            regid = getRegistrationId(this);
+
+            if (regid.isEmpty()) {
+                registerInBackground();
+            }
+	        
+	    } else {
+	    	// Otherwise, prompt user to get valid Play Services APK.
+	    	clsUtils.MessageBox(this, "Please download Play Services APK from the Google Play Store or enable it in the device's system settings", false);
+	    }
 
 		// Session management
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
@@ -261,6 +307,8 @@ public class ActivityExplorerStartup extends ListActivity {
 			LoadFile();
 		}
 	}
+	
+	
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
@@ -350,7 +398,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		// TODO Auto-generated method stub
 		SaveFile();
 		// very important:
-        Log.d(TAG, "Destroying helper.");
+        Log.d(TAG_IAB, "Destroying helper.");
         if (mHelper != null) {
             mHelper.dispose();
             mHelper = null;
@@ -388,9 +436,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		      adView.resume();
 		}
 		
-//		if (isGooglePlayServicesAvailable()) {
-//			
-//		}
+		checkPlayServices();
 	}
 
 	@Override
@@ -1096,6 +1142,9 @@ public class ActivityExplorerStartup extends ListActivity {
 			objMessaging.SaveFile(this);
 			boolDoNotSaveFile = true;
 			finish();
+			return true;
+		case R.id.actionUnregisterGcm:
+			storeRegistrationId(this,"");
 			return true;
 		case R.id.actionConsumePurchases:
 			mHelper.queryInventoryAsync(mGotInventoryForReversalListener);
@@ -2003,7 +2052,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	         */
 
 	        // Create the helper, passing it our context and the public key to verify signatures with
-	        Log.d(TAG, "Creating IAB helper.");
+	        Log.d(TAG_IAB, "Creating IAB helper.");
 	        mHelper = new IabHelper(this, clsUtils.Unscramble(base64EncodedPublicKeyPartScrambled));
 
 	        // enable debug logging (for a production application, you should set this to false).
@@ -2011,10 +2060,10 @@ public class ActivityExplorerStartup extends ListActivity {
 
 	        // Start setup. This is asynchronous and the specified listener
 	        // will be called once setup completes.
-	        Log.d(TAG, "Starting setup.");
+	        Log.d(TAG_IAB, "Starting setup.");
 	        mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
 	            public void onIabSetupFinished(IabResult result) {
-	                Log.d(TAG, "Setup finished.");
+	                Log.d(TAG_IAB, "Setup finished.");
 
 	                if (!result.isSuccess()) {
 	                    // There was a problem.
@@ -2026,7 +2075,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	                if (mHelper == null) return;
 
 	                // IAB is fully set up. Now, let's get an inventory of stuff we own.
-	                Log.d(TAG, "Setup successful. Querying inventory.");
+	                Log.d(TAG_IAB, "Setup successful. Querying inventory.");
 	                mHelper.queryInventoryAsync(mGotInventoryListener);
 	            }
 	        });
@@ -2035,7 +2084,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	    // Listener that's called when we finish querying the items and subscriptions we own
 	    IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
 	        public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
-	            Log.d(TAG, "Query inventory finished.");
+	            Log.d(TAG_IAB, "Query inventory finished.");
 
 	            // Have we been disposed of in the meantime? If so, quit.
 	            if (mHelper == null) return;
@@ -2046,7 +2095,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	                return;
 	            }
 
-	            Log.d(TAG, "Query inventory was successful.");
+	            Log.d(TAG_IAB, "Query inventory was successful.");
 
 	            /*
 	             * Check for items we own. Notice that for each purchase, we check
@@ -2063,17 +2112,17 @@ public class ActivityExplorerStartup extends ListActivity {
 	            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 	            clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
 	            
-	            Log.d(TAG, "User is " + (boolIsAdsDisabled ? "WITHOUT ADVERTS" : "WITH_ADVERTS"));
+	            Log.d(TAG_IAB, "User is " + (boolIsAdsDisabled ? "WITHOUT ADVERTS" : "WITH_ADVERTS"));
 
 	            setWaitScreen(false);
-	            Log.d(TAG, "Initial inventory query finished; enabling main UI.");
+	            Log.d(TAG_IAB, "Initial inventory query finished; enabling main UI.");
 	        }
 	    };
 	    
 	 // Listener that's called when we finish querying the items and subscriptions we own
 	    IabHelper.QueryInventoryFinishedListener mGotInventoryForReversalListener = new IabHelper.QueryInventoryFinishedListener() {
 	        public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
-	            Log.d(TAG, "Query inventory finished.");
+	            Log.d(TAG_IAB, "Query inventory finished.");
 
 	            // Have we been disposed of in the meantime? If so, quit.
 	            if (mHelper == null) return;
@@ -2084,21 +2133,21 @@ public class ActivityExplorerStartup extends ListActivity {
 	                return;
 	            }
 
-	            Log.d(TAG, "Query inventory was successful.");
+	            Log.d(TAG_IAB, "Query inventory was successful.");
 
 	            if (inventory.hasPurchase(SKU_ADVERTS_REMOVED)) {
 	                mHelper.consumeAsync(inventory.getPurchase(SKU_ADVERTS_REMOVED), mConsumeForReversalFinishedListener);
 	            }
 
 	            setWaitScreen(false);
-	            Log.d(TAG, "Inventory reversal completed");
+	            Log.d(TAG_IAB, "Inventory reversal completed");
 	        }
 	    };
 	    
 	 // Called when consumption is complete
 	    IabHelper.OnConsumeFinishedListener mConsumeForReversalFinishedListener = new IabHelper.OnConsumeFinishedListener() {
 	        public void onConsumeFinished(Purchase purchase, IabResult result) {
-	            Log.d(ActivityExplorerStartup.TAG, "Consumption finished. Purchase: " + purchase + ", result: " + result);
+	            Log.d(ActivityExplorerStartup.TAG_IAB, "Consumption finished. Purchase: " + purchase + ", result: " + result);
 
 	            // if we were disposed of in the meantime, quit.
 	            if (mHelper == null) return;
@@ -2119,7 +2168,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	            	clsUtils.MessageBox(objContext, "Error while consuming: " + result, true);
 	            }
 	            setWaitScreen(false);
-	            Log.d(ActivityExplorerStartup.TAG, "End of consumption flow.");
+	            Log.d(ActivityExplorerStartup.TAG_IAB, "End of consumption flow.");
 	        }
 	    };
 
@@ -2171,5 +2220,239 @@ public class ActivityExplorerStartup extends ListActivity {
  				}
  			}
  		}
+ 		
+ 		// ------------------- GCM ------------------------------------
+ 		/**
+ 		 * Check the device to make sure it has the Google Play Services APK. If
+ 		 * it doesn't, display a dialog that allows users to download the APK from
+ 		 * the Google Play Store or enable it in the device's system settings.
+ 		 */
+ 		
+ 		// As per http://developer.android.com/google/gcm/client.html#app
+ 		
+ 		private boolean checkPlayServices() {
+ 		    int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+ 		    if (resultCode != ConnectionResult.SUCCESS) {
+ 		        if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+ 		            GooglePlayServicesUtil.getErrorDialog(resultCode, this,
+ 		                    PLAY_SERVICES_RESOLUTION_REQUEST).show();
+ 		        } else {
+ 		            Log.i(TAG_IAB, "This device is not supported.");
+ 		            finish();
+ 		        }
+ 		        return false;
+ 		    }
+ 		    return true;
+ 		}
+ 		
+ 		/**
+ 		 * Gets the current registration ID for application on GCM service.
+ 		 * <p>
+ 		 * If result is empty, the app needs to register.
+ 		 *
+ 		 * @return registration ID, or empty string if there is no existing
+ 		 *         registration ID.
+ 		 */
+ 		private String getRegistrationId(Context context) {
+ 		    final SharedPreferences prefs = getGCMPreferences(context);
+ 		    String registrationId = prefs.getString(PROPERTY_REG_ID, "");
+ 		    if (registrationId.isEmpty()) {
+ 		        Log.i(TAG_GCM, "Registration not found.");
+ 		        return "";
+ 		    }
+ 		    // Check if app was updated; if so, it must clear the registration ID
+ 		    // since the existing regID is not guaranteed to work with the new
+ 		    // app version.
+ 		    int registeredVersion = prefs.getInt(PROPERTY_APP_VERSION, Integer.MIN_VALUE);
+ 		    int currentVersion = getAppVersion(context);
+ 		    if (registeredVersion != currentVersion) {
+ 		        Log.i(TAG_GCM, "App version changed.");
+ 		        return "";
+ 		    }
+ 		    return registrationId;
+ 		}
 
+ 		/**
+ 		 * @return Application's {@code SharedPreferences}.
+ 		 */
+ 		private SharedPreferences getGCMPreferences(Context context) {
+ 		    // This sample app persists the registration ID in shared preferences, but
+ 		    // how you store the regID in your app is up to you.
+ 		    return getSharedPreferences(ActivityExplorerStartup.class.getSimpleName(),
+ 		            Context.MODE_PRIVATE);
+ 		}
+ 		
+ 		/**
+ 		 * @return Application's version code from the {@code PackageManager}.
+ 		 */
+ 		private static int getAppVersion(Context context) {
+ 		    try {
+ 		        PackageInfo packageInfo = context.getPackageManager()
+ 		                .getPackageInfo(context.getPackageName(), 0);
+ 		        return packageInfo.versionCode;
+ 		    } catch (NameNotFoundException e) {
+ 		        // should never happen
+ 		        throw new RuntimeException("Could not get package name: " + e);
+ 		    }
+ 		}
+ 		
+		/**
+ 		 * Registers the application with GCM servers asynchronously.
+ 		 * <p>
+ 		 * Stores the registration ID and app versionCode in the application's
+ 		 * shared preferences.
+ 		 */
+ 		private void registerInBackground() {
+ 		    new AsyncTask <Void, Void, String>() {
+
+				@Override
+				protected String doInBackground(Void... params) {
+					String msg = "";
+ 		            try {
+ 		                if (gcm == null) {
+ 		                    gcm = GoogleCloudMessaging.getInstance(objContext);
+ 		                }
+ 		                regid = gcm.register(SENDER_ID);
+ 		                msg = "Device registered, registration ID=" + regid;
+
+ 		                // You should send the registration ID to your server over HTTP,
+ 		                // so it can use GCM/HTTP or CCS to send messages to your app.
+ 		                // The request to your server should be authenticated if your app
+ 		                // is using accounts.
+ 		                sendRegistrationIdToBackend();
+
+ 		                // For this demo: we don't need to send it because the device
+ 		                // will send upstream messages to a server that echo back the
+ 		                // message using the 'from' address in the message.
+
+ 		                // Persist the regID - no need to register again.
+ 		                storeRegistrationId(objContext, regid);
+ 		            } catch (IOException ex) {
+ 		                msg = "Error :" + ex.getMessage();
+ 		                // If there is an error, don't just keep trying to register.
+ 		                // Require the user to click a button again, or perform
+ 		                // exponential back-off.
+ 		            }
+ 		            return msg;
+				}
+				
+				@Override
+				protected void onPostExecute(String msg) {
+					// TODO Auto-generated method stub
+					super.onPostExecute(msg);
+					clsUtils.MessageBox(objContext, msg, true);
+				} 
+ 		    }.execute(null, null, null);
+ 		}
+ 		
+ 		
+ 		
+ 		/**
+ 		 * Stores the registration ID and app versionCode in the application's
+ 		 * {@code SharedPreferences}.
+ 		 *
+ 		 * @param context application's context.
+ 		 * @param regId registration ID
+ 		 */
+ 		private void storeRegistrationId(Context context, String regId) {
+ 		    final SharedPreferences prefs = getGCMPreferences(context);
+ 		    int appVersion = getAppVersion(context);
+ 		    Log.i(TAG_GCM, "Saving regId on app version " + appVersion);
+ 		    SharedPreferences.Editor editor = prefs.edit();
+ 		    editor.putString(PROPERTY_REG_ID, regId);
+ 		    editor.putInt(PROPERTY_APP_VERSION, appVersion);
+ 		    editor.commit();
+ 		}
+ 		
+ 		
+ 		
+ 		
+ 		
+ 		
+ 		/**
+ 		 * Sends the registration ID to your server over HTTP, so it can use GCM/HTTP
+ 		 * or CCS to send messages to your app.
+ 		 */
+ 		
+ 		class clsSendGcmRegIdCommandMessage {
+ 			String strRegId;
+ 		}
+ 		
+ 		class clsSendGcmRegIdResponse {
+ 			public int intSeqNum;
+ 			public int intErrorCode;
+ 			public String strErrorMessage = "";
+ 		}
+ 		 		
+ 		private void sendRegistrationIdToBackend() {
+ 			
+ 			
+ 			
+ 			new AsyncTask <Void, Void, clsSendGcmRegIdResponse>() {
+ 												
+ 				@Override
+				protected clsSendGcmRegIdResponse doInBackground(Void... params) {
+ 					Gson gson = new Gson();
+ 					JSONObject objJsonResult = null;
+ 					InputStream stream = null;
+					clsSendGcmRegIdCommandMessage objCommand = new clsSendGcmRegIdCommandMessage();
+					clsSendGcmRegIdResponse objResponse = new clsSendGcmRegIdResponse();
+					objCommand.strRegId = regid;
+					try {
+			            
+			            URL urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+								+ getResources().getString(R.string.url_send_gcm_reg_id));
+			            String strJsonCommand = gson.toJson(objCommand);
+			            try {
+			                Log.i("myCustom", "Sending GCM Reg ID to server: " + urlFeed);
+			                stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
+			                objJsonResult = clsMessaging.updateLocalFeedData(stream);
+			                // Makes sure that the InputStream is closed after the app is
+			                // finished using it.
+			            } catch (IOException e) {
+				            Log.e("myCustom", "Error reading from network: " + e.toString());
+				            objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+				            objResponse.strErrorMessage = "Error reading from network: " + e.toString();
+				            return objResponse;
+						} catch (JSONException e) {
+							// TODO Auto-generated catch block
+							Log.wtf("myCustom", "JSON exception", e);
+							objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+				            objResponse.strErrorMessage = "JSON exception: " + e.toString();
+				            return objResponse;
+						} finally {
+			                if (stream != null) {
+			                    stream.close();
+			                }
+			            }
+			        } catch (MalformedURLException e) {
+			            Log.wtf("myCustom", "Feed URL is malformed", e);
+			            objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+			            objResponse.strErrorMessage = "Feed URL is malformed: " + e.toString();
+			            return objResponse;
+			        } catch (IOException e) {
+			            Log.e("myCustom", "Error reading from network: " + e.toString());
+			            objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+			            objResponse.strErrorMessage = "Error reading from network: " + e.toString();
+			            return objResponse;
+			        }
+			        Log.i("myCustom", "Network synchronization complete");
+			        objResponse = gson.fromJson(objJsonResult.toString(),clsSendGcmRegIdResponse.class);
+			        return objResponse;
+ 				
+ 				}
+				
+				@Override
+				protected void onPostExecute(clsSendGcmRegIdResponse objResponse) {
+					// TODO Auto-generated method stub
+					super.onPostExecute(objResponse);
+					if (objResponse.intErrorCode != 0) {
+						clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+					}
+				}
+				
+ 			}.execute(null, null, null);
+ 		}
+ 		
+	
 }

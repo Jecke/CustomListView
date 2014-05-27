@@ -68,6 +68,7 @@ public class clsMessaging {
     public static final int SERVER_INSTRUCT_NO_PROBLEM = 5;
     public static final int SERVER_INSTRUCTION_REMOVE = 6;
     public static final int SERVER_INSTRUCT_CREATE_NEW_PUBLISHED = 7;
+	
 
     //Client instructions
     public static int SYNC_MEMBERS_CLIENT_INSTRUCT_GET_MEMBERS = 0;
@@ -97,6 +98,7 @@ public class clsMessaging {
     public static int ERROR_ADD_PUBLICATIONS = 14;
     public static int ERROR_UPLOAD_IMAGE = 15;
     public static int ERROR_DOWNLOAD_IMAGE = 16;
+    public static int ERROR_NETWORK = 17;
 
 	// Persistent items
 	public class clsRepository {

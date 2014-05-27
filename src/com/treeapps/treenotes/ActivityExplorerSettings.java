@@ -197,7 +197,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 				public boolean onPreferenceClick(Preference preference) {
 					// TODO Auto-generated method stub
 					setWaitScreen(true);
-					Log.d(ActivityExplorerStartup.TAG, "Launching purchase of adverts removal.");
+					Log.d(ActivityExplorerStartup.TAG_IAB, "Launching purchase of adverts removal.");
 
 					/*
 					 * TODO: for security, generate your payload here for
@@ -232,7 +232,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 			super.onDestroy();
 			
 			// very important:
-	        Log.d(ActivityExplorerStartup.TAG, "Destroying helper.");
+	        Log.d(ActivityExplorerStartup.TAG_IAB, "Destroying helper.");
 	        if (mHelper != null) {
 	            mHelper.dispose();
 	            mHelper = null;
@@ -259,7 +259,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 
 			// Create the helper, passing it our context and the public key to
 			// verify signatures with
-			Log.d(ActivityExplorerStartup.TAG, "Creating IAB helper.");
+			Log.d(ActivityExplorerStartup.TAG_IAB, "Creating IAB helper.");
 			mHelper = new IabHelper(objActivity,
 					clsUtils.Unscramble(ActivityExplorerStartup.base64EncodedPublicKeyPartScrambled));
 
@@ -269,10 +269,10 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 
 			// Start setup. This is asynchronous and the specified listener
 			// will be called once setup completes.
-			Log.d(ActivityExplorerStartup.TAG, "Starting setup.");
+			Log.d(ActivityExplorerStartup.TAG_IAB, "Starting setup.");
 			mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
 				public void onIabSetupFinished(IabResult result) {
-					Log.d(ActivityExplorerStartup.TAG, "Setup finished.");
+					Log.d(ActivityExplorerStartup.TAG_IAB, "Setup finished.");
 
 					if (!result.isSuccess()) {
 						// There was a problem.
@@ -286,7 +286,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 
 					// IAB is fully set up. Now, let's get an inventory of stuff
 					// we own.
-					Log.d(ActivityExplorerStartup.TAG, "Setup successful. Querying inventory.");
+					Log.d(ActivityExplorerStartup.TAG_IAB, "Setup successful. Querying inventory.");
 					mHelper.queryInventoryAsync(mGotInventoryListener);
 				}
 			});
@@ -296,7 +296,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 		// subscriptions we own
 		IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
 			public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
-				Log.d(ActivityExplorerStartup.TAG, "Query inventory finished.");
+				Log.d(ActivityExplorerStartup.TAG_IAB, "Query inventory finished.");
 
 				// Have we been disposed of in the meantime? If so, quit.
 				if (mHelper == null)
@@ -308,7 +308,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 					return;
 				}
 
-				Log.d(ActivityExplorerStartup.TAG, "Query inventory was successful.");
+				Log.d(ActivityExplorerStartup.TAG_IAB, "Query inventory was successful.");
 
 				/*
 				 * Check for items we own. Notice that for each purchase, we
@@ -329,11 +329,11 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 				Preference pref = findPreference("button_remove_advertisements");
 				pref.setEnabled(!boolIsAdsDisabled);
 				
-				Log.d(ActivityExplorerStartup.TAG, "User is "
+				Log.d(ActivityExplorerStartup.TAG_IAB, "User is "
 						+ (boolIsAdsDisabled ? "WITHOUT ADVERTS" : "WITH_ADVERTS"));
 
 				setWaitScreen(false);
-				Log.d(ActivityExplorerStartup.TAG, "Initial inventory query finished; enabling main UI.");
+				Log.d(ActivityExplorerStartup.TAG_IAB, "Initial inventory query finished; enabling main UI.");
 			}
 		};
 
@@ -374,7 +374,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 		// Callback for when a purchase is finished
 	    IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener = new IabHelper.OnIabPurchaseFinishedListener() {
 	        public void onIabPurchaseFinished(IabResult result, Purchase purchase) {
-	            Log.d(ActivityExplorerStartup.TAG, "Purchase finished: " + result + ", purchase: " + purchase);
+	            Log.d(ActivityExplorerStartup.TAG_IAB, "Purchase finished: " + result + ", purchase: " + purchase);
 
 	            // if we were disposed of in the meantime, quit.
 	            if (mHelper == null) return;
@@ -389,7 +389,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 	                setWaitScreen(false);
 	                return;
 	            }
-	            Log.d(ActivityExplorerStartup.TAG, "Purchase successful.");
+	            Log.d(ActivityExplorerStartup.TAG_IAB, "Purchase successful.");
 	            
 	            if (purchase.getSku().equals(ActivityExplorerStartup.SKU_ADVERTS_REMOVED)) {
 	            	SharedPreferences objSharedPreferences = PreferenceManager.getDefaultSharedPreferences(objActivity);
@@ -443,7 +443,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-	    Log.d(ActivityExplorerStartup.TAG, "onActivityResult(" + requestCode + "," + resultCode + "," + data);
+	    Log.d(ActivityExplorerStartup.TAG_IAB, "onActivityResult(" + requestCode + "," + resultCode + "," + data);
 
 	    // Pass on the activity result to the helper for handling
 	    if (!mHelper.handleActivityResult(requestCode, resultCode, data)) {
@@ -453,7 +453,7 @@ public class ActivityExplorerSettings extends PreferenceActivity {
 	        super.onActivityResult(requestCode, resultCode, data);
 	    }
 	    else {
-	        Log.d(ActivityExplorerStartup.TAG, "onActivityResult handled by IABUtil.");
+	        Log.d(ActivityExplorerStartup.TAG_IAB, "onActivityResult handled by IABUtil.");
 	    }
 	}
 

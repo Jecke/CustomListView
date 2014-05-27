@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.treeapps.treenotes"
-    android:versionCode="1"
-    android:versionName="0.23" >
+    android:versionCode="3"
+    android:versionName="3.01" >
+    
+    <uses-sdk
+        android:minSdkVersion="16"
+        android:targetSdkVersion="19" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
@@ -12,10 +16,16 @@
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+    <uses-permission android:name="com.treeapps.treenotes.permission.C2D_MESSAGE" />
+    
+    <permission android:name="com.treeapps.treenotes.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" />
 
-    <uses-sdk
-        android:minSdkVersion="16"
-        android:targetSdkVersion="19" />
+
+
 
     <application
         android:allowBackup="true"
@@ -23,8 +33,21 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme"
         android:windowSoftInputMode="stateAlwaysVisible" >
+        
+        <receiver
+            android:name="com.treeapps.treenotes.GcmBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND" >
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="com.treeapps.treenotes" />
+            </intent-filter>
+        </receiver>
+        
+        <service android:name="com.treeapps.treenotes.GcmIntentService" />
+        
         <meta-data android:name="com.google.android.gms.version"
            android:value="@integer/google_play_services_version" />
+        
         <activity
             android:name="com.treeapps.treenotes.ActivityExplorerStartup"
             android:configChanges="orientation|keyboardHidden|screenSize"
@@ -32,7 +55,6 @@
             android:uiOptions="splitActionBarWhenNarrow" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -93,7 +115,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
             </intent-filter>
-
             <meta-data
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
