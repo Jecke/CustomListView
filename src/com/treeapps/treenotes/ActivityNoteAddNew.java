@@ -1,56 +1,39 @@
 package com.treeapps.treenotes;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.UUID;
-
 
 import com.google.gson.reflect.TypeToken;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationText;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
 import com.treeapps.treenotes.imageannotation.clsShapeFactory.Shape;
-import com.treeapps.treenotes.sharing.clsAllMembersArrayAdapter;
-import com.treeapps.treenotes.sharing.clsGroupMembers;
-import com.treeapps.treenotes.sharing.ActivityAllMembers.clsAllMembersListViewState;
 
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.app.Activity;
-import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.ImageView.ScaleType;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.RadioGroup;
-import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.ImageView;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
 import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.ColorDrawable;
 import android.view.View.OnClickListener;
 
 public class ActivityNoteAddNew extends Activity implements clsResourceLoader.TaskCompletedInterface {
@@ -104,7 +87,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	
 	private String imageDirectory;
 	private File strImageFilename, strImageFilenameBackup;
-	private File strThumbnailFilename, strThumbnailFilenameBackup;
+	//private File strThumbnailFilename, strThumbnailFilenameBackup;
 	private File strFullFilename, strFullFilenameBackup;
 	
 	// If the user selects the camera to get a picture then the result must be handled differently
@@ -127,7 +110,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 
 			// Create a thumbnail for the tree and annotation
 			SaveBitmapToFile(bm, strImageFilename.getAbsolutePath());
-			SaveBitmapToFile(bm, strThumbnailFilename.getAbsolutePath());
+			//SaveBitmapToFile(bm, strThumbnailFilename.getAbsolutePath());
 
 			resourcePath = uri.toString();
 
@@ -165,8 +148,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		
 		strImageFilename           = new File(imageDirectory + strTreeNodeUuid + ".jpg");
 		strImageFilenameBackup     = new File(strImageFilename + ".backup");
-		strThumbnailFilename       = new File(imageDirectory + strTreeNodeUuid + "_annotate.jpg");
-		strThumbnailFilenameBackup = new File(strThumbnailFilename + ".backup");
 		strFullFilename            = new File(imageDirectory + strTreeNodeUuid + "_full.jpg");
 		strFullFilenameBackup      = new File(strFullFilename + ".backup");
 		
@@ -177,9 +158,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			// make copies of important files which could be altered
 			if (strImageFilename.exists()) {
 				clsUtils.CopyFile(strImageFilename, strImageFilenameBackup,     false);
-			}
-			if (strThumbnailFilename.exists()) {
-				clsUtils.CopyFile(strThumbnailFilename, strThumbnailFilenameBackup, false);
 			}
 			
 			if (strFullFilename.exists()) {
@@ -193,9 +171,9 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			rg.setVisibility(View.INVISIBLE);
 		}
 		
-		RelativeLayout rl = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
+		RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
 		if (boolIsReadOnly) {
-			rl.setVisibility(View.INVISIBLE);
+			objRelativeLayout.setVisibility(View.INVISIBLE);
 		}
 		
 		LinearLayout ll = (LinearLayout)findViewById(R.id.my_image_button);
@@ -207,9 +185,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		if (boolIsReadOnly) {
 			tv.setVisibility(View.INVISIBLE);
 		}
-		
-		
-		//urlText = (TextView)findViewById(R.id.textViewURLNote);
 		
 		// set description field
 		EditText objEditText = (EditText)findViewById(R.id.editTextNoteName);
@@ -236,7 +211,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		lblImageAnotationStatus.setVisibility(View.INVISIBLE);
 		TextView lblNumberedArrows = (TextView)findViewById(R.id.lblNumberedArrows);
 		lblNumberedArrows.setVisibility(View.INVISIBLE);
-		RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
 		if (resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE) {	
 			// Fill ListView ArrayAdapter
 			objArrayAdapter = new clsActivityNoteAddNewArrayAdapter(this, R.layout.arrows_list_item, objListViewStates);
@@ -561,12 +535,9 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 				{
 					resourceId = clsTreeview.WEB_RESOURCE;
 
-					//String t = urlText.getText().toString();
-					
 					String imageFile = strImageFilename.toString();
 					
 					Intent web = new Intent(objContext, ActivityWebBrowser.class);
-					//web.putExtra(WEB_VIEW_URL, t);
 					web.putExtra(WEB_VIEW_IMAGE, imageFile);
 
 					startActivityForResult(web, clsTreeview.WEB_RESOURCE);
@@ -642,18 +613,11 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
     	} else {
     		editor.putString("strImageFilename","");
     	}
-    	if (strThumbnailFilename != null) {
-        	editor.putString("strThumbnailFilename",strThumbnailFilename.toString());
-    	} else {
-    		editor.putString("strThumbnailFilename","");
-    	}
     	if (strFullFilename != null) {
         	editor.putString("strFullFilename",strFullFilename.toString());
     	} else {
     		editor.putString("strFullFilename","");
     	}
-    	
-
 	
     	editor.commit();
     	sharedPref = null;
@@ -687,10 +651,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		String strLocalImageFilename = sharedPref.getString("strImageFilename","");	
 		if (!strLocalImageFilename.isEmpty()) {
 			strImageFilename = new File(strLocalImageFilename);
-		}
-		strLocalImageFilename = sharedPref.getString("strThumbnailFilename","");	
-		if (!strLocalImageFilename.isEmpty()) {
-			strThumbnailFilename = new File(strLocalImageFilename);
 		}
 		strLocalImageFilename = sharedPref.getString("strFullFilename","");	
 		if (!strLocalImageFilename.isEmpty()) {
@@ -813,7 +773,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 						objAnnotationData = null;
 					}		
 				}
-				
 
 				// Update the display
 				objListViewStates.clear();
@@ -908,7 +867,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		} 
 		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
 		rg.setOnCheckedChangeListener(new RadioGroupOnCheckedChangeListener());
-		
 	}
 	
 	// Helper
@@ -1066,7 +1024,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
      		if(resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE)
      		{
      			strImageFilenameBackup.renameTo(strImageFilename);
-     			strThumbnailFilenameBackup.renameTo(strThumbnailFilename);
+     			//strThumbnailFilenameBackup.renameTo(strThumbnailFilename);
      			strFullFilenameBackup.renameTo(strFullFilename);
      		}
      		      	 

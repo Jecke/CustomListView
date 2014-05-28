@@ -12,7 +12,6 @@ import java.util.UUID;
 import android.util.Log;
 
 import com.google.gson.Gson;
-import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
@@ -95,13 +94,9 @@ public class clsTreeview {
 	}
 
 	private void ClearRepository() {
-		// TODO Auto-generated method stub
 		getRepository().objRootNodes.clear();
 		getRepository().intEmptyItemCounter = 0;
 	}
-
-	private clsTreeNode objCurrentParentTreeNode;
-	private int intCurrentTreeNodeLevel;
 
 	public class clsRepository implements Serializable {
 		private static final long serialVersionUID = 2223496794888289098L;
@@ -165,7 +160,6 @@ public class clsTreeview {
 		}
 
 		public ArrayList<clsSyncTreeNode> getRootNodesCopy() {
-			// TODO Auto-generated method stub
 			ArrayList<clsSyncTreeNode> objNewRootNodes = new ArrayList<clsSyncTreeNode>();
 			for (clsTreeNode objTreeNode : this.objRootNodes) {
 				objNewRootNodes.add(getTreeNode2SyncTreeNodeCopy(objTreeNode));
@@ -190,7 +184,6 @@ public class clsTreeview {
 		}
 
 		public clsSyncTreeNode getTreeNode2SyncTreeNodeCopy(clsTreeNode objTreeNode) {
-			// TODO Auto-generated method stub
 			clsSyncTreeNode objNewTreeNode = new clsSyncTreeNode();
 			objNewTreeNode.guidTreeNode = objTreeNode.guidTreeNode;
 			objNewTreeNode.strName = objTreeNode.strName;
@@ -231,12 +224,10 @@ public class clsTreeview {
 		}
 
 		public String getName() {
-			// TODO Auto-generated method stub
 			return this.strName;
 		}
 
 		public void setName(String strName) {
-			// TODO Auto-generated method stub
 			this.strName = strName;
 		}
 
@@ -254,7 +245,6 @@ public class clsTreeview {
 		}
 
 		public void SetOwnerOfAllSubNotes(String strRegisteredUserUuid) {
-			// TODO Auto-generated method stub
 			for (clsTreeNode objChildTreeNode : this.objRootNodes) {
 				SetOwnerOfAllSubNotesRecursively(objChildTreeNode, strRegisteredUserUuid);
 			}
@@ -305,7 +295,6 @@ public class clsTreeview {
 		}
 
 		public ArrayList<clsTreeNode> getRepositoryRootNodesCopy() {
-			// TODO Auto-generated method stub
 			ArrayList<clsTreeNode> objNewRootNodes = new ArrayList<clsTreeNode>();
 			for (clsSyncTreeNode objSyncTreeNode : this.objRootNodes) {
 				objNewRootNodes.add(getSyncTreeNode2TreeNodeCopy(objSyncTreeNode));
@@ -314,7 +303,6 @@ public class clsTreeview {
 		}
 
 		private clsTreeNode getSyncTreeNode2TreeNodeCopy(clsSyncTreeNode objSyncTreeNode) {
-			// TODO Auto-generated method stub
 			clsTreeNode objNewTreeNode = new clsTreeNode();
 			objNewTreeNode.guidTreeNode = objSyncTreeNode.guidTreeNode;
 			objNewTreeNode.strName = objSyncTreeNode.strName;
@@ -348,7 +336,6 @@ public class clsTreeview {
 		public String strAddedByUserDateTimeStamp = "";
 
 		public clsShareUser(String strUserUuid, String strAddedByUserUuid, String strAddedByUserDateTimeStamp) {
-			// TODO Auto-generated constructor stub
 			this.strUserUuid = strUserUuid;
 			this.strAddedByUserUuid = strAddedByUserUuid;
 			this.strAddedByUserDateTimeStamp = strAddedByUserDateTimeStamp;
@@ -448,27 +435,6 @@ public class clsTreeview {
 					if (objTempThumbnailFile.exists()) {
 						objTempThumbnailFile.renameTo(objThumbnailFile);
 					}
-
-					// Create annotation thumbnail (needs to be done here
-					// because the annotator has no access rights for
-					// remote images.
-					{
-						String strTempAnnotateThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir
-								+ "/temp_uuid_annotate.jpg";
-						File objTempAnnotateThumbnailFile = new File(strTempAnnotateThumbnailFullFilename);
-						// Check if the annotation thumbnail exists. Note that
-						// only remote images (like from google+) are
-						// handled here because the Annotator has no access
-						// rights for any external content provider to
-						// retrieve the image itself.
-						if (objTempAnnotateThumbnailFile.exists()) {
-							String strAnnotateThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/"
-									+ guidTreeNode.toString() + "_annotate.jpg";
-							File objAnnotateThumbnailFile = new File(strAnnotateThumbnailFullFilename);
-
-							objTempAnnotateThumbnailFile.renameTo(objAnnotateThumbnailFile);
-						}
-					}
 					// Create local version of full image for annotation if
 					// necessary
 					{
@@ -547,7 +513,6 @@ public class clsTreeview {
 
 		// To override by child classes
 		public boolean IsTreeViewPurposeIsToFindCheckStateOnly() {
-			// TODO Auto-generated method stub
 			return false;
 		}
 
@@ -573,7 +538,6 @@ public class clsTreeview {
 		}
 
 		public boolean IsToBeSynched() {
-			// TODO Auto-generated method stub
 			return true; // For now, sync all
 		}
 
@@ -666,7 +630,6 @@ public class clsTreeview {
 		}
 
 		public boolean IsEmptyOrAllChildrenDeleted() {
-			// TODO Auto-generated method stub
 			if (this.objChildren.size() == 0)
 				return true;
 			boolean boolAllChildrenDeleted = true;
@@ -888,7 +851,6 @@ public class clsTreeview {
 	}
 
 	public boolean IsNoteShared() {
-		// TODO Auto-generated method stub
 		if ((this.getRepository().getObjSharedUsers().size() != 0) ||
 				(this.getRepository().boolIsSubscribed)){
 			return true;
@@ -897,7 +859,6 @@ public class clsTreeview {
 	}
 
 	private boolean IsAnyHiddenItems(clsTreeNode objParentTreeNode) {
-		// TODO Auto-generated method stub
 		if (objParentTreeNode.getHidden() == true)
 			return true;
 		for (clsTreeNode objChildTreeNode : objParentTreeNode.objChildren) {
@@ -1049,7 +1010,6 @@ public class clsTreeview {
 	}
 
 	public int getTreeNodeItemOrder(clsTreeNode objSelectedTreeNode) {
-		// TODO Auto-generated method stub
 		ArrayList<clsTreeNode> objSourceTreeNodes;
 		int inOrder = 0;
 		clsTreeNode objParentTreeNode = getParentTreeNode(objSelectedTreeNode);
@@ -1068,7 +1028,6 @@ public class clsTreeview {
 
 	private ArrayList<clsTreeNode> GetReorderedTreeNodes(ArrayList<clsTreeNode> objSourceTreeNodes,
 			clsTreeNode objSelectedTreeNode, int intNewOrder) {
-		// TODO Auto-generated method stub
 		if (intNewOrder < 0) {
 			// Clamping
 			intNewOrder = 0;
@@ -1207,7 +1166,6 @@ public class clsTreeview {
 
 	public void PasteClipboardTreeNodes(clsTreeNode objSelectedTreeNode, boolean boolPasteAtSameLevel,
 			boolean boolDeleteSourceTreeNodes) {
-		// TODO Auto-generated method stub
 		ArrayList<clsTreeNode> objClonedClipboardTreeNodes;
 		if (boolDeleteSourceTreeNodes) {
 			// Clone the clipboard but retain UUIDs
@@ -1274,7 +1232,6 @@ public class clsTreeview {
 	}
 
 	public ArrayList<clsTreeNode> getClone(ArrayList<clsTreeNode> objSelectedTreeNodes, boolean boolResetUuid) {
-		// TODO Auto-generated method stub
 		ArrayList<clsTreeNode> objNewTreeNodes = new ArrayList<clsTreeNode>();
 		for (clsTreeNode objTreeNode : objSelectedTreeNodes) {
 			objNewTreeNodes.add(getClone(objTreeNode, boolResetUuid));
@@ -1283,7 +1240,6 @@ public class clsTreeview {
 	}
 
 	public void ClearAll() {
-		// TODO Auto-generated method stub
 		while (getRepository().objRootNodes.size() != 0) {
 			RemoveTreeNode(getRepository().objRootNodes.get(0), true);
 		}
@@ -1300,7 +1256,6 @@ public class clsTreeview {
 	}
 
 	public void RecursiveSetParentChecked(clsTreeNode objChildTreeNode, boolean boolChecked) {
-		// TODO Auto-generated method stub
 		clsTreeNode objParentTreeNode = getParentTreeNode(objChildTreeNode);
 		if (objParentTreeNode != null) {
 			objParentTreeNode.setChecked(boolChecked);
@@ -1317,7 +1272,6 @@ public class clsTreeview {
 	}
 
 	public void RecursiveSetParentHidden(clsTreeNode objChildTreeNode, boolean boolIsHidden) {
-		// TODO Auto-generated method stub
 		clsTreeNode objParentTreeNode = getParentTreeNode(objChildTreeNode);
 		if (objParentTreeNode != null) {
 			objParentTreeNode.setChecked(boolIsHidden);
@@ -1326,14 +1280,12 @@ public class clsTreeview {
 	}
 
 	public void RecursiveSetAllChecked(boolean boolChecked) {
-		// TODO Auto-generated method stub
 		for (clsTreeNode objChildTreeNode : getRepository().objRootNodes) {
 			RecursiveSetChildrenChecked(objChildTreeNode, boolChecked);
 		}
 	}
 
 	public void RecursiveRemoveAllChecked() {
-		// TODO Auto-generated method stub
 		ArrayList<clsTreeNode> objFoundTreeNodes = new ArrayList<clsTreeNode>();
 
 		for (clsTreeNode objChildTreeNode : getRepository().objRootNodes) {
@@ -1441,7 +1393,6 @@ public class clsTreeview {
 	}
 
 	public boolean IsTargetChildOfSource(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode) {
-		// TODO Auto-generated method stub
 		if (objSourceTreeNode.equals(objTargetTreeNode)) {
 			return true;
 		}
@@ -1454,7 +1405,6 @@ public class clsTreeview {
 	}
 
 	public void addSourceTreeNodeBelowTarget(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode) {
-		// TODO Auto-generated method stub
 		// Remove from where its at this stage
 		clsTreeNode objSourceParentTreeNode = getParentTreeNode(objSourceTreeNode);
 		if (objSourceParentTreeNode == null) {
@@ -1471,7 +1421,6 @@ public class clsTreeview {
 	}
 	
 	public void addSourceTreeNodeBeforeOrAfterTarget(clsTreeNode objSourceTreeNode, clsTreeNode objTargetTreeNode, boolean boolIsBefore) {
-		// TODO Auto-generated method stub
 		// Remove from where its at this stage
 		clsTreeNode objSourceParentTreeNode = getParentTreeNode(objSourceTreeNode);
 		if (objSourceParentTreeNode == null) {
