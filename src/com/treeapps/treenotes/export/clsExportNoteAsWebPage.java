@@ -12,7 +12,6 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.google.gson.Gson;
 import com.treeapps.treenotes.R;
@@ -24,7 +23,6 @@ import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageUpDownloadAsyncTask;
-import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
 
 public class clsExportNoteAsWebPage {
 
@@ -92,7 +90,6 @@ public class clsExportNoteAsWebPage {
 
 		@Override
 		protected clsExportNoteAsWebPageResponse doInBackground(Void... arg0) {
-			// TODO Auto-generated method stub
 			Gson gson = new Gson();
 			JSONObject objJsonResult = null;
 
@@ -106,7 +103,6 @@ public class clsExportNoteAsWebPage {
 					// Makes sure that the InputStream is closed after finished
 					// using it.
 				} catch (JSONException e) {
-					// TODO Auto-generated catch block
 					objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
 					objResponse.strErrorMessage = "JSON exception. " + e;
 					return objResponse;
@@ -132,7 +128,6 @@ public class clsExportNoteAsWebPage {
 
 		@Override
 		protected void onPostExecute(clsExportNoteAsWebPageResponse objResponse) {
-			// TODO Auto-generated method stub
 			super.onPostExecute(objResponse);
 			if (objProgressDialog.isShowing()) {
 				objProgressDialog.dismiss();
@@ -195,7 +190,6 @@ public class clsExportNoteAsWebPage {
 		try {
 			url = new URL(strUrl);
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, true);
 			return;
@@ -207,26 +201,6 @@ public class clsExportNoteAsWebPage {
 		clsExportNoteAsWebPageResponse objResponse = new clsExportNoteAsWebPageResponse();
 		clsMyExportNoteAsWebPageAsyncTask objAsyncTask = new clsMyExportNoteAsWebPageAsyncTask(objActivity, url,objCommand, objResponse);
 		objAsyncTask.SetOnWebPagePostedListener(callback);			
-//		objAsyncTask.SetOnWebPagePostedListener(new clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener() {			
-//			@Override
-//			public void onPosted(clsExportNoteAsWebPageResponse objResponse) {
-//				if (objResponse.intErrorCode == clsExportNoteAsWebPageResponse.ERROR_NONE) {
-//					// Do work here ...
-//					// Open mail with message
-//					String strSubject = objTreeview.getRepository().getName();
-//					String strBody = "<font face='verdana' size='3'>Please press <a href='<<TREENOTES:WEB_PAGE_URL>>'>here</a> for the message.</font><br><br><font face='verdana' size='2' color='blue'>Message sent using <a src='" + strServerUrl + "'>TreeNotes</a></font>";
-//					strBody = strBody.replace("<<TREENOTES:WEB_PAGE_URL>>", GetWebPageUrl());
-//
-//					Log.d(">>mail", GetWebPageUrl());
-//					
-//					clsUtils.SendGmail(objActivity, strSubject, strBody );
-//					
-//				} else {
-//					clsUtils.MessageBox(objActivity, "Error when generating mail webpage: " + objResponse.strErrorMessage, true);
-//					return;
-//				}
-//			}
-//		});
 		objAsyncTask.execute();
 	}
 
@@ -255,20 +229,7 @@ public class clsExportNoteAsWebPage {
 		objImageUpDownloadAsyncTask.execute();
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	private int GetLevelAmount(clsTreeview objTreeview) {
-		// TODO Auto-generated method stub
 		int intLevelAmount = 0;
 		int intCurrentLevel = 0;
 		for (clsTreeNode objTreeNode: objTreeview.getRepository().objRootNodes) {
@@ -307,7 +268,6 @@ public class clsExportNoteAsWebPage {
 				
 		// Determine how many columns required
 		int intExtraColumns = ((strImageUrl.isEmpty())?0:1) + ((objTreeview.getRepository().IsCheckList())?1:0);
-		
 		
 		// Build the table
 		String strRowHtml;

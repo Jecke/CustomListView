@@ -1,25 +1,16 @@
 package com.treeapps.treenotes.export;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
-
 
 import com.facebook.*;
-import com.facebook.Session.OpenRequest;
 import com.facebook.model.*;
 import com.treeapps.treenotes.R;
-import com.treeapps.treenotes.clsUtils;
-import com.treeapps.treenotes.imageannotation.clsAnnotationData;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
-import android.widget.Toast;
 
 // The Activity hosting the Facebook functionality. Note that only
 // one Fragment is used here which represents the unauthorised as well
@@ -32,8 +23,6 @@ public class ActivityFacebookExport extends FragmentActivity {
 	private Activity objActivity;
 	
 	private clsExportToFacebook mainFragment;
-	
-//	private clsExportData exportData;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -56,34 +45,14 @@ public class ActivityFacebookExport extends FragmentActivity {
 	  objContext  = this;
 	  objActivity = this;
 	  
-	  Intent objIntent = getIntent();
-	  Bundle objBundle = objIntent.getExtras();
-		
 	  
-	  
-//	  exportData = clsUtils.DeSerializeFromString(objBundle.getString(clsMainExport.EXPORT_DATA), 
-//				     						      clsExportData.class);
-			  
 	  // start Facebook Login
-//	  Session.openActiveSession(this, true, Arrays.asList("publish_actions"), new Session.StatusCallback() {
-		  Session.openActiveSession(this, true, new Session.StatusCallback() {
+	  Session.openActiveSession(this, true, new Session.StatusCallback() {
 
 		  // callback when session changes state
 		  @Override
 		  public void call(Session session, SessionState state, Exception exception) {
 			  if (session.isOpened()) {
-Log.d(">>>call", "<<<");
-// 				generates a infinity loop 				  
-//				  Session.NewPermissionsRequest newPermissionsRequest = new Session
-//					      .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions"));
-//					    session.requestNewPublishPermissions(newPermissionsRequest);
-
-				  
-//				  OpenRequest op = new Session.OpenRequest((Activity)objContext);
-//				  List<String> permissions = new ArrayList<String>();
-//				  permissions.add("publish_actions");
-//				  op.setPermissions(permissions);
-//				  session.openForPublish(op);
 
 				  // make request to the /me API
 				  Request.newMeRequest(session, new Request.GraphUserCallback() {
@@ -98,19 +67,19 @@ Log.d(">>>call", "<<<");
 						  }
 					  }
 				  }).executeAsync();
-				  
+
 				  // Start export if the necessary permissions are granted, otherwise request permissions first.
 				  // publish_actions is needed to upload content to FB
 				  // user_photos is used to request information about the photo albums
 				  if(session.isPermissionGranted("publish_actions") &&
-				     session.isPermissionGranted("user_photos"))
+						  session.isPermissionGranted("user_photos"))
 				  {
 					  mainFragment.export(objActivity);//, exportData);
 				  }
 				  else
 				  {
 					  Session.NewPermissionsRequest newPermissionsRequest = new Session
-						      .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions", "user_photos"));
+							  .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions", "user_photos"));
 					  session.requestNewPublishPermissions(newPermissionsRequest);
 				  }
 			  }
