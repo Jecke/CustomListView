@@ -10,7 +10,6 @@ import org.json.JSONObject;
 import com.facebook.*;
 import com.facebook.model.*;
 import com.treeapps.treenotes.R;
-import com.treeapps.treenotes.clsUtils;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
 
@@ -27,7 +26,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Html;
 import android.text.util.Linkify;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -66,10 +64,11 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 			
 		} else {
 			
-			clsUtils.MessageBox(_context, "Error while exporting: " + objResponse.strErrorMessage, true);
+			displayDialogFail("Error while exporting: " + objResponse.strErrorMessage, true);
 		}
 	}
 	
+	// Starting point of fragment
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
 	        					Bundle savedInstanceState) {
@@ -112,7 +111,7 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 	{
 		// Create a dialog showing the number and types of notes in that export to let the user decide
 		// whether he still wants to start the export.
-		String msg = "The link to the Note will be exported to Album >" + clsExportData._topNodeName + "<\n"
+		String msg = "The link to the Note will be exported to Album (" + clsExportData._topNodeName + ")\n"
 					+ "Start Export?";
 		
     	AlertDialog.Builder builder = new AlertDialog.Builder(_context);
@@ -124,7 +123,6 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
             	
             	// Start export of note as web page
             	startExport();
-
             }
         });
 	    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -150,7 +148,7 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 			
 		} catch (Exception e) {
 			
-			clsUtils.MessageBox(_context, "Unable to export note: " + e, true);
+			displayDialogFail("Unable to export note: " + e, true);
 			return;
 		}
 	}
@@ -164,52 +162,51 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 		Bundle params = new Bundle();
 		params.putString("fields", "id,name");
 
-		new Request(Session.getActiveSession(), "/me/albums", params, HttpMethod.GET, 
-				new Request.Callback() {
+		new Request(Session.getActiveSession(), "/me/albums", params, 
+					HttpMethod.GET, new Request.Callback() {
 					
-					@Override
-					public void onCompleted(Response response) {
-//						Log.d(">>>FBresp", response.toString());
-						FacebookRequestError fbError = response.getError();
+			@Override
+			public void onCompleted(Response response) {
+				FacebookRequestError fbError = response.getError();
 
-						if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
-						{
-							GraphObject responseGraphObject = response.getGraphObject();
-							JSONObject json = responseGraphObject.getInnerJSONObject();
+				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+				{
+					GraphObject responseGraphObject = response.getGraphObject();
+					JSONObject json = responseGraphObject.getInnerJSONObject();
 
-							String id;
-							String name;
+					String id;
+					String name;
 
-							JSONArray jArray = null;
-				           
-							try {
-								jArray = json.getJSONArray("data");
-								for(int i =0;i<jArray.length();i++){
-									id = jArray.getJSONObject(i).getString("id");
-									name = jArray.getJSONObject(i).getString("name");
+					JSONArray jArray = null;
 
-									if(0 == name.compareTo(clsExportData._topNodeName))
-									{
-										albumId = id;
-									}
-								}
-								
-						    	if(albumId.isEmpty())
-						    	{
-						    		createAlbum();
-						    	}
-						    	else
-						    	{
-						    		exportDefaultCoverImage();
-						    	}
-								
-							} catch (JSONException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
+					try {
+						jArray = json.getJSONArray("data");
+						for(int i =0;i<jArray.length();i++){
+							id = jArray.getJSONObject(i).getString("id");
+							name = jArray.getJSONObject(i).getString("name");
+
+							if(0 == name.compareTo(clsExportData._topNodeName))
+							{
+								albumId = id;
 							}
 						}
+
+						if(albumId.isEmpty())
+						{
+							createAlbum();
+						}
+						else
+						{
+							exportDefaultCoverImage();
+						}
+
+					} catch (JSONException e1) {
+						displayDialogFail("Unable to request albums from Facebook. Aborting.", true);
+						e1.printStackTrace();
 					}
-				}).executeAsync();
+				}
+			}
+		}).executeAsync();
 	}
 	
 	// Create a FB album by using the Note's name.
@@ -248,7 +245,7 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 				}
 				else
 				{
-					// TODO JE create dialog that album could not be created and export aborted
+					displayDialogFail("Unable to create album. Aborting.", true);
 				}
 			}
 		})
@@ -315,15 +312,17 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 											try
 											{
 												link = json.getString("link");
-												
-												Log.d(">>LINK", link);
-												
-												// TODO JE display link in dialog 
+
+												// Display FB link to user
 												displayDialogSuccess(link);
 												
 											} catch (JSONException e1) {
 												e1.printStackTrace();
 											}
+										}
+										else
+										{
+											_activity.finish();
 										}
 									}
 						}).executeAsync();
@@ -334,7 +333,7 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 				}
 				else
 				{
-//					error message
+					displayDialogFail("Export failed.", true);
 				}
 			}
 		}).executeAsync();
@@ -362,7 +361,12 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 		
 		// Enable OK and Cancel button but override onClickListeners later
 		// if required to prevent dialog from closing.
-		b.setPositiveButton("OK", null);
+		b.setPositiveButton("Close",  new DialogInterface.OnClickListener() {
+    		public void onClick(DialogInterface dialog, int id) {
+
+    			_activity.finish();
+    		}
+    	});
 		
 		dlg = b.create();
 
@@ -370,19 +374,30 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 		// otherwise dlg.getButton would return null. Also the onClickListener
 		// only works if registered AFTER dlg.show.
 		dlg.show();
+	}
 
-		// Set a special listener to the OK button to check the values
-		// of the dialog before dismissing it. If something is wrong
-		// (i.e. invalid line width) the dialog stays open.
-		dlg.getButton(AlertDialog.BUTTON_POSITIVE)
-		 	.setOnClickListener(new View.OnClickListener() {
-				
-				@Override
-				public void onClick(View v) {
-					// TODO Auto-generated method stub
-					
-				}
-			});
+	private void displayDialogFail(String msg, boolean dismissActivity)
+	{
+    	AlertDialog.Builder builder = new AlertDialog.Builder(_context);
+	    builder.setMessage(msg);
+	    builder.setCancelable(true);
+
+	    if(dismissActivity)
+    	{
+	    	builder.setPositiveButton("Close", new DialogInterface.OnClickListener() {
+	    		public void onClick(DialogInterface dialog, int id) {
+
+	    			_activity.finish();
+	    		}
+	    	});
+    	}
+	    else
+	    {
+	    	builder.setPositiveButton("Close", null);
+	    }
+	    AlertDialog dialog = builder.create();
+	    dialog.show();
 
 	}
+
 }
