@@ -2376,6 +2376,7 @@ public class ActivityExplorerStartup extends ListActivity {
  		
  		class clsSendGcmRegIdCommandMessage {
  			String strRegId;
+ 			String strClientUserUuid;
  		}
  		
  		class clsSendGcmRegIdResponse {
@@ -2398,6 +2399,7 @@ public class ActivityExplorerStartup extends ListActivity {
 					clsSendGcmRegIdCommandMessage objCommand = new clsSendGcmRegIdCommandMessage();
 					clsSendGcmRegIdResponse objResponse = new clsSendGcmRegIdResponse();
 					objCommand.strRegId = regid;
+					objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
 					try {
 			            
 			            URL urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
