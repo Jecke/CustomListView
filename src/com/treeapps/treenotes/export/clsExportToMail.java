@@ -33,6 +33,8 @@ public class clsExportToMail implements clsExportNoteAsWebPageAsyncTask.OnWebPag
 	public clsExportToMail(Activity objActivity, clsTreeview objTreeview, clsMessaging objMessaging, clsGroupMembers objGroupMembers) {
 		
 		objExportNoteAsWebPage = new clsExportNoteAsWebPage(objActivity, objTreeview, objMessaging, objGroupMembers);
+		this.objActivity = objActivity;
+		this.objTreeview = objTreeview;
 	}
 	
 	public void Execute() {
