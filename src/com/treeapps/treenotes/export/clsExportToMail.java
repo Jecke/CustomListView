@@ -242,7 +242,7 @@ public class clsExportToMail {
 				if (strImageUrl.isEmpty()) {
 					strRowHtml += "<td></td>";
 				} else {
-					strRowHtml += "<td><img class='displayed' src='" + strImageUrl +"' height='42' align='middle'></td>";
+					strRowHtml += "<td><a href='" + strImageUrl +"'><img class='displayed' src='" + strImageUrl +"' height='42' align='middle'></a></td>";
 				}				
 			} else {
 				strRowHtml += "<td></td>";
