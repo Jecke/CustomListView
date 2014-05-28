@@ -25,10 +25,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.text.Html;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 // The basic way to export to Facebook:
 // 1. Create WebPage from note and upload to TreeNote server
@@ -121,6 +124,7 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
             	
             	// Start export of note as web page
             	startExport();
+
             }
         });
 	    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -315,6 +319,7 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 												Log.d(">>LINK", link);
 												
 												// TODO JE display link in dialog 
+												displayDialogSuccess(link);
 												
 											} catch (JSONException e1) {
 												e1.printStackTrace();
@@ -333,5 +338,51 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 				}
 			}
 		}).executeAsync();
+	}
+
+	// Display a custom dialog providing the link to the FB export
+	private void displayDialogSuccess(String link)
+	{
+		AlertDialog dlg;
+		
+		AlertDialog.Builder b = new AlertDialog.Builder(_context);
+		b.setTitle("Finished");
+
+		LayoutInflater infl = LayoutInflater.from(_context);
+		View view = infl.inflate(R.layout.fb_link_dialog, null);
+
+		b.setView(view);
+	
+		String text = "Export successfully finished to " + link;
+		
+		TextView te = (TextView)view.findViewById(R.id.textFBMessage);
+		te.setText(Html.fromHtml(text));
+
+		Linkify.addLinks(te, Linkify.ALL);
+		
+		// Enable OK and Cancel button but override onClickListeners later
+		// if required to prevent dialog from closing.
+		b.setPositiveButton("OK", null);
+		
+		dlg = b.create();
+
+		// It is important to use the below command instead of Builder.show
+		// otherwise dlg.getButton would return null. Also the onClickListener
+		// only works if registered AFTER dlg.show.
+		dlg.show();
+
+		// Set a special listener to the OK button to check the values
+		// of the dialog before dismissing it. If something is wrong
+		// (i.e. invalid line width) the dialog stays open.
+		dlg.getButton(AlertDialog.BUTTON_POSITIVE)
+		 	.setOnClickListener(new View.OnClickListener() {
+				
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					
+				}
+			});
+
 	}
 }
