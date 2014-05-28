@@ -13,10 +13,14 @@ import android.content.Intent;
 import android.util.Log;
 
 
+
+
 import com.google.gson.Gson;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumItemType;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
+import com.treeapps.treenotes.sharing.clsMessaging;
+import com.treeapps.treenotes.sharing.clsMessaging.clsSyncRepositoryCtrlData;
 
 public class clsExplorerTreeview extends clsTreeview {
 	
@@ -258,17 +262,17 @@ public class clsExplorerTreeview extends clsTreeview {
 		objNoteRepository.SerializeToFile(objNoteFile);
 	}
 
-	public ArrayList<clsSyncRepository> GetAllSyncNotes() {
+	public ArrayList<clsSyncRepositoryCtrlData> GetAllSyncNotes(clsMessaging objMessaging) {
 		// TODO Auto-generated method stub
-		ArrayList<clsSyncRepository> objSyncRepositories = new ArrayList<clsSyncRepository>();
+		ArrayList<clsSyncRepositoryCtrlData> objSyncRepositoryCtrlDatas = new ArrayList<clsSyncRepositoryCtrlData>();
 		for (clsTreeNode objTreeNode: this.getRepository().objRootNodes) {
-			AddToSyncRepositoriesRecursively(objSyncRepositories,objTreeNode);
+			AddToSyncRepositoriesRecursively(objSyncRepositoryCtrlDatas,objTreeNode, objMessaging);
 		}
-		return objSyncRepositories;
+		return objSyncRepositoryCtrlDatas;
 	}
 
-	private void AddToSyncRepositoriesRecursively(ArrayList<clsSyncRepository> objSyncRepositories,
-			clsTreeNode objTreeNode) {
+	private void AddToSyncRepositoriesRecursively(ArrayList<clsSyncRepositoryCtrlData> objSyncRepositoryCtrlDatas,
+			clsTreeNode objTreeNode, clsMessaging objMessaging) {
 		// TODO Auto-generated method stub
 		if(objTreeNode.enumItemType == enumItemType.OTHER) {
 			if (objTreeNode.IsToBeSynched()) {
@@ -278,12 +282,16 @@ public class clsExplorerTreeview extends clsTreeview {
 				if (objNoteFile.exists()) {
 					clsRepository objNoteRepository = DeserializeNoteFromFile(objNoteFile);
 					// Add to sync repository
-					objSyncRepositories.add(objNoteRepository.getCopy());
+					clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
+		        	objRepositoryCtrlData.objSyncRepository = objNoteRepository.getCopy();
+		        	objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = false;
+		        	objRepositoryCtrlData.boolNeedsOnlyChangeNotification = true;
+		        	objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
 				}
 			}
 		}
 		for (clsTreeNode objChildTreeNode:objTreeNode.objChildren ){
-			AddToSyncRepositoriesRecursively(objSyncRepositories,objChildTreeNode);
+			AddToSyncRepositoriesRecursively(objSyncRepositoryCtrlDatas,objChildTreeNode, objMessaging);
 		}
 	}
 

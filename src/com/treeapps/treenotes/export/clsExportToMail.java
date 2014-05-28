@@ -198,7 +198,7 @@ public class clsExportToMail {
 		if ((objTreeNode.resourceId == clsTreeview.IMAGE_RESOURCE) || 
 				(objTreeNode.resourceId == clsTreeview.ANNOTATION_RESOURCE) ||
 				(objTreeNode.resourceId == clsTreeview.WEB_RESOURCE)){
-			if (objTreeNode.annotation != null) {
+			if (objTreeNode.getBoolUseAnnotatedImage()) {
 				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_annotate.jpg";
 			} else {
 				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_full.jpg";

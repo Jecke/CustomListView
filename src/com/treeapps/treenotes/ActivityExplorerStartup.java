@@ -722,45 +722,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				Toast.makeText(this, "A shortcut already exists, please delete first", Toast.LENGTH_SHORT).show();
 			}
 			return true;
-			
-		// Export note to Facebook
-        case R.id.actionSendToFacebook:
 
-        	// Start export only if exactly one note is selected 
-        	if (objExplorerTreeview.getRepository().objRootNodes.size() != 0 && 
-        		objSelectedTreeNodes.size() == 1 							 && 
-        		objSelectedTreeNodes.get(0).enumItemType == enumItemType.OTHER)
-        	{
-        		// Read actual note info from file
-        		File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objSelectedTreeNodes.get(0).guidTreeNode.toString());
-        		clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
-        		
-        		// Create access to the export functionality, gather necessary data and start export.
-        		// Note: The content of the node gets send to the export. If the data of the note container is
-        		// required then send objSelectedTreeNodes.get(0).
-        		//
-        		// first part of check: Note never had content
-        		// second part of check: Content of note has been deleted
-           		if(objNoteRepository == null || objNoteRepository.objRootNodes.isEmpty())
-        		{
-            		Toast.makeText(objContext, "Nothing to export. Note is empty.", Toast.LENGTH_LONG).show();
-        		}
-        		else
-        		{
-            		clsExportData data = new clsExportData(objNoteRepository.objRootNodes, 
-            												fileTreeNodesDir.getAbsolutePath(),
-            												objSelectedTreeNodes.get(0).getName());
-
-            		clsMainExport export = new clsMainExport(objContext);
-            		export.export(clsMainExport.EXPORT_DEST.TO_FACEBOOK, data);
-        		}
-        	}
-        	else 
-        	{
-        		Toast.makeText(objContext, "Please select one note", Toast.LENGTH_LONG).show();
-        	}
-       	 	return true;
-			
 		case R.id.actionEditNoteHeading:
 			if (objExplorerTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
 				MessageBoxOk("Please select only one item at a time");
@@ -919,7 +881,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
 			objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
 			objSyncCommandMsg.boolIsMergeNeeded = true;
-			objSyncCommandMsg.objSyncRepositories = objExplorerTreeview.GetAllSyncNotes();
+			objSyncCommandMsg.objSyncRepositoryCtrlDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
 
 			ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(this,
 					urlFeed, objSyncCommandMsg, objMessaging, true, objGroupMembers);

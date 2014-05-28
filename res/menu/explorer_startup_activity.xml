@@ -154,8 +154,8 @@
                   android:title="Subscriptions">
             </item>
             <item android:id="@+id/actionShareSyncAll"
-                  android:icon="@drawable/ic_action_share"
-                  android:title="Sync all"/>
+                  android:icon="@drawable/ic_action_send_now"
+                  android:title="Send/Refresh"/>
             <item android:id="@+id/actionShareRestoreFromServer"
                   android:icon="@drawable/ic_action_share"
                   android:title="Restore all from server"/>

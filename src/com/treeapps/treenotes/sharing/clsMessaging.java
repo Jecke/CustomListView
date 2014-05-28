@@ -979,7 +979,13 @@ public class clsMessaging {
     public class clsSyncNoteCommandMsg extends clsMsg {
         public String strClientUserUuid = "";
         public boolean boolIsMergeNeeded = true; // Return server version if set to false
-		public ArrayList<clsSyncRepository> objSyncRepositories = new ArrayList<clsSyncRepository>();
+		public ArrayList<clsSyncRepositoryCtrlData> objSyncRepositoryCtrlDatas = new ArrayList<clsSyncRepositoryCtrlData>();
+    }
+    
+    public class clsSyncRepositoryCtrlData {
+    	public clsSyncRepository objSyncRepository;
+    	public boolean boolNeedsOnlyChangeNotification;
+    	public boolean boolNeedsAutoSyncWithNotification;
     }
     
     public class clsSyncNoteResponseMsg extends clsMsg {

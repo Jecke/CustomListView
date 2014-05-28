@@ -17,6 +17,7 @@ import java.util.UUID;
 
 
 
+
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.gson.reflect.TypeToken;
@@ -37,6 +38,7 @@ import com.treeapps.treenotes.sharing.clsMessaging.NoteSyncAsyncTask;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageUpDownloadAsyncTask;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteCommandMsg;
+import com.treeapps.treenotes.sharing.clsMessaging.clsSyncRepositoryCtrlData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
 
 import android.os.Bundle;
@@ -653,6 +655,14 @@ public class ActivityNoteStartup extends ListActivity {
         	 objExportToMail = new clsExportToMail(this, objNoteTreeview, objMessaging, objGroupMembers);
         	 objExportToMail.Execute();
         	 return true;
+         case R.id.actionSendToFacebook:
+        	 clsMainExport objMainExport = new clsMainExport(this);
+        	 objMainExport.export(clsMainExport.EXPORT_DEST.TO_FACEBOOK);
+        	 return true;
+         case R.id.actionSendToFacebook:
+        	 clsMainExport objMainExport = new clsMainExport(this, this, objNoteTreeview, objMessaging, objGroupMembers);
+        	 objMainExport.Execute(clsMainExport.EXPORT_DEST.TO_FACEBOOK);
+        	 return true;
          case R.id.actionMoveDown:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
         		 clsUtils.MessageBox(this, "Please add some items first.", false);
@@ -773,7 +783,10 @@ public class ActivityNoteStartup extends ListActivity {
 			}
         	 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
         	 clsSyncRepository objSyncRepository = objNoteTreeview.getRepository().getCopy();
-        	 objSyncCommandMsg.objSyncRepositories.add(objSyncRepository);
+        	 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
+        	 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
+        	 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
+        	 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
         	 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
         	 objSyncCommandMsg.boolIsMergeNeeded = true;
         	 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
@@ -799,7 +812,11 @@ public class ActivityNoteStartup extends ListActivity {
 			}
         	 objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
         	 objSyncRepository = objNoteTreeview.getRepository().getCopy();
-        	 objSyncCommandMsg.objSyncRepositories.add(objSyncRepository);
+        	 objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
+        	 objRepositoryCtrlData.objSyncRepository = objSyncRepository;
+        	 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
+        	 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
+        	 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
         	 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
         	 objSyncCommandMsg.boolIsMergeNeeded = false;
         	 objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
