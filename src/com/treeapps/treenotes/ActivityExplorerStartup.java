@@ -722,7 +722,11 @@ public class ActivityExplorerStartup extends ListActivity {
 				Toast.makeText(this, "A shortcut already exists, please delete first", Toast.LENGTH_SHORT).show();
 			}
 			return true;
+<<<<<<< HEAD
 
+=======
+			
+>>>>>>> branch 'master' of https://github.com/Jecke/CustomListView
 		case R.id.actionEditNoteHeading:
 			if (objExplorerTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
 				MessageBoxOk("Please select only one item at a time");

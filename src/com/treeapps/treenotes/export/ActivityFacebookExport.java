@@ -29,10 +29,11 @@ import android.widget.Toast;
 public class ActivityFacebookExport extends FragmentActivity {
 
 	private Context objContext;
+	private Activity objActivity;
 	
 	private clsExportToFacebook mainFragment;
 	
-	private clsExportData exportData;
+//	private clsExportData exportData;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -52,13 +53,16 @@ public class ActivityFacebookExport extends FragmentActivity {
 				  			.findFragmentById(android.R.id.content);
 	  }
 	  
-	  objContext = this;
+	  objContext  = this;
+	  objActivity = this;
 	  
 	  Intent objIntent = getIntent();
 	  Bundle objBundle = objIntent.getExtras();
 		
-	  exportData = clsUtils.DeSerializeFromString(objBundle.getString(clsMainExport.EXPORT_DATA), 
-				     						      clsExportData.class);
+	  
+	  
+//	  exportData = clsUtils.DeSerializeFromString(objBundle.getString(clsMainExport.EXPORT_DATA), 
+//				     						      clsExportData.class);
 			  
 	  // start Facebook Login
 //	  Session.openActiveSession(this, true, Arrays.asList("publish_actions"), new Session.StatusCallback() {
@@ -101,7 +105,7 @@ Log.d(">>>call", "<<<");
 				  if(session.isPermissionGranted("publish_actions") &&
 				     session.isPermissionGranted("user_photos"))
 				  {
-					  mainFragment.export(objContext, exportData);
+					  mainFragment.export(objActivity);//, exportData);
 				  }
 				  else
 				  {
@@ -121,7 +125,6 @@ Log.d(">>>call", "<<<");
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 	  super.onActivityResult(requestCode, resultCode, data);
-	  Log.d(">>FB<<", "onActivityResult");
 
 	  Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
 	}

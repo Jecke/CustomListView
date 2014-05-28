@@ -1,34 +1,18 @@
-// NEXT:
-// create web page and post as caption
-// create dialog when export failed and finished
-
 package com.treeapps.treenotes.export;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.UUID;
 
 import org.apache.http.HttpStatus;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
-
 import com.facebook.*;
 import com.facebook.model.*;
-import com.facebook.widget.*; 
 import com.treeapps.treenotes.R;
-import com.treeapps.treenotes.clsResourceLoader;
-import com.treeapps.treenotes.clsTreeview;
 import com.treeapps.treenotes.clsUtils;
-import com.treeapps.treenotes.clsTreeview.clsTreeNode;
-import com.treeapps.treenotes.imageannotation.clsAnnotationData;
-import com.treeapps.treenotes.imageannotation.clsCombineAnnotateImage;
-import com.treeapps.treenotes.imageannotation.clsAnnotationData.clsAnnotationItem;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -39,96 +23,50 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.SyncStateContract.Constants;
 import android.support.v4.app.Fragment;
+import android.text.Html;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
+import android.widget.TextView;
 
-public class clsExportToFacebook extends Fragment {
+// The basic way to export to Facebook:
+// 1. Create WebPage from note and upload to TreeNote server
+// 2. Create an FB album with the name of the note if necessary
+// 3. Upload a standard TreeNote picture to the album with its caption set to the URL of the exported HTML document
+//
+// The optimal solution would be to display the web page directly on Facebook but there is no easy way to do that
+// because Facebook does not support HTML directly.
+public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener {
 	
 	private View view;
-	private clsExportData _data;
-	private int level = 0;
+	//private clsExportData _data;
 	private Context _context;
+	private Activity _activity;
 
-	private ProgressDialog pd;
 	private String appVersion;
 
-	// 
 	private String albumId = new String();
 	private String coverId = new String();
 	
-	private void imageNodeExportResult(boolean success, String exportID, ExportInputContainer node)
-	{
-		if(success)
-		{
-			//Log.d(">>imageCmtNode", "L"+String.valueOf(node.level)+ " " +node.guidTreeNode.toString());
-			
-			// Add the FB export ID to the element in order to be able to add further notes (i.e. comments)
-			// to it should a note on the next lower level appear.
-			// Scenario:
-			// currentNode
-			//	L2
-			//		L3
-			//  L2 <- must be attached to first L2 and not L3 (in FB that is a comment on a comment)
-			node.fbExportID = exportID;
-			
-			// Export annotation texts if necessary.
-			if(!node.annotationText.isEmpty())
-			{
-				exportComment(exportID, node, node.annotationText, true);
-			}
-			else
-			{
-				// Export next entry in exportInput
-				exportPendingId++;
-				if(exportInput.size() > exportPendingId)
-				{
-					exportNode(exportInput.get(exportPendingId));
-				}
-				else
-				{
-					pd.dismiss();
-				}
-			}
-		}
-		else
-		{
-			clsUtils.MessageBox(_context, "Image upload failed. Abort export.", false);
-			pd.dismiss();
-		}
-	}
+	private	clsExportNoteAsWebPage objExportNoteAsWebPage;
 	
-	private void textNodeExportResult(boolean success, String exportID, ExportInputContainer node)
-	{
-		//Log.d(">>idx", "textNodeExportResult");
-		if(success)
-		{
-			if(node.fbExportID.isEmpty())
-			{
-				node.fbExportID = exportID;
-			}
+	private ProgressDialog objProgressDialog;
+	
+	// implementation from clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener
+	@Override
+	public void onPosted(clsExportNoteAsWebPageResponse objResponse) {
+		if (objResponse.intErrorCode == clsExportNoteAsWebPageResponse.ERROR_NONE) {
 
-			// Export next entry in exportInput
-			exportPendingId++;
-			if(exportInput.size() > exportPendingId)
-			{
-				exportNode(exportInput.get(exportPendingId));
-			}
-			else
-			{
-				pd.dismiss();
-			}
-		}
-		else
-		{
-			clsUtils.MessageBox(_context, "Text upload failed. Abort export.", false);
-			pd.dismiss();
+			// Start FB export by creating the album for the URL of the note if necessary
+			requestCreateAlbum();
+			
+		} else {
+			
+			clsUtils.MessageBox(_context, "Error while exporting: " + objResponse.strErrorMessage, true);
 		}
 	}
 	
@@ -140,183 +78,42 @@ public class clsExportToFacebook extends Fragment {
 	    return view;
 	}
 	
-	class ExportInputContainer
-	{
-		public UUID guidTreeNode;
-		public String strName;
-		public int resourceId;
-		public boolean boolUseAnnotatedImage;
-		
-		public int level;
-		
-//		public ArrayList<String> annotationText = new ArrayList<String>();
-		public String annotationText = new String();
-
-		// specific to export functionality
-		public String fbExportID = new String();
-		//public String parentGuidTreeNode;
-		
-//		public ExportInputContainer()
-//		{
-//			
-//		}
-	}
-	
-	List<ExportInputContainer> exportInput = new ArrayList<ExportInputContainer>();
-	
-	// TODO JE I would prefer to change the resource types in clsTreeview to an enumeration and use an EnumMap
-	// here to implement the counters. That seems to be overkill for a one-off counter but would be more flexible
-	// if new resource types get added.
-	private int countText  = 0;
-	private int countImage = 0;
-	private int countVideo = 0;
-	private int countWeb   = 0;
-	
-	// Index of element currently in export
-	private int exportPendingId;
-	
-	// Create a linked list of data to export in order to keep track of export progress.
-	// The export of nodes happens asynchronous which means that smaller exports (e.g. text notes) will 
-	// happen quicker than bigger (e.g. annotated images) ones. We need to make sure that the hierarchy
-	// is kept intact meaning that children of a note should also appear as children on Facebook. That requires an
-	// upper level export to be finished before the lower level export starts.
-	// The current approach is to create a PhotoAlbum with the name of the topmost node (from ExplorerStartup)
-	// and to add the actual notes as a hierarchy of comments to it. Facebook supports images in comments so
-	// it should be possible to export images from lower levels.
-	private void createListToExport(ArrayList<clsTreeNode> top, int level)
-	{
-		for(clsTreeNode node: top)
-		{
-			//Log.d(">>>Exp", String.valueOf(level) + " --> " + node.getName());
-			
-			ExportInputContainer exp = new ExportInputContainer();
-			exp.guidTreeNode = node.guidTreeNode;
-			exp.strName = node.getName();
-			exp.resourceId = node.resourceId;
-			exp.boolUseAnnotatedImage = node.boolUseAnnotatedImage;
-			
-			exp.level = level;
-			
-			// The annotation texts will be combined in a multi-line string to create a
-			// single comment on facebook. That makes it more readable because every comment
-			// will be prefixed with the originator's name on FB.
-			if(node.annotation != null && !node.annotation.items.isEmpty())
-			{
-				String annotationText = new String();
-				
-				for(clsAnnotationItem item : node.annotation.items)
-				{
-					if(!item.getAnnotationText().isEmpty())
-					{
-						annotationText = annotationText + "\n";
-						annotationText = annotationText + item.getAnnotationText();
-					}
-				}
-				if(!annotationText.isEmpty())
-				{
-					exp.annotationText = annotationText;
-				}
-			}
-			
-			exportInput.add(exp);
-			
-			// Count the number of notes per type to give the user an idea how much
-			// data is about to be exported.
-			switch(exp.resourceId)
-			{
-			case clsTreeview.IMAGE_RESOURCE:
-				countImage++;
-				break;
-			case clsTreeview.TEXT_RESOURCE:
-				countText++;
-				break;
-			case clsTreeview.VIDEO_RESOURCE:
-				countVideo++;
-				break;
-			case clsTreeview.WEB_RESOURCE:
-				countWeb++;
-				break;
-			}
-			
-			if(!node.objChildren.isEmpty())
-			{
-				createListToExport(node.objChildren, level + 1);
-			}
-		}
-	}
-
-	private void startExport()
-	{
-		// TODO JE create webpage and add URL as caption to coverId
-		
-		return;
-		
-//		if(!exportInput.isEmpty())
-//		{
-//			pd = ProgressDialog.show(_context, "Processing...", "Please wait", 
-//					true, true, null);
-//			
-//			exportPendingId = 0;
-//			
-//			exportNode(exportInput.get(exportPendingId));
-//		}
-	}
-	
-	private void exportNode(ExportInputContainer node)
-	{
-		postToFacebook(node);
-	}
-	
 	/**
 	 * Main entry to export class
 	 * 
 	 * @param context
 	 * @param data
 	 */
-	public void export(Context context, clsExportData data)
+	public void export(Activity activity)//, clsExportData data)
 	{
-		_data = data;
-		_context = context;
+		//_data = data;
+		_activity = activity;
+		_context = (Context)activity;
 		
 		PackageInfo pInfo;
 		try {
+			
+			// The version of the app gets used as description of the album
 			pInfo = _context.getPackageManager().getPackageInfo(_context.getPackageName(), 0);
 			appVersion = " version " + pInfo.versionName;
+			
 		} catch (NameNotFoundException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 			appVersion = " ";
 		}
 
-		// Gather the data necessary to do the export.
-		createListToExport(_data._top, level);
-
-		// Each export goes to a photo album (due to lack of another structure like a folder on FB).
-		// The below method checks if the album still exists.
-    	requestCreateAlbum();
+		// Show a dialog to get the confirmation from the user to start the export.
+		requestUserConfirmationAndStart();
 	}
 
+	// Show a dialog to get the confirmation from the user to start the export.
 	private void requestUserConfirmationAndStart()
 	{
 		// Create a dialog showing the number and types of notes in that export to let the user decide
 		// whether he still wants to start the export.
-		int countImages = countImage + countWeb;
-		String msg = "Export contains \n";
-		msg = ((countText  > 0)?(msg + "\t"+String.valueOf(countText)  + " text note(s)\n"):msg);
-		msg = ((countVideo > 0)?(msg + "\t"+String.valueOf(countVideo) + " video note(s)\n"):msg);
-		msg = ((countImages > 0)?(msg + "\t"+String.valueOf(countImages) + " image note(s)\n"):msg);
-		msg = msg + "\n";
-		
-		if(albumId.isEmpty())
-		{
-			msg = msg + "The Facebook album >" + _data._topNodeName + "< will be created.\n"; 
-		}
-		else
-		{
-			msg = msg + "Note will be exported to Facebook album >" + _data._topNodeName + "<.\n"; 
-		}
-		
-		msg = msg + "\nStart Export?";
+		String msg = "The link to the Note will be exported to Album >" + clsExportData._topNodeName + "<\n"
+					+ "Start Export?";
 		
     	AlertDialog.Builder builder = new AlertDialog.Builder(_context);
 	    builder.setMessage(msg);
@@ -324,16 +121,10 @@ public class clsExportToFacebook extends Fragment {
 	    
 	    builder.setPositiveButton("Export", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-            	// It is not possible to delete an album so we create it if it does not 
-            	// exist and use it, otherwise.
-            	if(albumId.isEmpty())
-            	{
-            		createAlbum();
-            	}
-            	else
-            	{
-            		exportDefaultCoverImage();
-            	}
+            	
+            	// Start export of note as web page
+            	startExport();
+
             }
         });
 	    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -345,8 +136,31 @@ public class clsExportToFacebook extends Fragment {
 	    dialog.show();
 	}
 	
+	// Export note as web page 
+	private void startExport()
+	{
+		objExportNoteAsWebPage = new clsExportNoteAsWebPage(_activity, clsExportData._objTreeview, clsExportData._objMessaging, clsExportData._objGroupMembers);
+		
+		// TODO JE create webpage and add URL as caption to coverId
+		try {
+			
+			objExportNoteAsWebPage.GenerateWebPageHtml();
+			objExportNoteAsWebPage.PostWebPageHtmlToServer(this);
+			objExportNoteAsWebPage.UploadRequiredImages();
+			
+		} catch (Exception e) {
+			
+			clsUtils.MessageBox(_context, "Unable to export note: " + e, true);
+			return;
+		}
+	}
+
 	private void requestCreateAlbum()
 	{
+		objProgressDialog = new ProgressDialog(_context);
+		objProgressDialog.setMessage("Exporting to Facebook..., please wait.");
+		objProgressDialog.show();
+		
 		Bundle params = new Bundle();
 		params.putString("fields", "id,name");
 
@@ -374,13 +188,20 @@ public class clsExportToFacebook extends Fragment {
 									id = jArray.getJSONObject(i).getString("id");
 									name = jArray.getJSONObject(i).getString("name");
 
-									if(0 == name.compareTo(_data._topNodeName))
+									if(0 == name.compareTo(clsExportData._topNodeName))
 									{
 										albumId = id;
 									}
 								}
 								
-								requestUserConfirmationAndStart();
+						    	if(albumId.isEmpty())
+						    	{
+						    		createAlbum();
+						    	}
+						    	else
+						    	{
+						    		exportDefaultCoverImage();
+						    	}
 								
 							} catch (JSONException e1) {
 								// TODO Auto-generated catch block
@@ -391,11 +212,12 @@ public class clsExportToFacebook extends Fragment {
 				}).executeAsync();
 	}
 	
+	// Create a FB album by using the Note's name.
 	private void createAlbum()
 	{
 		Bundle params = new Bundle();
 
-		params.putString("name", _data._topNodeName);
+		params.putString("name", clsExportData._topNodeName);
 		params.putString("description", "Created by TreeNotes" + appVersion);
 
 		new Request(Session.getActiveSession(), "/me/albums/", params, HttpMethod.POST, new Request.Callback() {
@@ -420,8 +242,8 @@ public class clsExportToFacebook extends Fragment {
 						exportDefaultCoverImage();
 	            		
 					} catch (JSONException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
+						return;
 					}
 				}
 				else
@@ -433,17 +255,21 @@ public class clsExportToFacebook extends Fragment {
 		.executeAsync();
 	}
 	
+	// Export the default image with the URL as caption to FB. If successful request FB Link and display
+	// it to the user.
 	private void exportDefaultCoverImage()
 	{
 		byte[] data = null;
 		Bitmap bi = BitmapFactory.decodeResource(_context.getResources(), R.drawable.fb_album_icon);
-Log.d(">>BITMAP", "CREATED");
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		bi.compress(Bitmap.CompressFormat.JPEG, 100, baos);
 		data = baos.toByteArray();
 
+		String caption = "Click here for full information: " + objExportNoteAsWebPage.GetWebPageUrl();
+		
 		Bundle params = new Bundle();
-		//params.putString("caption", node.strName);
+		params.putString("caption", caption);
 		params.putByteArray("picture", data);
 
 		String target = "/" + albumId + "/photos";
@@ -453,8 +279,11 @@ Log.d(">>BITMAP", "CREATED");
 			
 			@Override
 			public void onCompleted(Response response) {
-//				Log.d(">>>FBresp", response.toString());
+
 				FacebookRequestError fbError = response.getError();
+
+				// Remove progress dialog
+				objProgressDialog.dismiss();
 
 				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
 				{
@@ -467,303 +296,93 @@ Log.d(">>BITMAP", "CREATED");
 						id = json.getString("id");
 						coverId = id;
 						
+						// Request link of recent export and display to user
+						Bundle params = new Bundle();
+						params.putString("fields", "link");
+						new Request(Session.getActiveSession(), coverId, params, HttpMethod.GET, 
+								new Request.Callback() {
+									
+									@Override
+									public void onCompleted(Response response) {
+										FacebookRequestError fbError = response.getError();
+
+										if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+										{
+											GraphObject responseGraphObject = response.getGraphObject();
+											JSONObject json = responseGraphObject.getInnerJSONObject();
+
+											String link;
+											try
+											{
+												link = json.getString("link");
+												
+												Log.d(">>LINK", link);
+												
+												// TODO JE display link in dialog 
+												displayDialogSuccess(link);
+												
+											} catch (JSONException e1) {
+												e1.printStackTrace();
+											}
+										}
+									}
+						}).executeAsync();
+						
 					} catch (JSONException e1) {
 						e1.printStackTrace();
 					}
 				}
-				
-				// Start export no matter whether the image upload succeeded.
-				startExport();
+				else
+				{
+//					error message
+				}
 			}
 		}).executeAsync();
 	}
-	
-//	private void export()
-//	{
-//		// Processing: Act on each element of list and all children of each list
-//		for(clsTreeNode node: _data._top)
-//		{
-//			Log.d(">>>", "call: "+node.getName()+" "+String.valueOf(level));
-//			
-//			// Create a POST to Facebook
-//			// Note: At the moment we only upload the images to Facebook and add the description and
-//			// other text notes as comments.
-//			// TODO JE Create a Facebook page or something alike to show the exported data.		
-//			postToFacebook(node, level);
-//						
-//			if(!node.objChildren.isEmpty())
-//			{
-//				exportChild(_context, node.objChildren, level + 1);
-//			}
-//		}
-//	}
-//	
-//	public void exportChild(Context context, ArrayList<clsTreeNode> top, int level)
-//	{
-//		for(clsTreeNode node: top)
-//		{
-//			Log.d(">>>", "callChild: "+node.getName()+" "+String.valueOf(level));
-//			
-//			// do something with the parent
-//			postToFacebook(node, level);
-//
-//			if(!node.objChildren.isEmpty())
-//			{
-//				exportChild(context, node.objChildren, level + 1);
-//			}
-//		}
-//	}
-	
-	
-	/**
-	 * This method checks if the node has a predecessor and returns its FB Id so that the export
-	 * can create a sub-comment.
-	 * 
-	 * @param node
-	 */
-	private String getFbIdOfParent(ExportInputContainer node)
-	{
-		String retval = new String();
 
-		if(node.level > 0)
-		{
-			int i = exportInput.indexOf(node);
-			for(; i >= 0; i--)
-			{
-				ExportInputContainer pred = exportInput.get(i); 
+	// Display a custom dialog providing the link to the FB export
+	private void displayDialogSuccess(String link)
+	{
+		AlertDialog dlg;
+		
+		AlertDialog.Builder b = new AlertDialog.Builder(_context);
+		b.setTitle("Finished");
+
+		LayoutInflater infl = LayoutInflater.from(_context);
+		View view = infl.inflate(R.layout.fb_link_dialog, null);
+
+		b.setView(view);
+	
+		String text = "Export successfully finished to " + link;
+		
+		TextView te = (TextView)view.findViewById(R.id.textFBMessage);
+		te.setText(Html.fromHtml(text));
+
+		Linkify.addLinks(te, Linkify.ALL);
+		
+		// Enable OK and Cancel button but override onClickListeners later
+		// if required to prevent dialog from closing.
+		b.setPositiveButton("OK", null);
+		
+		dlg = b.create();
+
+		// It is important to use the below command instead of Builder.show
+		// otherwise dlg.getButton would return null. Also the onClickListener
+		// only works if registered AFTER dlg.show.
+		dlg.show();
+
+		// Set a special listener to the OK button to check the values
+		// of the dialog before dismissing it. If something is wrong
+		// (i.e. invalid line width) the dialog stays open.
+		dlg.getButton(AlertDialog.BUTTON_POSITIVE)
+		 	.setOnClickListener(new View.OnClickListener() {
 				
-				if(pred.level < node.level)
-				{
-					retval = pred.fbExportID; 
-					return retval; 
-				}
-			}
-		}
-		
-		return retval; 
-	}
-
-	// That method communicates with facebook in order to post data
-	private void postToFacebook(ExportInputContainer node)
-	{
-		switch(node.resourceId)
-		{
-			case clsTreeview.IMAGE_RESOURCE:
-				// Create annotated image if required
-				String strCombinedFileName = _data._treeNotesDir + "/" + node.guidTreeNode + "_full.jpg";	
-				if(node.boolUseAnnotatedImage)
-				{
-					new ExportAnnotatedImage(node).createAndExport(strCombinedFileName);
-				}
-				else
-				{
-					exportImage(node, getFbIdOfParent(node), strCombinedFileName);
-				}
-				break;
-			
-			case clsTreeview.TEXT_RESOURCE:
-				exportComment(getFbIdOfParent(node), node, node.strName, false);
-
-				//Toast.makeText(_context, "clsExportToFacebook:TEXT_RESOURCE not implemented", Toast.LENGTH_SHORT).show();
-				break;
-			
-			case clsTreeview.VIDEO_RESOURCE:
-				Toast.makeText(_context, "clsExportToFacebook:VIDEO_RESOURCE not implemented", Toast.LENGTH_SHORT).show();
-				break;
-			
-			case clsTreeview.WEB_RESOURCE:
-				Toast.makeText(_context, "clsExportToFacebook:WEB_RESOURCE not implemented", Toast.LENGTH_SHORT).show();
-				break;
-			
-		}
-	}
-	
-	private void exportImage(ExportInputContainer node, String parentID, String file)
-	{
-		String target = new String();
-		
-		//clsTreeNode _node = node;
-
-		Log.d(">>>fbAlbumID", "onCompleteExport "+parentID);
-
-		
-		byte[] data = null;
-		Bitmap bi = BitmapFactory.decodeFile(file);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		bi.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-		data = baos.toByteArray();
-
-		Bundle params = new Bundle();
-
-		if(parentID.isEmpty())
-		{
-			params.putString("caption", node.strName);
-			params.putByteArray("picture", data);
-			
-			// Upload to album
-			if(albumId.isEmpty()) // should never happen
-			{
-				target = "/photos";
-			}
-			else
-			{
-				target = "/" + albumId + "/photos";
-			}
-
-		}
-		else
-		{
-			// Upload to album
-			if(albumId.isEmpty()) // should never happen
-			{
-				
-			}
-			else
-			{
-				if(node.level > 0)
-				{
-					Log.d(">>TODO", "pictures on sublevel ignored");
-					// TODO That does not work because image need to be encoded as
-					// multipart/form-encoded
-//					Log.d(">>", "PhotoComment");
-//					params.putString("message", node.strName);
-//					params.putParcelable("source", bi);
-//					// source
-//								
-//					target = "/" + parentID + "/comments";
-				}
-				else
-				{
-					params.putString("caption", node.strName);
-					params.putByteArray("picture", data);
-					
-					target = parentID + "/photos";
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
 					
 				}
-			}
-		}
-		Log.d(">>img", "target: " + target);
+			});
 
-		// test test 
-//		textNodeExportResult(true, "42", node);
-
-		new Request(Session.getActiveSession(), target, params, HttpMethod.POST, new RequestCallback(node, false))
-			.executeAsync();
-	}
-	
-	private void exportComment(String parentID, ExportInputContainer node, String message, boolean isAnnotation)
-	{
-		String target;
-
-		Bundle params = new Bundle();
-		params.putString("message", message);
-
-		if(parentID.isEmpty())
-		{
-			// TODO add comments to new photoalbum
-			if(albumId.isEmpty()) // should never happen
-			{
-				target = "/feed";
-			}
-			else
-			{
-				target = "/" + albumId + "/comments";
-			}
-		}
-		else
-		{
-			if(isAnnotation)
-			{
-				target = "/" + parentID + "/comments";
-			}
-			else
-			{
-				target = "/" + parentID + "/comments";
-				
-			}
-		}
-		Log.d(">>cmt", "target: " + target);
-
-// test test 
-//		textNodeExportResult(true, "23", node);
-
-		new Request(Session.getActiveSession(), target, params, HttpMethod.POST, new RequestCallback(node, true))
-			.executeAsync();
-	}
-
-	// Helper to handle Facebook request responses
-	class RequestCallback implements Request.Callback
-	{
-		ExportInputContainer _node;
-		boolean _textNote;
-		
-		public RequestCallback(ExportInputContainer node, boolean textNote)
-		{
-			_node = node;
-			_textNote = textNote;
-		}
-		
-		public void onCompleted(Response response) {
-			boolean success = false;
-			String fbId = "";
-			
-			FacebookRequestError fbError = response.getError();
-
-			if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
-			{
-//Log.d(">>>", "onCompleteExport "+String.valueOf(_textNote));
-//				Log.d(">>> resp", response.toString());
-				GraphObject responseGraphObject = response.getGraphObject();
-				JSONObject json = responseGraphObject.getInnerJSONObject();
-
-				try {
-					fbId = json.getString("id");
-					success = true;
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					
-					// unsuccessful
-					success = false;
-				}
-			}
-			Log.d(">>> resp", response.toString());
-
-			if(_textNote)
-				textNodeExportResult(success, fbId, _node);
-			else
-				imageNodeExportResult(success, fbId, _node);
-		}
-	}
-	
-	class ExportAnnotatedImage implements clsCombineAnnotateImage.TaskCompletedInterface
-	{
-		private ExportInputContainer _node;
-		
-		public ExportAnnotatedImage(ExportInputContainer node)
-		{
-			_node = node;
-		}
-		
-		// interface from  implements clsCombineAnnotateImage.TaskCompletedInterface 
-		public void loadTaskComplete(String combinedFile)
-		{
-//			Log.d(">>>", "combined " + combinedFile);
-//
-//			Log.d(">>imageNode", _node.guidTreeNode.toString());
-//			Log.d(">>imageNode", String.valueOf(_node.annotation.items.isEmpty()));
-
-			exportImage(_node, getFbIdOfParent(_node), combinedFile);
-			
-			
-		}
-
-		public void createAndExport(String original)
-		{
-			// Set dimensions of resulting image to the size of the view. 
-			new clsCombineAnnotateImage(_context, this)
-//				.createAnnotatedImage(original, _node.annotation, view.getWidth(), view.getHeight());
-			.createAnnotatedImage(original, null, view.getWidth(), view.getHeight());
-		}
 	}
 }
