@@ -656,13 +656,6 @@ public class ActivityNoteStartup extends ListActivity {
         	 objExportToMail.Execute();
         	 return true;
          case R.id.actionSendToFacebook:
-<<<<<<< HEAD
-        	 clsMainExport objMainExport = new clsMainExport(this);
-        	 objMainExport.export(clsMainExport.EXPORT_DEST.TO_FACEBOOK);
-        	 return true;
-         case R.id.actionSendToFacebook:
-=======
->>>>>>> branch 'master' of https://github.com/Jecke/CustomListView
         	 clsMainExport objMainExport = new clsMainExport(this, this, objNoteTreeview, objMessaging, objGroupMembers);
         	 objMainExport.Execute(clsMainExport.EXPORT_DEST.TO_FACEBOOK);
         	 return true;
