@@ -653,6 +653,10 @@ public class ActivityNoteStartup extends ListActivity {
         	 objExportToMail = new clsExportToMail(this, objNoteTreeview, objMessaging, objGroupMembers);
         	 objExportToMail.Execute();
         	 return true;
+         case R.id.actionSendToFacebook:
+        	 clsMainExport objMainExport = new clsMainExport(this, this, objNoteTreeview, objMessaging, objGroupMembers);
+        	 objMainExport.Execute(clsMainExport.EXPORT_DEST.TO_FACEBOOK);
+        	 return true;
          case R.id.actionMoveDown:
         	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
         		 clsUtils.MessageBox(this, "Please add some items first.", false);

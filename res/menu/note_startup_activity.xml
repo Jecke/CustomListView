@@ -131,6 +131,9 @@
             <item android:id="@+id/actionSendToMail"
                   android:icon="@drawable/ic_action_share"
                   android:title="@string/action_send_to_mail"/>
+            <item android:id="@+id/actionSendToFacebook"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="@string/action_send_to_facebook"/>
         </menu>
     </item>
     

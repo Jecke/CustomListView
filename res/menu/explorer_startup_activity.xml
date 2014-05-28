@@ -121,9 +121,6 @@
         android:icon="@drawable/ic_action_check"
         android:showAsAction="never|withText">
         <menu>
-            <item android:id="@+id/actionSendToFacebook"
-                  android:icon="@drawable/ic_action_share"
-                  android:title="@string/action_send_to_facebook"/>
             </menu>
     </item>
     
