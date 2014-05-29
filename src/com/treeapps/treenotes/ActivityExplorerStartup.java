@@ -65,6 +65,7 @@ import com.treeapps.treenotes.sharing.subscriptions.ActivityPublications.clsSele
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions.clsSubcriptionsIntentData;
 
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
@@ -263,41 +264,44 @@ public class ActivityExplorerStartup extends ListActivity {
 			editor.commit();
 		}
 		
+		// Skip adverts if app runs on emulator
+		// TODO JE remove skipping of ads if app is on emu
+		if(!clsUtils.RunsOnEmu())
+		{
+			// In-app billing
+			SetupInAppBilling();
 
-		// In-app billing
-		SetupInAppBilling();
-		
-		// AdMob, only when advert removal has not been purchased
-		objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
-		if (!(objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB)) {
-			// Look up the AdView as a resource and load a request.
-			AdView adView = (AdView)this.findViewById(R.id.adViewExplorer);
-			AdRequest adRequest = new AdRequest.Builder()
-	        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-	        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
-	        .addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
-	        .build();
-			adView.loadAd(adRequest);
-		} else {
-			RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.explorer_relative_layout);
-			View admobAds = (View) findViewById(R.id.adViewExplorer);
-			adscontainer.removeView(admobAds);
-		}
-		
-		// Push notification (Google Cloud Messaging - GCM)
-		if (checkPlayServices()) {
-	        // If this check succeeds, proceed with normal processing.
-			gcm = GoogleCloudMessaging.getInstance(this);
-            regid = getRegistrationId(this);
+			// AdMob, only when advert removal has not been purchased
+			objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
+			if (!(objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB)) {
+				// Look up the AdView as a resource and load a request.
+				AdView adView = (AdView)this.findViewById(R.id.adViewExplorer);
+				AdRequest adRequest = new AdRequest.Builder()
+				.addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+				.addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
+				.addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
+				.build();
+				adView.loadAd(adRequest);
+			} else {
+				RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.explorer_relative_layout);
+				View admobAds = (View) findViewById(R.id.adViewExplorer);
+				adscontainer.removeView(admobAds);
+			}
+			// Push notification (Google Cloud Messaging - GCM)
+			if (checkPlayServices()) {
+				// If this check succeeds, proceed with normal processing.
+				gcm = GoogleCloudMessaging.getInstance(this);
+				regid = getRegistrationId(this);
 
-            if (regid.isEmpty()) {
-                registerInBackground();
-            }
-	        
-	    } else {
-	    	// Otherwise, prompt user to get valid Play Services APK.
-	    	clsUtils.MessageBox(this, "Please download Play Services APK from the Google Play Store or enable it in the device's system settings", false);
-	    }
+				if (regid.isEmpty()) {
+					registerInBackground();
+				}
+
+			} else {
+				// Otherwise, prompt user to get valid Play Services APK.
+				clsUtils.MessageBox(this, "Please download Play Services APK from the Google Play Store or enable it in the device's system settings", false);
+			}
+		}		
 
 		// Session management
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
@@ -435,8 +439,12 @@ public class ActivityExplorerStartup extends ListActivity {
 		if (adView != null) {
 		      adView.resume();
 		}
-		
-		checkPlayServices();
+		// Skip adverts if app runs on emulator
+		// TODO JE remove skipping of ads if app is on emu
+		if(!clsUtils.RunsOnEmu())
+		{
+			checkPlayServices();
+		}
 	}
 
 	@Override

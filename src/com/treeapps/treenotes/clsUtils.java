@@ -44,6 +44,7 @@ import android.graphics.DashPathEffect;
 import android.graphics.PathEffect;
 import android.graphics.PointF;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -871,6 +872,12 @@ public class clsUtils {
         		}
         	}
     	}
+    }
+
+    // Determine if app runs on emulator
+    public static boolean RunsOnEmu()
+    {
+    	return "generic".endsWith(Build.BRAND.toLowerCase());
     }
 }
 

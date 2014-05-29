@@ -142,25 +142,29 @@ public class ActivityWebBrowser extends Activity {
         		objIntent.putExtra(ActivityNoteAddNew.WEB_VIEW_IMAGE, strWebImage);
         		
         		Bitmap bm;
-    			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) 
-    			{
-    				// Note: The below code does not work for API's <KITKAT.
-    				// getDrawingCache always returns null
-            		webView.setDrawingCacheEnabled(true);
-            		bm = Bitmap.createBitmap(webView.getDrawingCache());
-            		webView.setDrawingCacheEnabled(false);
-    			}
-    			else
-    			{
-            		// ?? Issue ??
-            		// We only capture the visible content of the web view here because big websites can cause
-            		// an out-of-memory error. If there is a resolution for that then below call can use
-            		// webView.getContentHeight instead of webView.getHeight to get all the content of the page.
-            		bm = Bitmap.createBitmap(webView.getWidth(), webView.getHeight(), Config.ARGB_8888);
-            		Canvas canvas = new Canvas(bm);
-            		webView.draw(canvas);
-    			}
-        		
+//    			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) 
+//    			{
+//    				// Note: The below code does not work for API's <KITKAT.
+//    				// getDrawingCache always returns null
+//            		webView.setDrawingCacheEnabled(true);
+//            		bm = Bitmap.createBitmap(webView.getDrawingCache());
+//            		webView.setDrawingCacheEnabled(false);
+//    			}
+//    			else
+//    			{
+//            		// ?? Issue ??
+//            		// We only capture the visible content of the web view here because big websites can cause
+//            		// an out-of-memory error. If there is a resolution for that then below call can use
+//            		// webView.getContentHeight instead of webView.getHeight to get all the content of the page.
+////    				bm = Bitmap.createBitmap(webView.getWidth(), webView.getHeight(), Config.ARGB_8888);
+////            		Canvas canvas = new Canvas(bm);
+////            		webView.draw(canvas);
+//    			}
+
+    			webView.setDrawingCacheEnabled(true);
+    			bm = Bitmap.createBitmap(webView.getDrawingCache());
+    			webView.setDrawingCacheEnabled(false);
+
         		// save bitmap to local file and return the URI to the caller
     			// image is saved in 80 percent quality to save some space
         		new clsResourceLoader().saveBitmapToFile(objContext, bm, strWebImage, 80);
