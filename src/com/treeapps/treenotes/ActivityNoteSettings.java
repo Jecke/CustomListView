@@ -215,8 +215,13 @@ public class ActivityNoteSettings extends PreferenceActivity {
 			// to their values. When their values change, their summaries are
 			// updated to reflect the new value, per the Android Design
 			// guidelines.
-			bindPreferenceSummaryToValue(findPreference("example_text"));
+			bindPreferenceSummaryToValue(findPreference("registered_user"));
+			bindPreferenceSummaryToValue(findPreference("note_owner"));
+			bindPreferenceSummaryToValue(findPreference("note_selecteditem_owner"));
+			bindPreferenceSummaryToValue(findPreference("treenotes_root_folder_name"));
 			bindPreferenceSummaryToValue(findPreference("example_list"));
+			bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
+			bindPreferenceSummaryToValue(findPreference("sync_frequency"));
 		}
 	}
 
@@ -236,7 +241,13 @@ public class ActivityNoteSettings extends PreferenceActivity {
 			// to their values. When their values change, their summaries are
 			// updated to reflect the new value, per the Android Design
 			// guidelines.
+			bindPreferenceSummaryToValue(findPreference("registered_user"));
+			bindPreferenceSummaryToValue(findPreference("note_owner"));
+			bindPreferenceSummaryToValue(findPreference("note_selecteditem_owner"));
+			bindPreferenceSummaryToValue(findPreference("treenotes_root_folder_name"));
+			bindPreferenceSummaryToValue(findPreference("example_list"));
 			bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
+			bindPreferenceSummaryToValue(findPreference("sync_frequency"));
 		}
 	}
 
@@ -255,6 +266,12 @@ public class ActivityNoteSettings extends PreferenceActivity {
 			// to their values. When their values change, their summaries are
 			// updated to reflect the new value, per the Android Design
 			// guidelines.
+			bindPreferenceSummaryToValue(findPreference("registered_user"));
+			bindPreferenceSummaryToValue(findPreference("note_owner"));
+			bindPreferenceSummaryToValue(findPreference("note_selecteditem_owner"));
+			bindPreferenceSummaryToValue(findPreference("treenotes_root_folder_name"));
+			bindPreferenceSummaryToValue(findPreference("example_list"));
+			bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
 			bindPreferenceSummaryToValue(findPreference("sync_frequency"));
 		}
 	}
