@@ -6,11 +6,9 @@ import com.treeapps.treenotes.imageannotation.clsShapeFactory.Shape;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint.Style;
-import android.graphics.Color;
 import android.graphics.PathEffect;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.util.Log;
 
 // arrow with a number attached
 public class clsShapeNumberedArrow extends clsShapeArrow

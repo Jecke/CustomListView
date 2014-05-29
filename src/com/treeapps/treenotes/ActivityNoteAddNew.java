@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationText;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
+import com.treeapps.treenotes.imageannotation.clsCombineAnnotateImage;
 import com.treeapps.treenotes.imageannotation.clsShapeFactory.Shape;
 
 import android.os.Bundle;
@@ -36,7 +37,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.view.View.OnClickListener;
 
-public class ActivityNoteAddNew extends Activity implements clsResourceLoader.TaskCompletedInterface {
+public class ActivityNoteAddNew extends Activity implements clsResourceLoader.TaskCompletedInterface, 
+															clsCombineAnnotateImage.TaskCompletedInterface {
 	
 	public static final int EDIT_ANNOTATION_IMAGE = 10;
 	public static final int EDIT_ANNOTATION_TEXT  = 11;
@@ -58,7 +60,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	private Intent objIntent;
 	private Activity objContext;
 
-	//private TextView urlText;
 	private String url = "";
 	
 	// Annotation data
@@ -66,7 +67,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	private boolean boolIsDirty = false;
 	
 	// Selected radio button
-	int    resourceId;
+	int    resourceId, resourceIdOrig;
 	String resourcePath;
 	String strDescription = "";
 	boolean boolIsReadOnly = false;
@@ -86,14 +87,35 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	private clsResourceLoader objResourceLoader;
 	
 	private String imageDirectory;
-	private File strImageFilename, strImageFilenameBackup;
-	//private File strThumbnailFilename, strThumbnailFilenameBackup;
-	private File strFullFilename, strFullFilenameBackup;
+	private File strImageFilename;
+	private File strFullFilename; 
+	private File strAnnotatedFilename;
 	
 	// If the user selects the camera to get a picture then the result must be handled differently
 	// than a picture from the gallery.
 	private Uri mPhotoUri;
 	
+	private String strWebPageURL;
+
+	public void loadTaskComplete(String combinedFile) {
+
+		// Remove possible backup files
+		clsUtils.RemoveBackupImagesOfNode((Context)objContext, strTreeNodeUuid);
+			
+		// put Information for MainActivity together
+		// depending on resourceId not all the information is needed
+    	objIntent.putExtra(ActivityNoteStartup.DESCRIPTION,   strDescription);
+    	objIntent.putExtra(ActivityNoteStartup.RESOURCE_ID,   resourceId);            	
+    	objIntent.putExtra(ActivityNoteStartup.RESOURCE_PATH, resourcePath);
+    	objIntent.putExtra(ActivityNoteStartup.TREENODE_URL, strWebPageURL);
+    	objIntent.putExtra(ActivityNoteStartup.TREENODE_UID, strTreeNodeUuid);
+    	objIntent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, boolUseAnnotatedImage);
+    	objIntent.putExtra(ActivityNoteStartup.ISDIRTY, true);
+    	
+    	setResult(RESULT_OK, objIntent);
+    	ActivityNoteAddNew.this.finish();
+	}
+
 	// interface from  implements clsResourceLoader.TaskCompletedInterface 
 	public void loadTaskComplete(Bitmap bm, Bitmap bmFull, Uri uri)
 	{
@@ -110,7 +132,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 
 			// Create a thumbnail for the tree and annotation
 			SaveBitmapToFile(bm, strImageFilename.getAbsolutePath());
-			//SaveBitmapToFile(bm, strThumbnailFilename.getAbsolutePath());
 
 			resourcePath = uri.toString();
 
@@ -136,7 +157,10 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		
 		Bundle objBundle = objIntent.getExtras();    		
 		strDescription  = objBundle.getString(ActivityNoteStartup.DESCRIPTION);
+		
 		resourceId      = objBundle.getInt(ActivityNoteStartup.RESOURCE_ID);
+		resourceIdOrig = resourceId; // keep backup in case user cancels 
+		
 		resourcePath    = objBundle.getString(ActivityNoteStartup.RESOURCE_PATH);
 		strTreeNodeUuid = objBundle.getString(ActivityNoteStartup.TREENODE_UID);
 		boolIsReadOnly = objBundle.getBoolean(ActivityNoteStartup.READONLY);
@@ -146,23 +170,22 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		boolUseAnnotatedImage = objBundle.getBoolean(ActivityNoteStartup.USE_ANNOTATED_IMAGE);
 		boolIsDirty = objBundle.getBoolean(ActivityNoteStartup.ISDIRTY);
 		
-		strImageFilename           = new File(imageDirectory + strTreeNodeUuid + ".jpg");
-		strImageFilenameBackup     = new File(strImageFilename + ".backup");
-		strFullFilename            = new File(imageDirectory + strTreeNodeUuid + "_full.jpg");
-		strFullFilenameBackup      = new File(strFullFilename + ".backup");
+		strImageFilename           = new File(clsUtils.GetThumbnailImageFileName(objContext, strTreeNodeUuid));
+		strFullFilename            = new File(clsUtils.GetFullImageFileName(objContext, strTreeNodeUuid));
+		strAnnotatedFilename       = new File(clsUtils.GetAnnotatedImageFileName(objContext, strTreeNodeUuid));
 		
 		if(resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE ||
 		   strTreeNodeUuid.equals("temp_uuid"))
 		{
-			
 			// make copies of important files which could be altered
-			if (strImageFilename.exists()) {
-				clsUtils.CopyFile(strImageFilename, strImageFilenameBackup,     false);
-			}
+			// thumbnail
+			clsUtils.CreateBackupFromFile(strImageFilename);
 			
-			if (strFullFilename.exists()) {
-				clsUtils.CopyFile(strFullFilename,      strFullFilenameBackup,      false);
-			}
+			// original image
+			clsUtils.CreateBackupFromFile(strFullFilename);
+
+			// annotated image
+			clsUtils.CreateBackupFromFile(strAnnotatedFilename);
 		}
 
 		// Hide items when in readonly mode
@@ -269,7 +292,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	        	 objAnnotationData.strNodeUuid  	= strTreeNodeUuid;
 	        	 objAnnotationData.strResourcePath  = resourcePath;
 	        	 objAnnotationData.strDescription   = strDescription;
-	        	 objAnnotationData.strLocalImage 	= imageDirectory + strTreeNodeUuid + "_full.jpg";
+	        	 objAnnotationData.strLocalImage 	= clsUtils.GetFullImageFileName(objContext, strTreeNodeUuid);
 	        	 objAnnotationData.resourceId 		= clsTreeview.translateResourceId(resourceId);
 				
 				Intent editImageIntent = new Intent(objContext, ActivityEditAnnotationImage.class);			
@@ -365,8 +388,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 						case clsTreeview.WEB_RESOURCE:
 							resourceId = clsTreeview.WEB_RESOURCE;
 
-							//String t = urlText.getText().toString();
-							
 							String imageFile = strFullFilename.toString();
 							
 							Intent web = new Intent(objContext, ActivityWebBrowser.class);
@@ -385,19 +406,21 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			case clsTreeview.IMAGE_RESOURCE:
 				// set radio button
 				rg.check(R.id.radioImageNote);
+				loadThumbnailFromImage(objEditThumbnail);
 				break;
 
 			case clsTreeview.WEB_RESOURCE:
 				// set radio button
 				rg.check(R.id.radioURLNote);
+				loadThumbnailFromImage(objEditThumbnail);
 				break;
 				
 			case clsTreeview.VIDEO_RESOURCE:
 				// set radio button
 				rg.check(R.id.radioVideoNote);
+				loadThumbnailFromImage(objEditThumbnail);
 				break;
 		}
-		loadThumbnailFromImage(objEditThumbnail);
 		
 		// object to create thumbnails from images and videos
 		objResourceLoader = new clsResourceLoader();
@@ -618,6 +641,11 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
     	} else {
     		editor.putString("strFullFilename","");
     	}
+    	if (strAnnotatedFilename != null) {
+        	editor.putString("strAnnotatedFilename", strAnnotatedFilename.toString());
+    	} else {
+    		editor.putString("strAnnotatedFilename","");
+    	}
 	
     	editor.commit();
     	sharedPref = null;
@@ -655,6 +683,10 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		strLocalImageFilename = sharedPref.getString("strFullFilename","");	
 		if (!strLocalImageFilename.isEmpty()) {
 			strFullFilename = new File(strLocalImageFilename);
+		}
+		strLocalImageFilename = sharedPref.getString("strAnnotatedFilename","");	
+		if (!strLocalImageFilename.isEmpty()) {
+			strAnnotatedFilename = new File(strLocalImageFilename);
 		}
 					
 		RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
@@ -929,15 +961,15 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
     	{
         	case R.id.actionAccept:
         		EditText objEditView    = (EditText)findViewById(R.id.editTextNoteName);
-         		String   strDescription = objEditView.getText().toString();
-
+         		
+        		strDescription = objEditView.getText().toString();
          		
          		// Default: Set annotationData to null. That covers the use cases when an annotated 
          		// image gets replaced by another type of node.
          		String strAnnotationData = clsUtils.SerializeToString(null);
 				objIntent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationData);
          		
-				String strWebPageURL = "";
+				strWebPageURL = "";
 				
          		switch(resourceId)
          		{
@@ -945,8 +977,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          				// for a TEXT_RESOURCE the description MUST be set
          				if(strDescription.isEmpty())
          				{
-         					// pop up information dialog
-         					// showErrorDialog(this, R.string.dlg_description_empty, true);
          					strDescription = "Empty note";
          					success = true;
          				}
@@ -974,9 +1004,21 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          						strWebPageURL = url;
          					}
          					
+         					// Create the annotated version of the original file and store it
+         					// for later use (e.g. exporting and display)
+         					DisplayMetrics dm = new DisplayMetrics();
+         					getWindowManager().getDefaultDisplay().getMetrics(dm);
+         					
+         					clsCombineAnnotateImage objCombineAnnotateImage = new clsCombineAnnotateImage(objContext, this);
+         					objCombineAnnotateImage.createAnnotatedImage(strFullFilename.toString(), strAnnotatedFilename.toString(), 
+         																	objAnnotationData, dm.widthPixels, dm.heightPixels);
+
+
          					strAnnotationData = clsUtils.SerializeToString(objAnnotationData);
          					objIntent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationData);
          					success = true;
+         					
+         					return true;
          				}
          				break;
          				
@@ -1000,33 +1042,27 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
          		
          		if(success)
          		{
-         			// put Information for MainActivity together
-         			// depending on resourceId not all the information is needed
-	            	objIntent.putExtra(ActivityNoteStartup.DESCRIPTION,   strDescription);
-	            	objIntent.putExtra(ActivityNoteStartup.RESOURCE_ID,   resourceId);            	
-	            	objIntent.putExtra(ActivityNoteStartup.RESOURCE_PATH, resourcePath);
-	            	objIntent.putExtra(ActivityNoteStartup.TREENODE_URL, strWebPageURL);
-	            	objIntent.putExtra(ActivityNoteStartup.TREENODE_UID, strTreeNodeUuid);
-	            	objIntent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, boolUseAnnotatedImage);
-	            	objIntent.putExtra(ActivityNoteStartup.ISDIRTY, true);
-	            	
-	            	setResult(RESULT_OK, objIntent);
-	            	ActivityNoteAddNew.this.finish();
-	            	
+         			loadTaskComplete("");
 	            	return true;
          		}
          		else
 	            	return false;
         	 
          case R.id.actionCancel:
-     		// If initial resource was an Image then restore relevant files because they 
-     		// might have been overwritten in that Activity.
-     		if(resourceId == clsTreeview.IMAGE_RESOURCE || resourceId == clsTreeview.WEB_RESOURCE)
-     		{
-     			strImageFilenameBackup.renameTo(strImageFilename);
-     			//strThumbnailFilenameBackup.renameTo(strThumbnailFilename);
-     			strFullFilenameBackup.renameTo(strFullFilename);
-     		}
+        	 // Restore original condition:
+        	 // If old and new id supports images then restore backup.
+        	 if((resourceId     == clsTreeview.IMAGE_RESOURCE || resourceId     == clsTreeview.WEB_RESOURCE) &&
+        		(resourceIdOrig == clsTreeview.IMAGE_RESOURCE || resourceIdOrig == clsTreeview.WEB_RESOURCE))
+        	 {
+      			clsUtils.RestoreFileFromBackup(strImageFilename);
+      			clsUtils.RestoreFileFromBackup(strFullFilename);
+      			clsUtils.RestoreFileFromBackup(strAnnotatedFilename);
+        	 }
+        	 // otherwise just blindly try to remove all images even though the actual resource may not support images
+        	 else if(resourceIdOrig == clsTreeview.TEXT_RESOURCE)
+        	 {
+      			clsUtils.RemoveAllImagesOfNode(objContext, strTreeNodeUuid);
+        	 }
      		      	 
         	objIntent.putExtra(ActivityNoteStartup.DESCRIPTION, "");
         	objIntent.putExtra(ActivityNoteStartup.ISDIRTY, false);

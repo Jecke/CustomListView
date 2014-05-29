@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,6 +47,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.provider.MediaStore.Files;
 import android.text.Html;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -767,5 +769,108 @@ public class clsUtils {
 		objEditor.commit();
 	}
 	
+// Handle thumbnails, full and annotated images.    
+    public static String GetThumbnailImageFileName(Context context, String strTreeNodeUuid)
+    {
+    	String result = GetTreeNotesDirectoryName(context);
+    	
+    	result = result + "/" + strTreeNodeUuid + ".jpg";
+    	
+    	return result;
+    }
+    
+    public static String GetFullImageFileName(Context context, String strTreeNodeUuid)
+    {
+    	String result = GetTreeNotesDirectoryName(context);
+    	
+    	result = result + "/" + strTreeNodeUuid + "_full.jpg";
+    	
+    	return result;
+    }
+    
+    public static String GetAnnotatedImageFileName(Context context, String strTreeNodeUuid)
+    {
+    	String result = GetTreeNotesDirectoryName(context);
+    	
+    	result = result + "/" + strTreeNodeUuid + "_annotated.jpg";
+    	
+    	return result;
+    }
+    
+    public static void CreateBackupFromFile(File origFile)
+    {
+		if (origFile.exists()) 
+		{
+			File backupFile = new File(origFile + ".backup");
+			CopyFile(origFile, backupFile, false);
+		}
+    }
+    
+    public static void RestoreFileFromBackup(File origFile)
+    {
+		File backupFile = new File(origFile + ".backup");
+		if (backupFile.exists()) 
+		{
+			backupFile.renameTo(origFile);
+			backupFile.delete();
+		}
+    }
+
+    public static void RemoveBackupImagesOfNode(Context context, final String strTreeNodeUuid)
+    {
+    	File dir = new File(GetTreeNotesDirectoryName(context));
+    	
+    	File[] files = dir.listFiles(new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File dir, String filename) {
+				if(filename.contains(strTreeNodeUuid) && 
+				   filename.contains(".backup"))
+				{
+					return true;
+				}
+				return false;
+			}
+		});
+    	
+    	if(files != null)
+    	{
+        	for(File fp : files)
+        	{
+        		if(fp.exists())
+        		{
+        			fp.delete();
+        		}
+        	}
+    	}
+    }
+
+    public static void RemoveAllImagesOfNode(Context context, final String strTreeNodeUuid)
+    {
+    	File dir = new File(GetTreeNotesDirectoryName(context));
+    	
+    	File[] files = dir.listFiles(new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File dir, String filename) {
+				if(filename.contains(strTreeNodeUuid))
+				{
+					return true;
+				}
+				return false;
+			}
+		});
+    	
+    	if(files != null)
+    	{
+        	for(File fp : files)
+        	{
+        		if(fp.exists())
+        		{
+        			fp.delete();
+        		}
+        	}
+    	}
+    }
 }
 

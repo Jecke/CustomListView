@@ -260,7 +260,7 @@ public class clsExportNoteAsWebPage {
 				(objTreeNode.resourceId == clsTreeview.ANNOTATION_RESOURCE) ||
 				(objTreeNode.resourceId == clsTreeview.WEB_RESOURCE)){
 			if (objTreeNode.getBoolUseAnnotatedImage()) {
-				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_annotate.jpg";
+				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_annotated.jpg";
 			} else {
 				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_full.jpg";
 			}	

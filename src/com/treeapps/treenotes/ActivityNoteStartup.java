@@ -549,6 +549,8 @@ public class ActivityNoteStartup extends ListActivity {
  	            	if (objNoteTreeview.IsNoteShared() == false) {
  	            		// Delete immediately if note is not shared, otherwise deletion will take place during next sync
  	            		 objNoteTreeview.RemoveAllIsDeletedTreeNodes(true);
+ 	            		 
+ 	            		 // TODO JE delete all images (clsUtils.RemoveAllImagesOfNode) of tree, probably in above method because of possible sync
  	            	}
 	 	           
 	 	            RefreshListView();

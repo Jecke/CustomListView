@@ -1,31 +1,19 @@
 package com.treeapps.treenotes;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 
 import com.google.gson.reflect.TypeToken;
-import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
-import com.treeapps.treenotes.imageannotation.clsCombineAnnotateImage;
-import com.treeapps.treenotes.imageannotation.clsInteractiveImageView;
 import com.treeapps.treenotes.imageannotation.clsZoomableImageView;
 import com.treeapps.treenotes.imageannotation.clsShapeFactory.Shape;
-import com.treeapps.treenotes.sharing.ActivityGetUserForGroups;
-import com.treeapps.treenotes.sharing.clsGetUserForGroupsArrayAdapter;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.ActionBar;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,22 +21,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.RelativeLayout.LayoutParams;
 import android.widget.TextView;
 import android.os.Build;
 
-public class ActivityViewImage extends Activity implements clsCombineAnnotateImage.TaskCompletedInterface {
+public class ActivityViewImage extends Activity {
 
 	public class clsSession {
-		public File fileTreeNodesDir;
 		public String strDescription;
 		ArrayList<clsListViewState> objListViewStates = new ArrayList<clsListViewState>();
-		public String strCombinedFileFullFilename;
 		public String strWebPageURL;
+		public String strTreeNodeUuid;
+		public clsAnnotationData objAnnotationData;
 	}
 
 	public static class clsListViewState {
@@ -69,7 +55,8 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 
 	clsArrayAdapter objArrayAdapter;
 	
-	private clsAnnotationData objAnnotationData;
+	private Bitmap bitmap = null;
+	private clsZoomableImageView objImageView;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -80,11 +67,7 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 		
 		ListView objListView = (ListView) findViewById(R.id.activity_view_image_arrows);
 		
-		clsZoomableImageView objImageView = (clsZoomableImageView) findViewById(R.id.activity_view_image_image);
-		//File fileImageFilename  = new File(objSession.strCombinedFileFullFilename);
-		
-//		Log.d("specViewer", String.valueOf(objImageView.getWidth())+"/"+String.valueOf(objImageView.getHeight()));
-		//bitmap = BitmapFactory.decodeFile(fileImageFilename.getAbsolutePath());
+		objImageView = (clsZoomableImageView) findViewById(R.id.activity_view_image_image);
 
 		// The below code gets called when the layout is known including the size of the ImageView
 		objImageView.post(new Runnable() {
@@ -94,9 +77,20 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 
 				clsZoomableImageView objImageView = (clsZoomableImageView)findViewById(R.id.activity_view_image_image);
 								
-				clsCombineAnnotateImage objCombineAnnotateImage = new clsCombineAnnotateImage(context, thisObject);
-				objCombineAnnotateImage.createAnnotatedImage(objSession.strCombinedFileFullFilename, objAnnotationData,
-																objImageView.getWidth(), objImageView.getHeight());
+				bitmap = BitmapFactory.decodeFile(clsUtils.GetAnnotatedImageFileName(context, objSession.strTreeNodeUuid));
+
+				objImageView.setImageBitmap(bitmap);
+				objImageView.setWebPageURL(objSession.strWebPageURL);
+
+				TextView objTextView = (TextView)findViewById(R.id.activity_view_description);
+				objTextView.setText(objSession.strDescription);
+				
+				if (objSession.objListViewStates.size() == 0) {
+					TextView objTextViewLabel = (TextView)findViewById(R.id.activity_view_arrow_label);
+					objTextViewLabel.setVisibility(View.INVISIBLE);
+				}
+				
+				UpdateScreen();
 			}
 		});
 
@@ -104,21 +98,17 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 		if (savedInstanceState == null) {
 			Bundle objBundle = getIntent().getExtras();
 			
-			objAnnotationData = clsUtils.DeSerializeFromString(objBundle.getString(ActivityNoteStartup.ANNOTATION_DATA_GSON), 
-																clsAnnotationData.class);
+			objSession.objAnnotationData = clsUtils.DeSerializeFromString(objBundle.getString(ActivityNoteStartup.ANNOTATION_DATA_GSON), 
+																			clsAnnotationData.class);
 			
 			objSession.strDescription = objBundle.getString(ActivityViewImage.DESCRIPTION);
-			objSession.strCombinedFileFullFilename = objBundle.getString(ActivityViewImage.FILE_FULLFILENAME);
 			objSession.strWebPageURL = objBundle.getString(ActivityViewImage.URL);
+			objSession.strTreeNodeUuid = objBundle.getString(ActivityNoteStartup.TREENODE_UID);
 			
 			String strListViewStatesGson = objBundle.getString(ActivityViewImage.LISTVIEWSTATES_GSON);
 			if (!strListViewStatesGson.isEmpty()) {
 				java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsListViewState>>(){}.getType();
 				objSession.objListViewStates = clsUtils.DeSerializeFromString(strListViewStatesGson, collectionType);
-			}
-			objSession.fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
-			if (!objSession.fileTreeNodesDir.exists()) {
-				objSession.fileTreeNodesDir.mkdirs();
 			}
 
 			// Show the Up button in the action bar.
@@ -131,15 +121,16 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 
 			SaveFile();
 			clsUtils.CustomLog("ActivityViewImage onCreate SaveFile");
+			
 		} else {
 			LoadFile();
-			clsUtils.CustomLog("ActivityViewImage onCreate SaveFile");
+			clsUtils.CustomLog("ActivityViewImage onCreate LoadFile");
 		}
 
 		// Hide text area displaying information about numbered arrows if there are no such shapes 
 		// in the annotation to gain space for the actual image.
 		boolean numberedArrowAvailable = false;
-		for(clsAnnotationData.clsAnnotationItem item : objAnnotationData.items)
+		for(clsAnnotationData.clsAnnotationItem item : objSession.objAnnotationData.items)
 		{
 			if(item.getType() == Shape.NUMBERED_ARROW)
 			{
@@ -160,42 +151,22 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 			RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) objLabel.getLayoutParams();
 			lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, objLabel.getId());
 		}
-		
-		UpdateScreen();
-
-	}
-	
-	@Override
-	public void loadTaskComplete(String combinedFile) {
-		
-		Bitmap bitmap = BitmapFactory.decodeFile(combinedFile);
-
-		clsZoomableImageView objImageView = (clsZoomableImageView)findViewById(R.id.activity_view_image_image);
-		objImageView.setImageBitmap(bitmap);
-		objImageView.setWebPageURL(objSession.strWebPageURL);
-
-		TextView objTextView = (TextView)findViewById(R.id.activity_view_description);
-		objTextView.setText(objSession.strDescription);
-		
-		if (objSession.objListViewStates.size() == 0) {
-			TextView objTextViewLabel = (TextView)findViewById(R.id.activity_view_arrow_label);
-			objTextViewLabel.setVisibility(View.INVISIBLE);
-		}
 	}
 	
 	private void UpdateScreen() {
 
-		
-		//Log.d("--Abs--", fileImageFilename.getAbsolutePath());
-//		objImageView.setImageBitmap(bitmap);	
-		
-//		TextView objTextView = (TextView)findViewById(R.id.activity_view_description);
-//		objTextView.setText(objSession.strDescription);
-//		
-//		if (objSession.objListViewStates.size() == 0) {
-//			TextView objTextViewLabel = (TextView)findViewById(R.id.activity_view_arrow_label);
-//			objTextViewLabel.setVisibility(View.INVISIBLE);
-//		}
+		if(bitmap != null)
+		{
+			objImageView.setImageBitmap(bitmap);	
+
+			TextView objTextView = (TextView)findViewById(R.id.activity_view_description);
+			objTextView.setText(objSession.strDescription);
+
+			if (objSession.objListViewStates.size() == 0) {
+				TextView objTextViewLabel = (TextView)findViewById(R.id.activity_view_arrow_label);
+				objTextViewLabel.setVisibility(View.INVISIBLE);
+			}
+		}
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -239,7 +210,7 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 		SharedPreferences sharedPref = this.getSharedPreferences("ActivityViewImage", Context.MODE_PRIVATE);
 		String strSession = sharedPref.getString("objSession", "");
 		objSession = clsUtils.DeSerializeFromString(strSession, objSession.getClass());
-		objSession.fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
+
 		if (objArrayAdapter == null) {
 			objArrayAdapter = new clsArrayAdapter(this, R.layout.arrows_list_item, objSession.objListViewStates);
 			ListView objListView = (ListView) findViewById(R.id.activity_view_image_arrows);
@@ -252,7 +223,6 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 
 	@Override
 	protected void onStart() {
-		// TODO Auto-generated method stub
 		LoadFile();
 		super.onStart();
 		clsUtils.CustomLog("ActivityViewImage onStart");
@@ -282,7 +252,6 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 
 	@Override
 	protected void onPause() {
-		// TODO Auto-generated method stub
 		SaveFile();
 		super.onPause();
 		clsUtils.CustomLog("ActivityViewImage onPause");
@@ -290,23 +259,19 @@ public class ActivityViewImage extends Activity implements clsCombineAnnotateIma
 
 	@Override
 	protected void onDestroy() {
-		// TODO Auto-generated method stub
 		SaveFile();
 		super.onDestroy();
 		clsUtils.CustomLog("ActivityViewImage onDestroy");
 	}
-
 	
 	public class clsArrayAdapter extends ArrayAdapter<clsListViewState> {
 
 		public clsArrayAdapter(Context context, int resource, ArrayList<clsListViewState> objects) {
 			super(context, resource, objects);
-			// TODO Auto-generated constructor stub
 		}
 		
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-			// TODO Auto-generated method stub
 			
 			 LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			 View rowView = inflater.inflate(R.layout.arrows_list_item, parent, false);

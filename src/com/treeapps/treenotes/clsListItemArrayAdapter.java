@@ -450,15 +450,12 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 					}
 				} else {
 					// Annotated, display using custom viewer
-					// ActivityViewImage generates the annotated image and displays it together with
-					// additional text information
-					File fileImageFilename  = new File(ActivityExplorerStartup.fileTreeNodesDir, objTreenode.guidTreeNode + "_full.jpg");
-					
+					// ActivityViewImage also displays additional text information
 					Intent intentViewImage = new Intent(context, ActivityViewImage.class);
 
-					intentViewImage.putExtra(ActivityViewImage.FILE_FULLFILENAME, fileImageFilename.toString());
 					intentViewImage.putExtra(ActivityViewImage.URL, objTreenode.strWebPageURL);
-					
+					intentViewImage.putExtra(ActivityNoteStartup.TREENODE_UID, objListItem.getTreeNodeGuid().toString());
+
 					clsAnnotationData objAnnotationData = objTreenode.annotation;
 					ArrayList<ActivityViewImage.clsListViewState> objListViewStates = new ArrayList<ActivityViewImage.clsListViewState>();
 					if (objAnnotationData != null) {

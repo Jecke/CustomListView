@@ -1,11 +1,6 @@
 package com.treeapps.treenotes.export;
 
-import java.util.ArrayList;
-
-import android.app.Activity;
-
 import com.treeapps.treenotes.clsTreeview;
-import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging;
 

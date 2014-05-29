@@ -14,11 +14,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.CompressFormat;
 import android.os.AsyncTask;
-import android.util.DisplayMetrics;
 import android.util.Log;
 
 import com.treeapps.treenotes.clsUtils;
-import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 
 /**
  * @author 
@@ -34,7 +32,6 @@ public class clsCombineAnnotateImage {
 	private String annotatedFile;
 	private ProgressDialog pd;
 	private TaskCompletedInterface _listener;
-	private clsTreeNode _objTreeNode;
 	
 	private int maxWidth;
 	private int maxHeight;
@@ -51,11 +48,9 @@ public class clsCombineAnnotateImage {
 		_listener = listener;
 	}
 
-	public void createAnnotatedImage(String original, clsAnnotationData annotationData, int maxWidth, int maxHeight)
+	public void createAnnotatedImage(String original, String annotated, clsAnnotationData annotationData, int maxWidth, int maxHeight)
 	{
 		annotatedFile = original;
-		
-		//Log.d("combine", "max: "+String.valueOf(maxWidth)+"/"+String.valueOf(maxHeight));
 		
 		this.maxWidth  = maxWidth;
 		this.maxHeight = maxHeight;
@@ -70,14 +65,12 @@ public class clsCombineAnnotateImage {
 			}
 			
 			// 1. Create the name of the new file
-			String outFile;
-			outFile = annotationData.strLocalImage.substring(0, annotationData.strLocalImage.lastIndexOf('/'));
-			outFile = outFile + "/tempAnnotatedImage.jpg";
+			annotatedFile = annotated;
 
 			pd = ProgressDialog.show(_context, "Processing...", "Please wait", 
 					true, true, null);
 
-			loadImage(outFile, annotationData);
+			loadImage(annotatedFile, annotationData);
 		}
 		else
 			_listener.loadTaskComplete(annotatedFile);
@@ -132,11 +125,9 @@ public class clsCombineAnnotateImage {
 					fOutputStream.close();
 
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return "";
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return "";
 				}
@@ -204,9 +195,6 @@ public class clsCombineAnnotateImage {
 					}
 				}
 				
-				Log.d("combine", "bitmap: "+String.valueOf(imageBitmap.getWidth())+"/"+String.valueOf(imageBitmap.getHeight()));
-
-				
 				// write annotated bitmap back to file uncompressed
 				try {
 					fOutputStream = new FileOutputStream(new File(out));
@@ -217,11 +205,9 @@ public class clsCombineAnnotateImage {
 					fOutputStream.close();
 
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return "";
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return "";
 				}
