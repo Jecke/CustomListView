@@ -448,12 +448,29 @@ public class clsTreeview {
 							File objAnnotateThumbnailFile = new File(strAnnotateFullFilename);
 							
 							objTempAnnotateFile.renameTo(objAnnotateThumbnailFile);
+							objTempAnnotateFile.delete();
 
 							// Workaround for local files. Replace temporary resourcePath by actual 
 							if(this.resourcePath.contains("temp_uuid"))
 							{
 								this.resourcePath = strAnnotateFullFilename;
 							}
+						}
+					}
+					// Create local version of full image for annotation if
+					// necessary
+					{
+						String strTempAnnotateFullFilename = ActivityExplorerStartup.fileTreeNodesDir
+								+ "/temp_uuid_annotated.jpg";
+						File objTempAnnotateFile = new File(strTempAnnotateFullFilename);
+
+						if (objTempAnnotateFile.exists()) {
+							String strAnnotateFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/"
+									+ guidTreeNode.toString() + "_annotated.jpg";
+							File objAnnotateThumbnailFile = new File(strAnnotateFullFilename);
+							
+							objTempAnnotateFile.renameTo(objAnnotateThumbnailFile);
+							objTempAnnotateFile.delete();
 						}
 					}
 				}

@@ -76,7 +76,7 @@ public class ActivityViewImage extends Activity {
 			public void run() {
 
 				clsZoomableImageView objImageView = (clsZoomableImageView)findViewById(R.id.activity_view_image_image);
-								
+
 				bitmap = BitmapFactory.decodeFile(clsUtils.GetAnnotatedImageFileName(context, objSession.strTreeNodeUuid));
 
 				objImageView.setImageBitmap(bitmap);

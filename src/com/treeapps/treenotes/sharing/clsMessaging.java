@@ -859,6 +859,8 @@ public class clsMessaging {
 						objImageUpDownloadResult.strUploadErrors.add(objError);
 					} else {
 						for (String strImageVersionToBeUploaded: strImageVersionsToBeUploaded ) {
+Log.d("UPLOAD", strImageVersionToBeUploaded);							
+							
 							clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
 							objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + strImageVersionToBeUploaded + ".jpg";
 							objUploadCommand.strFileExtentionWithoutDot = "jpg";
@@ -908,11 +910,9 @@ public class clsMessaging {
 			strImageVersionsToBeUploaded.add(strImageVersion);
 			
 			// Annotated image
-			strImageVersion = objImageToBeUploadedData.strUuid + "_annotate";
-			strImageVersionFullFilename = clsUtils
-					.GetTreeNotesDirectoryName(objActivity)
-					+ "/"
-					+ strImageVersion + ".jpg";
+			strImageVersion = objImageToBeUploadedData.strUuid + "_annotated";
+			strImageVersionFullFilename = 
+					clsUtils.GetAnnotatedImageFileName(objActivity, objImageToBeUploadedData.strUuid);
 			fileImageVersion = new File(strImageVersionFullFilename);
 			if (fileImageVersion.exists()) {
 				strImageVersionsToBeUploaded.add(strImageVersion);
@@ -920,10 +920,8 @@ public class clsMessaging {
 
 			// Full image
 			strImageVersion = objImageToBeUploadedData.strUuid + "_full";
-			strImageVersionFullFilename = clsUtils
-					.GetTreeNotesDirectoryName(objActivity)
-					+ "/"
-					+ strImageVersion + ".jpg";
+			strImageVersionFullFilename = 
+					clsUtils.GetFullImageFileName(objActivity, objImageToBeUploadedData.strUuid);
 			fileImageVersion = new File(strImageVersionFullFilename);
 			if (!fileImageVersion.exists()) {
 				return strImageVersion + " does not exist on client";

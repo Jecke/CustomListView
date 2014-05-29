@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.treeapps.treenotes.R;
@@ -260,7 +261,7 @@ public class clsExportNoteAsWebPage {
 				(objTreeNode.resourceId == clsTreeview.ANNOTATION_RESOURCE) ||
 				(objTreeNode.resourceId == clsTreeview.WEB_RESOURCE)){
 			if (objTreeNode.getBoolUseAnnotatedImage()) {
-				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_annotated.jpg";
+				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_annotated.jpg";				
 			} else {
 				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_full.jpg";
 			}	
