@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.zip.CRC32;
 
@@ -875,9 +876,11 @@ public class clsUtils {
     }
 
     // Determine if app runs on emulator
-    public static boolean RunsOnEmu()
+    public static boolean RunsOnEmu(Context context)
     {
-    	return "generic".endsWith(Build.BRAND.toLowerCase());
+    	Locale locale = context.getResources().getConfiguration().locale;
+    			
+    	return "generic".endsWith(Build.BRAND.toLowerCase(locale));
     }
 }
 

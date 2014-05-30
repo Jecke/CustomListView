@@ -266,7 +266,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		
 		// Skip adverts if app runs on emulator
 		// TODO JE remove skipping of ads if app is on emu
-		if(!clsUtils.RunsOnEmu())
+		if(!clsUtils.RunsOnEmu(objContext))
 		{
 			// In-app billing
 			SetupInAppBilling();
@@ -441,7 +441,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		}
 		// Skip adverts if app runs on emulator
 		// TODO JE remove skipping of ads if app is on emu
-		if(!clsUtils.RunsOnEmu())
+		if(!clsUtils.RunsOnEmu(objContext))
 		{
 			checkPlayServices();
 		}
