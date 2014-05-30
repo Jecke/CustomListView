@@ -306,8 +306,6 @@ public class ActivityEditAnnotationImage extends Activity {
 	        	Intent objIntent = getIntent();
 	        	objIntent.putExtra(clsAnnotationData.DATA, clsUtils.SerializeToString(data));
 	        	
-	        	//overlayImage.getWidth(); overlayImage.getHeight();
-	        	
 	        	// return to caller
             	setResult(RESULT_OK, objIntent);
             	finish();
