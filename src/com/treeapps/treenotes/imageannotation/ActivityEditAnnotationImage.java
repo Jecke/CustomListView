@@ -608,7 +608,7 @@ public class ActivityEditAnnotationImage extends Activity {
 		public void onDraw(Canvas canvas)
 		{
 			super.onDraw(canvas);
-Log.d("<<onDraw>>", String.valueOf(currentColor));			
+			
 			if(notified)
 			{
 				int i;
