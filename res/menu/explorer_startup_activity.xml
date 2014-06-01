@@ -121,9 +121,6 @@
         android:icon="@drawable/ic_action_check"
         android:showAsAction="never|withText">
         <menu>
-            <item android:id="@+id/actionSendToFacebook"
-                  android:icon="@drawable/ic_action_share"
-                  android:title="@string/action_send_to_facebook"/>
             </menu>
     </item>
     
@@ -155,7 +152,7 @@
             </item>
             <item android:id="@+id/actionShareSyncAll"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Sync all"/>
+                  android:title="Send/Refresh"/>
             <item android:id="@+id/actionShareRestoreFromServer"
                   android:icon="@drawable/ic_action_share"
                   android:title="Restore all from server"/>
@@ -209,15 +206,12 @@
             <item android:id="@+id/actionTestQuick"
                   android:icon="@drawable/ic_action_share"
                   android:title="Quick"/>
-            <item android:id="@+id/actionImageUploadTest"
+            <item android:id="@+id/actionConsumePurchases"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Image upload test"/>
-            <item android:id="@+id/actionImageDownloadTest"
+                  android:title="Consume all purchases"/>
+            <item android:id="@+id/actionUnregisterGcm"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Image download test"/>
-            <item android:id="@+id/actionImageUpDownloadTest"
-                  android:icon="@drawable/ic_action_share"
-                  android:title="Image Upload/Download test"/>
+                  android:title="Unregister GCM"/>
             <item android:id="@+id/actionClearWebServiceRepository"
                   android:icon="@drawable/ic_action_share"
                   android:title="Clear webservice repository"/>

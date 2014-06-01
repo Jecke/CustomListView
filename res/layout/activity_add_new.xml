@@ -33,8 +33,10 @@
             android:layout_height="wrap_content"
             android:layout_alignLeft="@+id/textView1"
             android:layout_below="@+id/textView1"
-            android:inputType="text"
+            android:inputType="textMultiLine"
             android:singleLine="false"
+            android:maxLines="20"
+            android:ellipsize="end"
             android:text="" >
 
         </EditText>
@@ -137,8 +139,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignBottom="@+id/radioItemType"
-            android:layout_marginBottom="30dp"
-            android:layout_marginLeft="10dp"
             android:layout_toRightOf="@+id/radioItemType"
             android:clickable="true"
             android:gravity="center"

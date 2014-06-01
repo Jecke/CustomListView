@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+
 <PreferenceScreen
         xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory
-            android:title="Cat 1">
+   <PreferenceCategory
+            android:title="Purchase">
 
-        <CheckBoxPreference
-                android:key="checkbox_preference"
-                android:title="Check 1"
-                android:summary="Check 1 Summary" />
-
+        <Preference 
+	      android:key="button_remove_advertisements" 
+	      android:title="Removal of advertisements ..."></Preference>
+        
+        <Preference 
+	      android:key="button_allow_time_travel" 
+	      android:title="Unlimited time travel ..."></Preference>
+      
+        
     </PreferenceCategory>
 
     <PreferenceCategory
             android:title="Cat 2">
+      
 
         <EditTextPreference
                 android:key="edittext_preference"
@@ -38,7 +45,7 @@
              preferences.  If running in a large screen, they can be embedded
              inside of the overall preferences UI. -->
         <PreferenceScreen
-                android:fragment="com.example.spacesavertreeview.ActivitySettings$Prefs1FragmentInner"
+                android:fragment="com.treeapps.treenotes.ActivitySettings$Prefs1FragmentInner"
                 android:title="Pref21"
                 android:summary="Pref21 summary">
             <!-- Arbitrary key/value pairs can be included for fragment arguments -->

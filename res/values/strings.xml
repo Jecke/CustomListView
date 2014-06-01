@@ -80,6 +80,7 @@
     <color name="notepad_paper">#EEF8E0A0</color>
     <color name="white_background">#FFFFFF</color>
     <color name="grey_background">#dddddd</color>
+    <color name="black_background">#000000</color>
     <color name="annotation_colour">#1932cc</color>
 
     <!--
@@ -180,6 +181,7 @@
     <string name="url_upload_image_file">"/api/TreeManager/UploadImageFile"</string>
     <string name="url_download_image_file">"/api/TreeManager/DownloadImageFile"</string>
     <string name="url_upload_webpage_html">"/api/TreeManager/UploadWebPageHtml"</string>
+    <string name="url_send_gcm_reg_id">"/api/TreeManager/SendGcmRegistrationId"</string>
     
     
     

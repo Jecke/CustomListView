@@ -2,23 +2,23 @@
 <preference-headers
         xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <header android:fragment="com.example.spacesavertreeview.ActivityExplorerSettings$Prefs1Fragment"
-            android:icon="@drawable/ic_folder"
+    <header android:fragment="com.treeapps.treenotes.ActivityExplorerSettings$Prefs1Fragment"
+            android:icon="@drawable/ic_action_settings_dark"
             android:title="General settings"
-            android:summary="Some general settings for explorer" />
+            android:summary="Some general settings for the application" />
 
-    <header android:fragment="com.example.spacesavertreeview.ActivityExplorerSettings$Prefs2Fragment"
-            android:icon="@drawable/ic_launcher"
-            android:title="Header 2"
-            android:summary="Some other preferences you can see.">
+    <header android:fragment="com.treeapps.treenotes.ActivityExplorerSettings$Prefs2Fragment"
+            android:icon="@drawable/ic_action_accounts"
+            android:title="Purchases"
+            android:summary="Enable additional functionality">
 	        <!-- Arbitrary key/value pairs can be included with a header as
 	             arguments to its fragment. -->
 	        <extra android:name="someKey" android:value="someHeaderValue" />
     </header>
 
-    <header android:icon="@drawable/ic_launcher"
-            android:title="Intent"
-            android:summary="Launches an Intent.">
+    <header android:icon="@drawable/ic_action_web_site"
+            android:title="Home"
+            android:summary="Launches the TreeNotes website">
         <intent android:action="android.intent.action.VIEW"
                 android:data="http://www.android.com" />
     </header>

@@ -83,7 +83,7 @@
         android:layout_centerInParent="false"
         android:layout_centerVertical="false" >
 
-        <com.example.spacesavertreeview.imageannotation.clsInteractiveImageView
+        <com.treeapps.treenotes.imageannotation.clsInteractiveImageView
             android:id="@+id/imageViewAnnotate"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
@@ -92,7 +92,7 @@
             android:scaleType="fitCenter"
             android:src="@drawable/listitem_unselected_shape" />
 
-        <com.example.spacesavertreeview.imageannotation.clsInteractiveImageViewOverlay
+        <com.treeapps.treenotes.imageannotation.clsInteractiveImageViewOverlay
             android:id="@+id/imageViewAnnotateOverlay"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
