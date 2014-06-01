@@ -1383,8 +1383,9 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        }
 	   	        // Start background image syncing
 				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objContext, ((ActivityNoteStartup)objContext).objMessaging, 
-						true, ActivityNoteStartup.objImageLoadDatas);
-				objImageUpDownloadAsyncTask.execute(); 
+						true, ActivityNoteStartup.objImageLoadDatas, null, null);
+				objImageUpDownloadAsyncTask.execute();
+
 	   	    }
 	}
         

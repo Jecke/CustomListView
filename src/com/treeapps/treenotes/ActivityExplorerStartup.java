@@ -1883,7 +1883,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			
 			// Start background image syncing
 			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(objContext, ((ActivityExplorerStartup)objContext).objMessaging, 
-					true, ((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+					true, ((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas, null, null);
 			objImageUpDownloadAsyncTask.execute();
 		}
 	}

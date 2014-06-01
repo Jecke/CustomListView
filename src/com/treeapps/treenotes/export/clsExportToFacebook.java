@@ -38,7 +38,11 @@ import android.widget.TextView;
 //
 // The optimal solution would be to display the web page directly on Facebook but there is no easy way to do that
 // because Facebook does not support HTML directly.
-public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener {
+public class clsExportToFacebook extends Fragment 
+								 implements clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener,
+								 		    clsExportNoteAsWebPage.OnImageUploadFinishedListener,
+								 		    clsExportNoteAsWebPage.OnImageUploadProgressListener
+{
 	
 	private View view;
 	//private clsExportData _data;
@@ -49,23 +53,84 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 
 	private String albumId = new String();
 	private String coverId = new String();
+	private String link = new String();
 	
 	private	clsExportNoteAsWebPage objExportNoteAsWebPage;
 	
 	private ProgressDialog objProgressDialog;
+	private String defaultMessage = "Exporting. Please wait...";
+	// Counter of pending export steps. If it is zero then the export was successful.
+	private int stepsToSuccess; 
+	private int uploadCurrent;
+	private int uploadMax;
+
+	
+	private void checkExportSuccess()
+	{
+		switch(stepsToSuccess)
+		{
+		case 0:
+			// Export is finished. Show success.
+			displayDialogSuccess(link);
+			break;
+			
+		case 1:
+			// Export of web page and upload of images to servers is finished.
+			// Now we can start the actual FB export. 
+			requestCreateAlbum();
+			break;
+		}
+	}
 	
 	// implementation from clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener
 	@Override
 	public void onPosted(clsExportNoteAsWebPageResponse objResponse) {
 		if (objResponse.intErrorCode == clsExportNoteAsWebPageResponse.ERROR_NONE) {
 
-			// Start FB export by creating the album for the URL of the note if necessary
-			requestCreateAlbum();
+			stepsToSuccess--;
+			
+			checkExportSuccess();
 			
 		} else {
-			
 			displayDialogFail("Error while exporting: " + objResponse.strErrorMessage, true);
 		}
+	}
+	
+	// implementation from clsExportNoteAsWebPage.OnImageUploadFinishedListener
+	public void imageUploadFinished(boolean success, String errorMessage)
+	{
+		if(success)
+		{
+			stepsToSuccess--;
+			
+			checkExportSuccess();
+		}
+		else
+		{
+			displayDialogFail("Error while exporting:\n" + errorMessage, true);
+		}
+	}
+	
+	// Helper to change the text of the progress dialog
+	private Runnable changeMessage = new Runnable() {
+		
+		@Override
+		public void run() {
+			String msg = String.format("%s\nUploading file %d of %d", defaultMessage, 
+										uploadCurrent, uploadMax);
+			objProgressDialog.setMessage(msg);
+		}
+	};
+	
+	// implementation from clsExportNoteAsWebPage.OnImageUploadProgressListener
+	public void imageUploadProgress(int current, int max)
+	{
+		uploadCurrent = current;
+		uploadMax     = max;
+		
+		// The text of the progress dialog cannot be changed directly. Instead
+		// we store the new values and call the helper above.
+		_activity.runOnUiThread(changeMessage);
 	}
 	
 	// Starting point of fragment
@@ -139,15 +204,20 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 	{
 		objExportNoteAsWebPage = new clsExportNoteAsWebPage(_activity, clsExportData._objTreeview, clsExportData._objMessaging, clsExportData._objGroupMembers);
 		
-		// TODO JE create webpage and add URL as caption to coverId
+		objProgressDialog = new ProgressDialog(_context);
+		objProgressDialog.setMessage("Creating web page, uploading images, exporting to Facebook.\nPlease wait ...");
+		objProgressDialog.show();
+
+		// Three steps to success
+		stepsToSuccess = 3;
+		
 		try {
 			
 			objExportNoteAsWebPage.GenerateWebPageHtml();
 			objExportNoteAsWebPage.PostWebPageHtmlToServer(this);
-			objExportNoteAsWebPage.UploadRequiredImages();
+			objExportNoteAsWebPage.UploadRequiredImages(this, this);
 			
 		} catch (Exception e) {
-			
 			displayDialogFail("Unable to export note: " + e, true);
 			return;
 		}
@@ -155,10 +225,6 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 
 	private void requestCreateAlbum()
 	{
-		objProgressDialog = new ProgressDialog(_context);
-		objProgressDialog.setMessage("Exporting to Facebook..., please wait.");
-		objProgressDialog.show();
-		
 		Bundle params = new Bundle();
 		params.putString("fields", "id,name");
 
@@ -308,13 +374,13 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 											GraphObject responseGraphObject = response.getGraphObject();
 											JSONObject json = responseGraphObject.getInnerJSONObject();
 
-											String link;
 											try
 											{
 												link = json.getString("link");
 
-												// Display FB link to user
-												displayDialogSuccess(link);
+												stepsToSuccess--;
+												
+												checkExportSuccess();
 												
 											} catch (JSONException e1) {
 												e1.printStackTrace();
@@ -322,7 +388,8 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 										}
 										else
 										{
-											_activity.finish();
+											displayDialogFail("Export failed.", true);
+//											_activity.finish();
 										}
 									}
 						}).executeAsync();
@@ -342,6 +409,9 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 	// Display a custom dialog providing the link to the FB export
 	private void displayDialogSuccess(String link)
 	{
+		// Close progress dialog
+		dismissProgressDialog();
+
 		AlertDialog dlg;
 		
 		AlertDialog.Builder b = new AlertDialog.Builder(_context);
@@ -378,6 +448,9 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 
 	private void displayDialogFail(String msg, boolean dismissActivity)
 	{
+		// Close progress dialog
+		dismissProgressDialog();
+		
     	AlertDialog.Builder builder = new AlertDialog.Builder(_context);
 	    builder.setMessage(msg);
 	    builder.setCancelable(true);
@@ -400,4 +473,11 @@ public class clsExportToFacebook extends Fragment implements clsExportNoteAsWebP
 
 	}
 
+	private void dismissProgressDialog()
+	{
+		if(objProgressDialog.isShowing())
+		{
+			objProgressDialog.dismiss();
+		}
+	}
 }

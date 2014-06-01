@@ -41,7 +41,7 @@ public class clsExportToMail implements clsExportNoteAsWebPageAsyncTask.OnWebPag
 		try {
 			objExportNoteAsWebPage.GenerateWebPageHtml();
 			objExportNoteAsWebPage.PostWebPageHtmlToServer(this);
-			objExportNoteAsWebPage.UploadRequiredImages();
+			objExportNoteAsWebPage.UploadRequiredImages(null, null);
 		} catch (Exception e) {
 			clsUtils.MessageBox(objActivity, "Error exporting the note as webpage: " + e, true);
 			return;

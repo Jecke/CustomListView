@@ -306,8 +306,6 @@ public class ActivityEditAnnotationImage extends Activity {
 	        	Intent objIntent = getIntent();
 	        	objIntent.putExtra(clsAnnotationData.DATA, clsUtils.SerializeToString(data));
 	        	
-	        	//overlayImage.getWidth(); overlayImage.getHeight();
-	        	
 	        	// return to caller
             	setResult(RESULT_OK, objIntent);
             	finish();
@@ -610,7 +608,7 @@ public class ActivityEditAnnotationImage extends Activity {
 		public void onDraw(Canvas canvas)
 		{
 			super.onDraw(canvas);
-Log.d("<<onDraw>>", String.valueOf(currentColor));			
+			
 			if(notified)
 			{
 				int i;

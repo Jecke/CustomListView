@@ -144,12 +144,6 @@ public class clsInteractiveImageView extends ImageView implements OnTouchListene
 				
 			case MotionEvent.ACTION_UP:
 				mode = NONE;
-				/*int xDiff = (int)Math.abs(curr.x - start.x);
-				int yDiff = (int)Math.abs(curr.y - start.y);
-				if(xDiff < CLICK && yDiff < CLICK)
-				{
-					performClick();
-				}*/
 				break;
 				
 			case MotionEvent.ACTION_POINTER_UP:

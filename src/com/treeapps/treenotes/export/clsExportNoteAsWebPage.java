@@ -11,6 +11,8 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -38,6 +40,16 @@ public class clsExportNoteAsWebPage {
 	private clsImageLoadData objImageLoadData;
 	
 	clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener callback;
+	
+	public interface OnImageUploadFinishedListener 
+	{
+		public void imageUploadFinished(boolean success, String errorMessage);
+	}
+	
+	public interface OnImageUploadProgressListener 
+	{
+		public void imageUploadProgress(int current, int max);
+	}
 	
 	public clsExportNoteAsWebPage(Activity objActivity, clsTreeview objTreeview, 
 									clsMessaging objMessaging, clsGroupMembers objGroupMembers)
@@ -205,7 +217,8 @@ public class clsExportNoteAsWebPage {
 		objAsyncTask.execute();
 	}
 
-	public void UploadRequiredImages() {
+	public void UploadRequiredImages(OnImageUploadFinishedListener cbFinished, OnImageUploadProgressListener cbProgress)
+	{
 		objImageLoadDatas = new ArrayList<clsImageLoadData>();
 		objImageLoadData = objMessaging.new clsImageLoadData();
 		objImageLoadData.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
@@ -226,7 +239,9 @@ public class clsExportNoteAsWebPage {
 			}
 		};
 		objTreeviewIterator.Execute();
-		clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(objActivity, objMessaging, false, objImageLoadDatas);
+		clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask = 
+			new clsImageUpDownloadAsyncTask(objActivity, objMessaging, false, objImageLoadDatas, 
+											cbFinished, cbProgress);
 		objImageUpDownloadAsyncTask.execute();
 	}
 	
