@@ -22,6 +22,9 @@ import org.json.JSONTokener;
 
 
 
+
+
+
 import com.google.gson.Gson;
 import com.treeapps.treenotes.R;
 import com.treeapps.treenotes.clsResourceLoader;
@@ -40,10 +43,13 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.ImageView;
@@ -240,11 +246,15 @@ public class clsMessaging {
 		        if (objResponseMsg.intErrorCode == ERROR_NONE) {
 		        	objRepository.boolIsServerAlive = true;
 		        	clsUtils.CustomLog("WebService is available");
-		        	Toast.makeText(objContext, "Syncing is available", Toast.LENGTH_SHORT).show();
+		        	SpannableString text = new SpannableString("Syncing is available");
+					text.setSpan(new ForegroundColorSpan(Color.GREEN), 11, 20, 0);
+					Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
 		        } else {
 		        	objRepository.boolIsServerAlive = false;
 		        	clsUtils.CustomLog("WebService is unavailable");
-		        	Toast.makeText(objContext, "Syncing is unavailable", Toast.LENGTH_SHORT).show();
+		        	SpannableString text = new SpannableString("Syncing is unavailable");
+					text.setSpan(new ForegroundColorSpan(Color.RED), 11, 22, 0);
+					Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
 		        } 			        
 		    }
 		}
@@ -859,8 +869,6 @@ public class clsMessaging {
 						objImageUpDownloadResult.strUploadErrors.add(objError);
 					} else {
 						for (String strImageVersionToBeUploaded: strImageVersionsToBeUploaded ) {
-Log.d("UPLOAD", strImageVersionToBeUploaded);							
-							
 							clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
 							objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + strImageVersionToBeUploaded + ".jpg";
 							objUploadCommand.strFileExtentionWithoutDot = "jpg";
@@ -910,9 +918,11 @@ Log.d("UPLOAD", strImageVersionToBeUploaded);
 			strImageVersionsToBeUploaded.add(strImageVersion);
 			
 			// Annotated image
-			strImageVersion = objImageToBeUploadedData.strUuid + "_annotated";
-			strImageVersionFullFilename = 
-					clsUtils.GetAnnotatedImageFileName(objActivity, objImageToBeUploadedData.strUuid);
+			strImageVersion = objImageToBeUploadedData.strUuid + "_annotate";
+			strImageVersionFullFilename = clsUtils
+					.GetTreeNotesDirectoryName(objActivity)
+					+ "/"
+					+ strImageVersion + ".jpg";
 			fileImageVersion = new File(strImageVersionFullFilename);
 			if (fileImageVersion.exists()) {
 				strImageVersionsToBeUploaded.add(strImageVersion);
@@ -920,8 +930,10 @@ Log.d("UPLOAD", strImageVersionToBeUploaded);
 
 			// Full image
 			strImageVersion = objImageToBeUploadedData.strUuid + "_full";
-			strImageVersionFullFilename = 
-					clsUtils.GetFullImageFileName(objActivity, objImageToBeUploadedData.strUuid);
+			strImageVersionFullFilename = clsUtils
+					.GetTreeNotesDirectoryName(objActivity)
+					+ "/"
+					+ strImageVersion + ".jpg";
 			fileImageVersion = new File(strImageVersionFullFilename);
 			if (!fileImageVersion.exists()) {
 				return strImageVersion + " does not exist on client";
@@ -976,7 +988,9 @@ Log.d("UPLOAD", strImageVersionToBeUploaded);
  // ------------------------------------------------------------------------------------
     public class clsSyncNoteCommandMsg extends clsMsg {
         public String strClientUserUuid = "";
-        public boolean boolIsMergeNeeded = true; // Return server version if set to false
+        public String strRegistrationId = "";
+        public boolean boolIsMergeNeeded = true; // Simply return the one on the server if 'false' 
+        public boolean boolIsAutoSyncCommand;	// To prevent infinite syncing loop 
 		public ArrayList<clsSyncRepositoryCtrlData> objSyncRepositoryCtrlDatas = new ArrayList<clsSyncRepositoryCtrlData>();
     }
     

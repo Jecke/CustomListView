@@ -18,6 +18,11 @@ import java.util.UUID;
 
 
 
+
+
+
+
+
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.gson.reflect.TypeToken;
@@ -47,13 +52,16 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources.NotFoundException;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -78,6 +86,7 @@ public class ActivityNoteStartup extends ListActivity {
 	public static final String READONLY = "com.treeapps.treenotes.read_only";
 	public static final String USE_ANNOTATED_IMAGE = "com.treeapps.treenotes.use_annotated_image";
 	public static final String ISDIRTY = "com.treeapps.treenotes.is_dirty";
+	
 
 	private static final int GET_DESCRIPTION_ADD_SAME_LEVEL = 0;
 	private static final int GET_DESCRIPTION_ADD_NEXT_LEVEL = 1;
@@ -89,7 +98,9 @@ public class ActivityNoteStartup extends ListActivity {
 	private static final int ANNOTATE_IMAGE = 7;
 	
 
-	
+	// IntenrService interaction
+	public static final String BROADCAST_ACTION = "com.treeapps.treenotes.broadcast_autosync";
+	public static final String BROADCAST_DATA_NOTE_UUID = "com.treeapps.treenotes.broadcast_data_note_uuid";
 	
 	
 	
@@ -105,6 +116,7 @@ public class ActivityNoteStartup extends ListActivity {
 	 private boolean boolUserIsNoteOwner = false;
 	 static Context objContext;
 	 static ArrayList<clsImageLoadData> objImageLoadDatas;
+	 String strRegistrationId;  // Device ID for GCM purposes
 	 
 	 
 	 // Temporarily locals
@@ -135,6 +147,8 @@ public class ActivityNoteStartup extends ListActivity {
 			String strImageLoadDatas = objBundle.getString(ActivityExplorerStartup.IMAGE_LOAD_DATAS);
 			java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
 			objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
+			
+			strRegistrationId = clsUtils.getRegistrationId(objContext);
 
 			File objFile = clsUtils.BuildNoteFilename(ActivityExplorerStartup.fileTreeNodesDir, strUuid );
 			objNoteTreeview = new clsNoteTreeview(objGroupMembers);
@@ -188,6 +202,13 @@ public class ActivityNoteStartup extends ListActivity {
 				adscontainer.removeView(admobAds);
 			}
 			
+			// Broadcast from notification service
+			IntentFilter mStatusIntentFilter = new IntentFilter(ActivityNoteStartup.BROADCAST_ACTION);
+	        // Instantiates a new DownloadStateReceiver
+	        ResponseReceiver objResponseReceiver = new ResponseReceiver();
+	        // Registers the DownloadStateReceiver and its intent filters
+	        LocalBroadcastManager.getInstance(this).registerReceiver(objResponseReceiver, mStatusIntentFilter);
+			
 			// Session Management
 	        clsUtils.CustomLog("ActivityNoteStartup onCreate");
 	        if (savedInstanceState == null) {
@@ -199,7 +220,21 @@ public class ActivityNoteStartup extends ListActivity {
 	    }
 
 
+	    // Broadcast receiver for receiving status updates from the IntentService
+	    private class ResponseReceiver extends BroadcastReceiver
+	    {
 
+	        // Called when the BroadcastReceiver gets an Intent it's registered to receive
+	        @Override
+	        public void onReceive(Context context, Intent intent) {
+	        	Bundle extras = intent.getExtras();
+	        	String strNoteUuid = extras.getString(BROADCAST_DATA_NOTE_UUID);
+	        	if (objNoteTreeview.getRepository().uuidRepository.toString().equals(strNoteUuid)) {
+	        		// Will only auto-sync an open and same repository, otherwise ignore
+		        	ExecuteNoteSync(true);
+	        	}
+	        }
+	    }
 
 
 
@@ -459,6 +494,7 @@ public class ActivityNoteStartup extends ListActivity {
    	    java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
    	    objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
    	    GetUserRegistrationStatus(); // Update boolIsUserRegistered and boolUserIsNoteOwner
+   	    strRegistrationId = clsUtils.getRegistrationId(objContext);
 	}
 	
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -766,31 +802,10 @@ public class ActivityNoteStartup extends ListActivity {
         		 Toast.makeText(this, "You need to register first before you can sync",Toast.LENGTH_SHORT).show();
         		 return true;
         	 }
-        	 SaveFile();
-        	 URL urlFeed;
-        	 try {
-				urlFeed = new URL(objMessaging.GetServerUrl(objNoteTreeview) + getResources().getString(R.string.url_note_sync));
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return true;
-			} catch (NotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return true;
-			}
-        	 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
-        	 clsSyncRepository objSyncRepository = objNoteTreeview.getRepository().getCopy();
-        	 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
-        	 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
-        	 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
-        	 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
-        	 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
-        	 objSyncCommandMsg.boolIsMergeNeeded = true;
-        	 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
-        	 objSyncAsyncTask.execute("");
+        	 ExecuteNoteSync(false);
         	 return true;
          case R.id.actionShareRestoreFromServer: 
+        	 URL urlFeed;
         	 objRegisteredUser = objGroupMembers.GetRegisteredUser();
         	 if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
         		 // Not registered, cannot sync
@@ -808,16 +823,17 @@ public class ActivityNoteStartup extends ListActivity {
 				e.printStackTrace();
 				return true;
 			}
-        	 objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
-        	 objSyncRepository = objNoteTreeview.getRepository().getCopy();
-        	 objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
-        	 objRepositoryCtrlData.objSyncRepository = objSyncRepository;
+        	 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
+        	 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
+        	 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy();
         	 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
         	 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
         	 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
         	 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
+        	 objSyncCommandMsg.strRegistrationId = strRegistrationId;
         	 objSyncCommandMsg.boolIsMergeNeeded = false;
-        	 objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
+        	 objSyncCommandMsg.boolIsAutoSyncCommand = false;
+        	 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
         	 objSyncAsyncTask.execute("");
         	 return true;
          case R.id.actionClearAll:
@@ -860,6 +876,35 @@ public class ActivityNoteStartup extends ListActivity {
              return super.onOptionsItemSelected(item);
     	 }
     }
+
+
+	private void ExecuteNoteSync(boolean boolIsAutoSyncCommand) {
+		SaveFile();
+		 URL urlFeed;
+		 try {
+			urlFeed = new URL(objMessaging.GetServerUrl(objNoteTreeview) + getResources().getString(R.string.url_note_sync));
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (NotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
+		 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
+		 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy();
+		 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
+		 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
+		 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
+		 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
+		 objSyncCommandMsg.strRegistrationId = strRegistrationId;
+		 objSyncCommandMsg.boolIsMergeNeeded = true;
+		 objSyncCommandMsg.boolIsAutoSyncCommand = boolIsAutoSyncCommand;
+		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
+		 objSyncAsyncTask.execute("");
+	}
 	
 	public class MyTextOnClickListenerBackup2 implements View.OnClickListener{
 		@Override
@@ -1323,6 +1368,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	        	break;
 	   	   	   	    	}
 	   	        	}
+	   	        	((ActivityNoteStartup)objContext).SaveFile();
 	   	        	clsUtils.MessageBox(objContext, strMessage, true);
 	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objContext).objMessaging,
 	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objImageLoadDatas);

@@ -178,15 +178,15 @@ public class ActivityExplorerStartup extends ListActivity {
     // GCM Data
     static final String TAG_GCM = "GCM";
 	private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-	private static final String PROPERTY_REG_ID = "com.treeapps.treenotes.gcm_registration_id";
-	private static final String PROPERTY_APP_VERSION = "com.treeapps.treenotes.gcm_application_version";
+	public static final String PROPERTY_REG_ID = "com.treeapps.treenotes.gcm_registration_id";
+	public static final String PROPERTY_APP_VERSION = "com.treeapps.treenotes.gcm_application_version";
 	public static final String EXTRA_MESSAGE = "com.treeapps.treenotes.message";
     GoogleCloudMessaging gcm;
     AtomicInteger msgId = new AtomicInteger();
-    String regid;
+    String strRegistrationId;
     /**
      * Substitute you own sender ID here. This is the project number you got
-     * from the API Console, as described in "Getting Started."
+     * from the Google Developer API Console, as described in "Getting Started."
      */
     String SENDER_ID = "543138772701";
     // End of GCM data
@@ -291,9 +291,9 @@ public class ActivityExplorerStartup extends ListActivity {
 			if (checkPlayServices()) {
 				// If this check succeeds, proceed with normal processing.
 				gcm = GoogleCloudMessaging.getInstance(this);
-				regid = getRegistrationId(this);
+				strRegistrationId = clsUtils.getRegistrationId(this);
 
-				if (regid.isEmpty()) {
+				if (strRegistrationId.isEmpty()) {
 					registerInBackground();
 				}
 
@@ -480,6 +480,8 @@ public class ActivityExplorerStartup extends ListActivity {
 		objContext = this;
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 		objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
+		clsUtils.SerializeToSharedPreferences("ActivityExplorerStartup", "strRegistrationId", this, strRegistrationId);
+		strRegistrationId = clsUtils.getRegistrationId(objContext);
 		clsUtils.CustomLog("ActivityExplorerStartup LoadFile");
 	}
 	
@@ -494,6 +496,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 		clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
 		clsUtils.CustomLog("ActivityExplorerStartup SaveFile");
+		
 	}
 	
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -887,7 +890,9 @@ public class ActivityExplorerStartup extends ListActivity {
 			}
 			clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
 			objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
+			objSyncCommandMsg.strRegistrationId = strRegistrationId;
 			objSyncCommandMsg.boolIsMergeNeeded = true;
+			objSyncCommandMsg.boolIsAutoSyncCommand = false;
 			objSyncCommandMsg.objSyncRepositoryCtrlDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
 
 			ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(this,
@@ -977,7 +982,9 @@ public class ActivityExplorerStartup extends ListActivity {
 																										// all
 					objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository
 							.getStrRegisteredUserUuid();
+					objSyncCommandMsg.strRegistrationId = strRegistrationId;
 					objSyncCommandMsg.boolIsMergeNeeded = false;
+					objSyncCommandMsg.boolIsAutoSyncCommand = false;
 
 					// Clear local repository
 					objExplorerTreeview.ClearAll();
@@ -1113,7 +1120,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			finish();
 			return true;
 		case R.id.actionUnregisterGcm:
-			storeRegistrationId(this,"");
+			clsUtils.storeRegistrationId(this,"");
 			return true;
 		case R.id.actionConsumePurchases:
 			mHelper.queryInventoryAsync(mGotInventoryForReversalListener);
@@ -2214,56 +2221,7 @@ public class ActivityExplorerStartup extends ListActivity {
  		    return true;
  		}
  		
- 		/**
- 		 * Gets the current registration ID for application on GCM service.
- 		 * <p>
- 		 * If result is empty, the app needs to register.
- 		 *
- 		 * @return registration ID, or empty string if there is no existing
- 		 *         registration ID.
- 		 */
- 		private String getRegistrationId(Context context) {
- 		    final SharedPreferences prefs = getGCMPreferences(context);
- 		    String registrationId = prefs.getString(PROPERTY_REG_ID, "");
- 		    if (registrationId.isEmpty()) {
- 		        Log.i(TAG_GCM, "Registration not found.");
- 		        return "";
- 		    }
- 		    // Check if app was updated; if so, it must clear the registration ID
- 		    // since the existing regID is not guaranteed to work with the new
- 		    // app version.
- 		    int registeredVersion = prefs.getInt(PROPERTY_APP_VERSION, Integer.MIN_VALUE);
- 		    int currentVersion = getAppVersion(context);
- 		    if (registeredVersion != currentVersion) {
- 		        Log.i(TAG_GCM, "App version changed.");
- 		        return "";
- 		    }
- 		    return registrationId;
- 		}
-
- 		/**
- 		 * @return Application's {@code SharedPreferences}.
- 		 */
- 		private SharedPreferences getGCMPreferences(Context context) {
- 		    // This sample app persists the registration ID in shared preferences, but
- 		    // how you store the regID in your app is up to you.
- 		    return getSharedPreferences(ActivityExplorerStartup.class.getSimpleName(),
- 		            Context.MODE_PRIVATE);
- 		}
  		
- 		/**
- 		 * @return Application's version code from the {@code PackageManager}.
- 		 */
- 		private static int getAppVersion(Context context) {
- 		    try {
- 		        PackageInfo packageInfo = context.getPackageManager()
- 		                .getPackageInfo(context.getPackageName(), 0);
- 		        return packageInfo.versionCode;
- 		    } catch (NameNotFoundException e) {
- 		        // should never happen
- 		        throw new RuntimeException("Could not get package name: " + e);
- 		    }
- 		}
  		
 		/**
  		 * Registers the application with GCM servers asynchronously.
@@ -2281,8 +2239,8 @@ public class ActivityExplorerStartup extends ListActivity {
  		                if (gcm == null) {
  		                    gcm = GoogleCloudMessaging.getInstance(objContext);
  		                }
- 		                regid = gcm.register(SENDER_ID);
- 		                msg = "Device registered, registration ID=" + regid;
+ 		                strRegistrationId = gcm.register(SENDER_ID);
+ 		                msg = "Device registered, registration ID=" + strRegistrationId;
 
  		                // You should send the registration ID to your server over HTTP,
  		                // so it can use GCM/HTTP or CCS to send messages to your app.
@@ -2295,7 +2253,7 @@ public class ActivityExplorerStartup extends ListActivity {
  		                // message using the 'from' address in the message.
 
  		                // Persist the regID - no need to register again.
- 		                storeRegistrationId(objContext, regid);
+ 		               clsUtils.storeRegistrationId(objContext, strRegistrationId);
  		            } catch (IOException ex) {
  		                msg = "Error :" + ex.getMessage();
  		                // If there is an error, don't just keep trying to register.
@@ -2313,29 +2271,6 @@ public class ActivityExplorerStartup extends ListActivity {
 				} 
  		    }.execute(null, null, null);
  		}
- 		
- 		
- 		
- 		/**
- 		 * Stores the registration ID and app versionCode in the application's
- 		 * {@code SharedPreferences}.
- 		 *
- 		 * @param context application's context.
- 		 * @param regId registration ID
- 		 */
- 		private void storeRegistrationId(Context context, String regId) {
- 		    final SharedPreferences prefs = getGCMPreferences(context);
- 		    int appVersion = getAppVersion(context);
- 		    Log.i(TAG_GCM, "Saving regId on app version " + appVersion);
- 		    SharedPreferences.Editor editor = prefs.edit();
- 		    editor.putString(PROPERTY_REG_ID, regId);
- 		    editor.putInt(PROPERTY_APP_VERSION, appVersion);
- 		    editor.commit();
- 		}
- 		
- 		
- 		
- 		
  		
  		
  		/**
@@ -2367,7 +2302,7 @@ public class ActivityExplorerStartup extends ListActivity {
  					InputStream stream = null;
 					clsSendGcmRegIdCommandMessage objCommand = new clsSendGcmRegIdCommandMessage();
 					clsSendGcmRegIdResponse objResponse = new clsSendGcmRegIdResponse();
-					objCommand.strRegId = regid;
+					objCommand.strRegId = strRegistrationId;
 					objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
 					try {
 			            
