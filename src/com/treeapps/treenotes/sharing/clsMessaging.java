@@ -59,12 +59,12 @@ import android.widget.Toast;
 
 public class clsMessaging {
 	
-	private static final int NET_CONNECT_TIMEOUT_MILLIS = 60000;  // 15 seconds
-    private static final int NET_READ_TIMEOUT_MILLIS = 60000;  // 10 seconds
-    private static final int FILE_CONVERT_TIMEOUT_MILLIS = 20000;  // 10 seconds
+	private static final int NET_CONNECT_TIMEOUT_MILLIS = 15000;  // 15 seconds
+    private static final int NET_READ_TIMEOUT_MILLIS = 10000;  // 10 seconds
+    private static final int FILE_CONVERT_TIMEOUT_MILLIS = 20000;  // 20 seconds
     
     public static String SERVER_URL_AZURE = "http://treenotes.azurewebsites.net";
-    public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.7";
+    public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.14";
 	
     // Webserver instructions
     public static final int SERVER_INSTRUCT_KEEP_ORIGINAL = 0;
@@ -238,7 +238,9 @@ public class clsMessaging {
 		        if (result == null)  {
 		        	objRepository.boolIsServerAlive = false;
 		        	clsUtils.CustomLog("WebService is unavailable");
-		        	Toast.makeText(objContext, "Syncing is unavailable", Toast.LENGTH_SHORT).show();
+		        	SpannableString text = new SpannableString("Syncing is unavailable");
+					text.setSpan(new ForegroundColorSpan(Color.RED), 11, 22, 0);
+					Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
 		        	return;
 		        }
 		        clsIsServerAliveResponseMsg objResponseMsg = clsUtils.DeSerializeFromString(result.toString(), clsIsServerAliveResponseMsg.class);

@@ -280,6 +280,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				.addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
 				.addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
 				.addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
+				.addTestDevice("A947D095EE036142160FD3D2D4D5034C")
 				.build();
 				adView.loadAd(adRequest);
 			} else {
