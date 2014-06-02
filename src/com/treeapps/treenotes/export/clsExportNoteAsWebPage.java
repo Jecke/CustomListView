@@ -38,6 +38,7 @@ public class clsExportNoteAsWebPage {
 	private clsGroupMembers objGroupMembers;
 	private ArrayList<clsImageLoadData> objImageLoadDatas;
 	private clsImageLoadData objImageLoadData;
+	private static String strExportTimeStampWinFilenameSafe;
 	
 	clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener callback;
 	
@@ -58,6 +59,7 @@ public class clsExportNoteAsWebPage {
 		this.objActivity = objActivity;
 		this.objMessaging = objMessaging;
 		this.objGroupMembers=objGroupMembers;
+		this.strExportTimeStampWinFilenameSafe = "";
 	}
 	
 	// Input to async task
@@ -66,6 +68,7 @@ public class clsExportNoteAsWebPage {
 		public String strWebPageHtml;
 		public String strSenderName;
 		public String strOgTags; // Open Graph HTML meta tags
+		public String strExportTimeStampWinFilenameSafe;	// To make each URL unique
 	}
 
 	// Output from async task
@@ -165,7 +168,9 @@ public class clsExportNoteAsWebPage {
 	}
 	
 	public void GenerateWebPageHtml() {
-		
+		// Generate the timestamp value
+		strExportTimeStampWinFilenameSafe = clsUtils.GetStrCurrentDateTimeWinFilenameSafe();
+				
 		// This method assumes all the images are already on the webserver
 		intLevelAmount = GetLevelAmount(objTreeview);
 		strWebPageHtml  = "<div class='datagrid'>";
@@ -213,6 +218,7 @@ public class clsExportNoteAsWebPage {
 		objCommand.strWebPageHtml = strWebPageHtml;
 		objCommand.strSenderName = objGroupMembers.GetRegisteredUser().strUserName;
 		objCommand.strOgTags = "";
+		objCommand.strExportTimeStampWinFilenameSafe = strExportTimeStampWinFilenameSafe;
 		clsExportNoteAsWebPageResponse objResponse = new clsExportNoteAsWebPageResponse();
 		clsMyExportNoteAsWebPageAsyncTask objAsyncTask = new clsMyExportNoteAsWebPageAsyncTask(objActivity, url,objCommand, objResponse);
 		objAsyncTask.SetOnWebPagePostedListener(callback);			
@@ -341,7 +347,8 @@ public class clsExportNoteAsWebPage {
 		else {
 			strServerUrl =  clsMessaging.SERVER_URL_AZURE;
 		}
-		return strServerUrl + "/Views/Pages/Messages/" + objTreeview.getRepository().uuidRepository.toString()+ ".html";
+		return strServerUrl + "/Views/Pages/Messages/" + objTreeview.getRepository().uuidRepository.toString() +
+				"_" + strExportTimeStampWinFilenameSafe + ".html";
 	}
 
 }

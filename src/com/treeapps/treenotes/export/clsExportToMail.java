@@ -42,6 +42,7 @@ public class clsExportToMail implements clsExportNoteAsWebPageAsyncTask.OnWebPag
 		case 1:
 			// Export of web page and upload of images to servers is finished.
 			// Now we can start to generate the mail. 
+			objProgressDialog.dismiss();
 			generateMailRequest();
 			break;
 		}

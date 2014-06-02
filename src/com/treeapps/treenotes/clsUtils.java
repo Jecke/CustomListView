@@ -495,6 +495,11 @@ public class clsUtils {
 	public static String GetStrCurrentDateTime() {
 		return DateToJson(new Date());
 	}
+	
+	public static String GetStrCurrentDateTimeWinFilenameSafe() {
+		 String strValue = GetStrCurrentDateTime();
+		 return strValue.replaceAll("[^a-zA-Z0-9.-]", "_");
+	}
 
 	public static String DateToJson(Date dtDate) {
 		SimpleDateFormat df = new SimpleDateFormat(strDateTimeFormat);
