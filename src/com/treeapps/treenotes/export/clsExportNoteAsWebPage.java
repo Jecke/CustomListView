@@ -212,6 +212,7 @@ public class clsExportNoteAsWebPage {
 		objCommand.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
 		objCommand.strWebPageHtml = strWebPageHtml;
 		objCommand.strSenderName = objGroupMembers.GetRegisteredUser().strUserName;
+		objCommand.strOgTags = "";
 		clsExportNoteAsWebPageResponse objResponse = new clsExportNoteAsWebPageResponse();
 		clsMyExportNoteAsWebPageAsyncTask objAsyncTask = new clsMyExportNoteAsWebPageAsyncTask(objActivity, url,objCommand, objResponse);
 		objAsyncTask.SetOnWebPagePostedListener(callback);			
