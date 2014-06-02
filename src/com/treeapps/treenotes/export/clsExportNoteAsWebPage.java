@@ -65,6 +65,7 @@ public class clsExportNoteAsWebPage {
 		public String strNoteUuid;
 		public String strWebPageHtml;
 		public String strSenderName;
+		public String strOgTags; // Open Graph HTML meta tags
 	}
 
 	// Output from async task
