@@ -366,6 +366,11 @@ public class clsTreeview {
 		public boolean boolUseAnnotatedImage = false;
 		public boolean boolIsNew = false;
 
+		public boolean hasImage()
+		{
+			return (resourceId == IMAGE_RESOURCE || resourceId == WEB_RESOURCE); 
+		}
+		
 		public boolean getBoolUseAnnotatedImage() {
 			return boolUseAnnotatedImage;
 		}
