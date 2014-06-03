@@ -20,14 +20,14 @@ import android.content.Context;
 public class ActivityEditAnnotationText extends Activity {
 
 	// static Id annotation text (i.e. Arrow x)
-	private String annotationId;
+	private String strAnnotationId;
 	
 	// container used to receive and send text 
-	private clsAnnotationItem cnt;
+	private clsAnnotationItem objAnnotationItem;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		annotationId = "";
+		strAnnotationId = "";
 		
 		super.onCreate(savedInstanceState);
 		
@@ -36,11 +36,11 @@ public class ActivityEditAnnotationText extends Activity {
 		Intent objIntent = getIntent();
 		Bundle objBundle = objIntent.getExtras();   
 		
-		cnt = 
+		objAnnotationItem = 
 			clsUtils.DeSerializeFromString(objBundle.getString(clsAnnotationData.DATA), 
 										   clsAnnotationItem.class);
 		
-		String strResult = cnt.getAnnotationText();
+		String strResult = objAnnotationItem.getAnnotationText();
 		
 		// parse the annotation text and use the text from the start to the first colon
 		// as description above the actual text field
@@ -51,7 +51,7 @@ public class ActivityEditAnnotationText extends Activity {
 		int idx = strResult.indexOf(": ");
 		if(idx != -1)
 		{
-			annotationId = strResult.substring(0, idx);
+			strAnnotationId = strResult.substring(0, idx);
 
 			// display the remaining text in the editable text field
 			String annotationText = strResult.substring(idx + 2);
@@ -60,7 +60,7 @@ public class ActivityEditAnnotationText extends Activity {
 			editText.setText(annotationText);
 		}
 		
-		id.setText(annotationId + ":");
+		id.setText(strAnnotationId + ":");
 		
 		// pop up soft keyboard
 		clsUtils.showKeyboard(this);
@@ -85,9 +85,9 @@ public class ActivityEditAnnotationText extends Activity {
         		String   strDescription = objEditView.getText().toString();
 
         		// put Information for MainActivity together
-        		cnt.setAnnotationText(annotationId + ": " + strDescription);
+        		objAnnotationItem.setAnnotationText(strAnnotationId + ": " + strDescription);
 
-        		objIntent.putExtra(clsAnnotationData.DATA, clsUtils.SerializeToString(cnt));
+        		objIntent.putExtra(clsAnnotationData.DATA, clsUtils.SerializeToString(objAnnotationItem));
 
         		setResult(RESULT_OK, objIntent);
 

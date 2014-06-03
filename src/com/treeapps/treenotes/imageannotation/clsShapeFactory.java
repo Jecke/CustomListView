@@ -6,7 +6,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 
 /**
- * @author Ultraventris
+ * @author
  *
  * Factory producing shapes for the image overlay
  */

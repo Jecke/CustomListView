@@ -17,8 +17,8 @@ public class clsShapeArrow extends clsShapeBase
 	private static final float HEAD_WIDTH_DEFAULT  = 15f;
 	private static final float HEAD_LENGTH_DEFAULT = 30f;
 
-	private float HEAD_WIDTH;
-	private float HEAD_LENGTH;
+	private float headWidth;
+	private float headLength;
 
 	// hotspots
 	protected PointF tip;
@@ -34,7 +34,6 @@ public class clsShapeArrow extends clsShapeBase
 
 	// test 
 	Matrix m = new Matrix(); 
-
 	
 	public clsShapeArrow(Context context, clsAnnotationData.AttributeContainer attributes, 
 			float[] reference, float maxWidth, float maxHeight, float minScreenDim)
@@ -42,12 +41,11 @@ public class clsShapeArrow extends clsShapeBase
 		super(context, attributes, reference, clsShapeFactory.Shape.ARROW,
 				maxWidth, maxHeight, minScreenDim);
 		
-		Log.d("ARROW", "("+String.valueOf(reference[0])+";"+String.valueOf(reference[1])+") - " +
-				"("+String.valueOf(reference[2])+";"+String.valueOf(reference[3])+") max(" + 
-				String.valueOf(maxWidth)+"/"+String.valueOf(maxHeight)+")" 
-				
-				
-				);
+//		Log.d("ARROW", "("+String.valueOf(reference[0])+";"+String.valueOf(reference[1])+") - " +
+//				"("+String.valueOf(reference[2])+";"+String.valueOf(reference[3])+") max(" + 
+//				String.valueOf(maxWidth)+"/"+String.valueOf(maxHeight)+")" 
+//				);
+		
 		// set hotspots
 		// Note: The object assumes that the default shape is starting from the middle
 		// of the bitmap running down. So tip is always inside the bitmap but the 
@@ -56,8 +54,8 @@ public class clsShapeArrow extends clsShapeBase
 		tail = new PointF(reference[2], Math.min(reference[3], clipRegionLR.y));
 		
 		// compute dimension of arrow head
-		HEAD_WIDTH  = Math.min(maxWidth,  maxHeight) * HEAD_WIDTH_DEFAULT / minScreenDim;
-		HEAD_LENGTH = Math.min(maxWidth,  maxHeight) * HEAD_LENGTH_DEFAULT / minScreenDim;
+		headWidth  = Math.min(maxWidth,  maxHeight) * HEAD_WIDTH_DEFAULT / minScreenDim;
+		headLength = Math.min(maxWidth,  maxHeight) * HEAD_LENGTH_DEFAULT / minScreenDim;
 		
 		// arrow head is filled
 		paint.setStyle(Style.FILL_AND_STROKE);
@@ -82,7 +80,6 @@ public class clsShapeArrow extends clsShapeBase
 		paint.setStyle(Style.STROKE);
 		path.moveTo(tip.x, tip.y);
 		path.lineTo(tail.x, tail.y);
-
 		
 		// Draw an arrow with the tip of the arrow head as the reference point.
 		// If the shape is currently selected draw it in a different color and add a visual
@@ -119,7 +116,7 @@ public class clsShapeArrow extends clsShapeBase
 		double nx = dx/normLength;
 		double ny = dy/normLength;
 		
-		double scale = HEAD_WIDTH/Math.sqrt(dx*dx+dy*dy);
+		double scale = headWidth/Math.sqrt(dx*dx+dy*dy);
 		
 		// create perpendicular lines forming the base of the arrow head
 		double dx2 = -dy * scale;
@@ -129,8 +126,8 @@ public class clsShapeArrow extends clsShapeBase
 		double dy3 = -dx * scale;
 
 		// calculate the intersection point with the arrow body
-		double x3 = tip.x + (HEAD_LENGTH * nx);
-		double y3 = tip.y + (HEAD_LENGTH * ny);
+		double x3 = tip.x + (headLength * nx);
+		double y3 = tip.y + (headLength * ny);
 		
 		// draw arrow head
 		path.moveTo((float)(x3+dx2), (float)(y3+dy2));
