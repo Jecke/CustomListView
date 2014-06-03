@@ -15,17 +15,16 @@ import android.view.MotionEvent;
 import android.view.View;
 
 public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
-											//implements OnClickListener
 {
 	// current values of the matrix used to pan and zoom the image as well as the overlay 
 	private float overlayMatrixValues[];
     
 	private clsShapeFactory.SelectedShape shapeSelected;
-	private ActivityEditAnnotationImage.ShapeObserver shapeObserver;
+	private ActivityEditAnnotationImage.ShapeObserver objShapeObserver;
 	
 	private clsShapeFactory overlay;
     
-	private clsShapeFactory.SelectedShape temp;
+	private clsShapeFactory.SelectedShape tempShape;
 	
     private int mode = NONE;
     
@@ -47,14 +46,14 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 
 		shapeSelected = clsShapeFactory.SelectedShape.NONE;
 		
-		shapeObserver = null;
+		objShapeObserver = null;
 	}
 
 	// register an observer to keep the parent activity informed about the current 
 	// selection state of shapes. That is used to disable and enable menu entries.
 	public void setShapeObserver(ActivityEditAnnotationImage.ShapeObserver obs)
 	{
-		shapeObserver = obs;
+		objShapeObserver = obs;
 	}
 	
 	public float getBitmapWidth()
@@ -92,14 +91,14 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 				// map screen coordinates to canvas coordinates
 				inverseMatrix.mapPoints(in_out);
 
-				temp = overlay.prePickShape(in_out); 
+				tempShape = overlay.prePickShape(in_out); 
 				
 				if(shapeSelected == SelectedShape.NONE)
 				{
 					mode = NONE;
 					
 					// no shape selected previously and click occurred on a shape
-					if(temp != SelectedShape.NONE)
+					if(tempShape != SelectedShape.NONE)
 					{
 						mode = SHAPE_PRESELECT;
 						eventConsumed = true;
@@ -111,7 +110,7 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 					// on that shape or a different one
 					mode = SHAPE_SELECT;
 					
-					if(temp == shapeSelected)
+					if(tempShape == shapeSelected)
 						eventConsumed = true;
 				}
 				break;
@@ -161,7 +160,7 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 				// also if the click occurred close to a different shape than the currently selected one.)
 				if(mode == SHAPE_SELECT && 
 				   shapeSelected == clsShapeFactory.SelectedShape.SAME &&
-				   temp == shapeSelected)
+				   tempShape == shapeSelected)
 				{
 					float[] c = {curr.x, curr.y};
 					float[] l = {last.x, last.y};
@@ -233,10 +232,6 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 	{
 		// for now the reference point (center of the rectangle) is initial in the 
 		// middle of the visible area of the screen
-//		float[] coord = {width/2 - RECTANGLE_OFFSET_HOR, height/2 - RECTANGLE_OFFSET_VER,
-//						 width/2 + RECTANGLE_OFFSET_HOR, height/2 + RECTANGLE_OFFSET_VER};
-//		inverseMatrix.mapPoints(coord);
-//		
 		float offset = Math.min(bmWidth, bmHeight)/3;
 		float[] coord = {width/2, height/2, 0f, 0f};
 		
@@ -245,7 +240,7 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 		coord[2] = coord[0] + offset;
 		coord[3] = coord[1] + offset;
 
-		if(overlay.createShape(context,
+		if(overlay.createShape(objContext,
 								Shape.RECTANGLE, 
 								"",
 								attr,
@@ -280,7 +275,7 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 		coord[2] = coord[0];
 		coord[3] = coord[1] + offset;
 		
-		if(overlay.createShape(context,
+		if(overlay.createShape(objContext,
 								Shape.ARROW, 
 								"",
 								attr,
@@ -310,7 +305,7 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 		coord[2] = coord[0];
 		coord[3] = coord[1] + offset * 2;
 		
-		if(overlay.createShape(context,
+		if(overlay.createShape(objContext,
 								Shape.NUMBERED_ARROW, 
 								"",
 								attr,
@@ -396,7 +391,7 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 			// of the actual shapes.
 			//inverseMatrix.mapPoints(ptr);
 			
-			overlay.createShape(context, 
+			overlay.createShape(objContext, 
 								item.getType(), 
 								item.getAnnotationText(),
 								item.getAttributes(),
@@ -447,9 +442,9 @@ public class clsInteractiveImageViewOverlay extends clsInteractiveImageView
 	// Helper to redraw the graphics. It also notifies the observer if required.
 	private void redraw(boolean notifyShapeObserver)
 	{
-		if(notifyShapeObserver && shapeObserver != null)
+		if(notifyShapeObserver && objShapeObserver != null)
 		{
-			shapeObserver.notify(overlay.getSelectedShapeType());
+			objShapeObserver.notify(overlay.getSelectedShapeType());
 		}
 		invalidate();
 	}

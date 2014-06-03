@@ -15,7 +15,7 @@ import android.widget.ImageView;
 // based on Nicolas Tyler's answer on http://stackoverflow.com/questions/6650398/android-imageview-zoom-in-and-zoom-out
 public class clsInteractiveImageView extends ImageView implements OnTouchListener
 {
-	Context context;
+	Context objContext;
 	
 	Matrix matrix;
 	Matrix inverseMatrix;
@@ -54,42 +54,42 @@ public class clsInteractiveImageView extends ImageView implements OnTouchListene
     
     private int mode = NONE;
 	
-	ScaleGestureDetector mScaleDetector;
+	ScaleGestureDetector objScaleDetector;
 	
 	// constructor of super class
-	public clsInteractiveImageView(Context context, AttributeSet attr)
+	public clsInteractiveImageView(Context objContext, AttributeSet attr)
 	{
-		super(context, attr);
+		super(objContext, attr);
 		super.setClickable(true);
 		
-		this.context = context;
+		this.objContext = objContext;
 		
 		initialise();
 	}
 	
 	// constructor of super class
-	public clsInteractiveImageView(Context context) {
-	    super(context);
+	public clsInteractiveImageView(Context objContext) {
+	    super(objContext);
 	    super.setClickable(true);
 			
-	    this.context = context;
+	    this.objContext = objContext;
 		
 		initialise();
 	}
 
 	// constructor of super class
-	public clsInteractiveImageView(Context context, AttributeSet attrs, int defStyle) {
-	    super(context, attrs, defStyle);
+	public clsInteractiveImageView(Context objContext, AttributeSet attrs, int defStyle) {
+	    super(objContext, attrs, defStyle);
 	    super.setClickable(true);
 			
-	    this.context = context;
+	    this.objContext = objContext;
 		
 		initialise();
 	}
 
 	public void initialise()
 	{
-		mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
+		objScaleDetector = new ScaleGestureDetector(objContext, new ScaleListener());
 		matrix        = new Matrix();
 		inverseMatrix = new Matrix();
 		
@@ -118,7 +118,7 @@ public class clsInteractiveImageView extends ImageView implements OnTouchListene
 	
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {	
-		mScaleDetector.onTouchEvent(event);
+		objScaleDetector.onTouchEvent(event);
 		
 		matrix.getValues(currentMatrixValues);
 		
@@ -214,7 +214,6 @@ public class clsInteractiveImageView extends ImageView implements OnTouchListene
 				break;
 		}
 		
-		//Toast.makeText(context, "touched", Toast.LENGTH_SHORT).show();
 		// avoid unnecessary draw operations
 		if(drawPending)
 		{

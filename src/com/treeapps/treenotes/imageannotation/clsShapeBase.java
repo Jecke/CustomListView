@@ -2,8 +2,6 @@ package com.treeapps.treenotes.imageannotation;
 
 import java.util.Arrays;
 
-
-
 import com.treeapps.treenotes.R;
 import com.treeapps.treenotes.clsUtils;
 
@@ -15,7 +13,6 @@ import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Paint.Align;
 import android.graphics.PointF;
-import android.util.Log;
 
 /*
  * Base class for supported shapes
@@ -23,12 +20,13 @@ import android.util.Log;
 // base class for shapes
 public class clsShapeBase
 {
-	private static final float TEXT_SIZE_DEFAULT = 30f;
-	private float TEXT_SIZE = 30;
-
 	protected static final float HOTSPOT_RADIUS = 10f;
 	protected static final float HOTSPOT_PICKRADIUS = 2 * HOTSPOT_RADIUS;
-	protected Context context;
+
+	private static final float TEXT_SIZE_DEFAULT = 30f;
+	private float textSize = 30;
+
+	protected Context objContext;
 
 	protected clsShapeFactory.Shape type;
 	protected float[] reference;
@@ -46,9 +44,9 @@ public class clsShapeBase
 	protected PointF clipRegionLR;
 
 	// attributes
-	protected clsAnnotationData.AttributeContainer attr;
+	protected clsAnnotationData.AttributeContainer objAttr;
 	
-	protected clsShapeBase(Context context, 
+	protected clsShapeBase(Context objContext, 
 			clsAnnotationData.AttributeContainer attributes,
 			float[] reference, clsShapeFactory.Shape type,
 			float maxWidth, float maxHeight, float minScreenDim)
@@ -56,13 +54,13 @@ public class clsShapeBase
 		this.reference = Arrays.copyOf(reference, reference.length);
 		
 		this.type    = type;
-		this.context = context;
+		this.objContext = objContext;
 		
 		clsAnnotationData data = new clsAnnotationData("");
-		attr = data.new AttributeContainer(attributes);
+		objAttr = data.new AttributeContainer(attributes);
 
 		// compute dimension of text
-		TEXT_SIZE  = Math.min(maxWidth,  maxHeight) * TEXT_SIZE_DEFAULT / minScreenDim;
+		textSize  = Math.min(maxWidth,  maxHeight) * TEXT_SIZE_DEFAULT / minScreenDim;
 
 		// Define bounding box of shape movement and resize operations
 		// Note that the coordinate system has its origin in the upper left
@@ -74,9 +72,9 @@ public class clsShapeBase
 		// outline
 		paint.setAntiAlias(true);
 		paint.setStyle(Style.STROKE); // should be FILL_AND_STROKE for text
-		paint.setColor(attr.lineColor);
-		paint.setStrokeWidth(attr.lineWidth);
-		paint.setPathEffect(clsUtils.getPathEffect(attr.lineStyle));
+		paint.setColor(objAttr.lineColor);
+		paint.setStrokeWidth(objAttr.lineWidth);
+		paint.setPathEffect(clsUtils.getPathEffect(objAttr.lineStyle));
 
 		// hotspots are circles which are not filled
 		hotspotPaint = new Paint(paint);
@@ -88,13 +86,13 @@ public class clsShapeBase
 		textPaint.setAntiAlias(true);
 		textPaint.setColor(Color.WHITE); // default
 		textPaint.setStrokeWidth(3);
-		textPaint.setTextSize(TEXT_SIZE);
+		textPaint.setTextSize(textSize);
 		textPaint.setTextAlign(Align.CENTER);
 		
 		// The paint used to draw the selected object is based on the
 		// normal paint.
 		rubberBand = new Paint(paint);
-		rubberBand.setColor(context.getResources().getInteger(R.color.color_rubberband));
+		rubberBand.setColor(objContext.getResources().getInteger(R.color.color_rubberband));
 		rubberBand.setPathEffect(clsUtils.getPathEffect(clsUtils.Linestyle.LS_SOLID));
 
 		path  = new Path();
@@ -113,15 +111,15 @@ public class clsShapeBase
 	protected void changeAttributes(clsAnnotationData.AttributeContainer attributes)
 	{
 		// Copy Attributes
-		attr.setAttributes(attributes);
+		objAttr.setAttributes(attributes);
 
-		paint.setColor(attr.lineColor);
-		paint.setStrokeWidth(attr.lineWidth);
-		paint.setPathEffect(clsUtils.getPathEffect(attr.lineStyle));
+		paint.setColor(objAttr.lineColor);
+		paint.setStrokeWidth(objAttr.lineWidth);
+		paint.setPathEffect(clsUtils.getPathEffect(objAttr.lineStyle));
 		
-		rubberBand.setStrokeWidth(attr.lineWidth);
+		rubberBand.setStrokeWidth(objAttr.lineWidth);
 		
-		textPaint.setColor(attr.textColor);
+		textPaint.setColor(objAttr.textColor);
 	}
 
 	// draw
@@ -148,11 +146,11 @@ public class clsShapeBase
 	public void extractAnnotation(clsAnnotationData.clsAnnotationItem elem)
 	{
 		// set attributes
-		elem.setAttributes(attr);
+		elem.setAttributes(objAttr);
 	}
 	
 	public clsAnnotationData.AttributeContainer getAttributes()
 	{
-		return attr;
+		return objAttr;
 	}
 }

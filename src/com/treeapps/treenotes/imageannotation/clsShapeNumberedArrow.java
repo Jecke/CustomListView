@@ -14,9 +14,9 @@ import android.graphics.Rect;
 public class clsShapeNumberedArrow extends clsShapeArrow
 {
 	private static final float NUMBER_CIRCLE_RADIUS_DEFAULT = 25f;
-	private float NUMBER_CIRCLE_RADIUS;
+	private float numberCircleRadius;
 	
-	private String numberedNote = "";
+	private String strNumberedNote = "";
 	private int runningNumber;
 	
 	// midpoint of the circle around the Id of the arrow
@@ -31,7 +31,7 @@ public class clsShapeNumberedArrow extends clsShapeArrow
 		type = clsShapeFactory.Shape.NUMBERED_ARROW;
 
 		// compute dimension of circle enclosing the id
-		NUMBER_CIRCLE_RADIUS  = Math.min(maxWidth,  maxHeight) * NUMBER_CIRCLE_RADIUS_DEFAULT / minScreenDim;
+		numberCircleRadius  = Math.min(maxWidth,  maxHeight) * NUMBER_CIRCLE_RADIUS_DEFAULT / minScreenDim;
 		
 		setDescription(text);
 		runningNumber = id;
@@ -45,7 +45,7 @@ public class clsShapeNumberedArrow extends clsShapeArrow
 		
 		circledNumber = new PointF(tail.x, tail.y + radius);
 		
-		textPaint.setColor(attr.textColor);
+		textPaint.setColor(objAttr.textColor);
 	}
 	
 	/*
@@ -67,7 +67,7 @@ public class clsShapeNumberedArrow extends clsShapeArrow
 	
 		if(selected)
 		{
-			canvas.drawCircle(tail.x, tail.y, NUMBER_CIRCLE_RADIUS, rubberBand);
+			canvas.drawCircle(tail.x, tail.y, numberCircleRadius, rubberBand);
 		}
 		else
 		{
@@ -78,7 +78,7 @@ public class clsShapeNumberedArrow extends clsShapeArrow
 			paint.setStyle(Style.FILL_AND_STROKE);
 			paint.setPathEffect(clsUtils.getPathEffect(clsUtils.Linestyle.LS_SOLID));
 
-			canvas.drawCircle(tail.x, tail.y, NUMBER_CIRCLE_RADIUS, paint);
+			canvas.drawCircle(tail.x, tail.y, numberCircleRadius, paint);
 			
 			// restore style
 			paint.setStyle(styleBackup);
@@ -104,7 +104,7 @@ public class clsShapeNumberedArrow extends clsShapeArrow
 	
 	public String getDescription()
 	{
-		return String.valueOf(runningNumber) + ": " + numberedNote;
+		return String.valueOf(runningNumber) + ": " + strNumberedNote;
 	}
 	
 	public void setDescription(String description)
@@ -115,7 +115,7 @@ public class clsShapeNumberedArrow extends clsShapeArrow
 		if(idx != -1)
 		{
 			// display the remaining text in the editable text field
-			numberedNote = description.substring(idx + 2);
+			strNumberedNote = description.substring(idx + 2);
 		}
 	}
 

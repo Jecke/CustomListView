@@ -28,7 +28,7 @@ public class clsShapeRectangle extends clsShapeBase
 		NONE
 	}
 
-	private RectF rect;
+	private RectF objRect;
 	
 	// hotspots
 	private PointF ul;
@@ -53,7 +53,7 @@ public class clsShapeRectangle extends clsShapeBase
 				maxWidth, maxHeight, minScreenDim);
 
 		// create a new rectangle with the given upper left and lower right corner
-		rect = new RectF(reference[0], reference[1],
+		objRect = new RectF(reference[0], reference[1],
 						 reference[2], reference[3]);
 
 		// Allocate hotspots
@@ -75,21 +75,21 @@ public class clsShapeRectangle extends clsShapeBase
 		// feedback for the hotspots.
 		if(selected)
 		{
-			canvas.drawRoundRect(rect, CORNER_RADIUS, CORNER_RADIUS, rubberBand);
+			canvas.drawRoundRect(objRect, CORNER_RADIUS, CORNER_RADIUS, rubberBand);
 
 			// draw hotspots (corners of bounding box)
 			// upper left
-			canvas.drawCircle(rect.left, rect.top, HOTSPOT_RADIUS, hotspotPaint);
+			canvas.drawCircle(objRect.left, objRect.top, HOTSPOT_RADIUS, hotspotPaint);
 			// upper right
-			canvas.drawCircle(rect.right, rect.top, HOTSPOT_RADIUS, hotspotPaint);
+			canvas.drawCircle(objRect.right, objRect.top, HOTSPOT_RADIUS, hotspotPaint);
 			// lower left
-			canvas.drawCircle(rect.left, rect.bottom, 10, hotspotPaint);
+			canvas.drawCircle(objRect.left, objRect.bottom, 10, hotspotPaint);
 			// lower right
-			canvas.drawCircle(rect.right, rect.bottom, 10, hotspotPaint);
+			canvas.drawCircle(objRect.right, objRect.bottom, 10, hotspotPaint);
 		}
 		else
 		{
-			canvas.drawRoundRect(rect, CORNER_RADIUS, CORNER_RADIUS, paint);
+			canvas.drawRoundRect(objRect, CORNER_RADIUS, CORNER_RADIUS, paint);
 		}
 	}
 
@@ -99,10 +99,10 @@ public class clsShapeRectangle extends clsShapeBase
 
 		double minDist;
 
-		ul.x = rect.left;  ul.y = rect.top;
-		ur.x = rect.right; ur.y = rect.top;
-		ll.x = rect.left;  ll.y = rect.bottom;
-		lr.x = rect.right; lr.y = rect.bottom;
+		ul.x = objRect.left;  ul.y = objRect.top;
+		ur.x = objRect.right; ur.y = objRect.top;
+		ll.x = objRect.left;  ll.y = objRect.bottom;
+		lr.x = objRect.right; lr.y = objRect.bottom;
 
 		// closed polygon
 		PointF[] vertices = {ul, ur, lr, ll, ul};
@@ -151,62 +151,62 @@ public class clsShapeRectangle extends clsShapeBase
 		switch(pickedHotspot)
 		{
 		case UPPER_LEFT:
-			x = rect.left + deltaX;
-			y = rect.top  + deltaY;
+			x = objRect.left + deltaX;
+			y = objRect.top  + deltaY;
 			
 			// clipping
-			if(rect.right - x  >= MIN_WIDTH &&
-			   rect.bottom - y >= MIN_HEIGHT)
+			if(objRect.right - x  >= MIN_WIDTH &&
+			   objRect.bottom - y >= MIN_HEIGHT)
 			{
-				rect.left = x;
-				rect.top  = y;
+				objRect.left = x;
+				objRect.top  = y;
 			}
 				
 			break;
 
 		case UPPER_RIGHT:
-			x = rect.right + deltaX;
-			y = rect.top   + deltaY;
+			x = objRect.right + deltaX;
+			y = objRect.top   + deltaY;
 
-			if(x - rect.left   >= MIN_WIDTH &&
-			   rect.bottom - y >= MIN_HEIGHT)
+			if(x - objRect.left   >= MIN_WIDTH &&
+			   objRect.bottom - y >= MIN_HEIGHT)
 			{
-				rect.right = x;
-				rect.top   = y;
+				objRect.right = x;
+				objRect.top   = y;
 			}
 			
 			break;
 
 		case LOWER_LEFT:
-			x = rect.left   + deltaX;
-			y = rect.bottom + deltaY;
+			x = objRect.left   + deltaX;
+			y = objRect.bottom + deltaY;
 
-			if(rect.right  - x >= MIN_WIDTH &&
-			   y - rect.top    >= MIN_HEIGHT)
+			if(objRect.right  - x >= MIN_WIDTH &&
+			   y - objRect.top    >= MIN_HEIGHT)
 			{
-				rect.left   = x;
-				rect.bottom = y;
+				objRect.left   = x;
+				objRect.bottom = y;
 			}
 			break;
 
 		case LOWER_RIGHT:
-			x = rect.right  + deltaX;
-			y = rect.bottom + deltaY;
+			x = objRect.right  + deltaX;
+			y = objRect.bottom + deltaY;
 			Log.d("==", "lower right");
-			if(x - rect.left >= MIN_WIDTH &&
-			   y - rect.top  >= MIN_HEIGHT)
-			{Log.d("==", "change rect");
-				rect.right  = x;
-				rect.bottom = y;
+			if(x - objRect.left >= MIN_WIDTH &&
+			   y - objRect.top  >= MIN_HEIGHT)
+			{Log.d("==", "change objRect");
+				objRect.right  = x;
+				objRect.bottom = y;
 			}
 			break;
 
 		// a side has been picked -> move the entire rectangle
 		case NONE:
-			if ((coordInClipRegion(rect.left  + deltaX, rect.top    + deltaY)) &&
-				(coordInClipRegion(rect.right + deltaX, rect.bottom + deltaY)))
+			if ((coordInClipRegion(objRect.left  + deltaX, objRect.top    + deltaY)) &&
+				(coordInClipRegion(objRect.right + deltaX, objRect.bottom + deltaY)))
 			{
-				rect.offset(deltaX, deltaY);
+				objRect.offset(deltaX, deltaY);
 			}
 			break;
 		}
@@ -221,8 +221,8 @@ public class clsShapeRectangle extends clsShapeBase
 		
 		// add geometrical data
 		// upper left corner
-		elem.addReferencePoint(rect.left, rect.top);
+		elem.addReferencePoint(objRect.left, objRect.top);
 		// lower right corner
-		elem.addReferencePoint(rect.right, rect.bottom);
+		elem.addReferencePoint(objRect.right, objRect.bottom);
 	}
 }

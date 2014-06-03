@@ -28,8 +28,8 @@ import com.treeapps.treenotes.clsUtils;
  */
 public class clsCombineAnnotateImage {
 
-	private Context _context;
-	private String annotatedFile;
+	private Context objContext;
+	private String strAnnotatedFile;
 	private ProgressDialog pd;
 	private TaskCompletedInterface _listener;
 	
@@ -44,13 +44,13 @@ public class clsCombineAnnotateImage {
 	
 	public clsCombineAnnotateImage(Context context, TaskCompletedInterface listener)
 	{
-		_context = context;
+		objContext = context;
 		_listener = listener;
 	}
 
 	public void createAnnotatedImage(String original, String annotated, clsAnnotationData annotationData, int maxWidth, int maxHeight)
 	{
-		annotatedFile = original;
+		strAnnotatedFile = original;
 		
 		this.maxWidth  = maxWidth;
 		this.maxHeight = maxHeight;
@@ -60,20 +60,20 @@ public class clsCombineAnnotateImage {
 			// handle annotationData with default values
 			if(annotationData.compressionRate == 0 && annotationData.items.isEmpty())
 			{
-				_listener.loadTaskComplete(annotatedFile);
+				_listener.loadTaskComplete(strAnnotatedFile);
 				return;
 			}
 			
 			// 1. Create the name of the new file
-			annotatedFile = annotated;
+			strAnnotatedFile = annotated;
 
-			pd = ProgressDialog.show(_context, "Processing...", "Please wait", 
+			pd = ProgressDialog.show(objContext, "Processing...", "Please wait", 
 					true, true, null);
 
-			loadImage(annotatedFile, annotationData);
+			loadImage(strAnnotatedFile, annotationData);
 		}
 		else
-			_listener.loadTaskComplete(annotatedFile);
+			_listener.loadTaskComplete(strAnnotatedFile);
 	}
 
 	private void loadImage(String outFile, clsAnnotationData data)
@@ -88,16 +88,16 @@ public class clsCombineAnnotateImage {
 	public class LoadImage extends AsyncTask<String, Integer, String>
 	{
 		int quality = 100;
-		String _inFile;
-		clsAnnotationData _data;
+		String strInFile;
+		clsAnnotationData objData;
 		
 		public LoadImage(clsAnnotationData data) 
 		{
-			_data = data;
+			objData = data;
 			
-			_inFile = _data.strLocalImage;
+			strInFile = objData.strLocalImage;
 			
-			quality = 100 - _data.compressionRate;
+			quality = 100 - objData.compressionRate;
 		}
 		
 		protected String doInBackground(String...outFile)
@@ -111,7 +111,7 @@ public class clsCombineAnnotateImage {
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inMutable = true;
 
-			imageBitmap = clsUtils.downsampleImageToView(_inFile, maxWidth, maxHeight, true);
+			imageBitmap = clsUtils.downsampleImageToView(strInFile, maxWidth, maxHeight, true);
 			
 			// write back compressed file if necessary
 			if(quality < 100)
@@ -136,7 +136,7 @@ public class clsCombineAnnotateImage {
 				imageBitmap = BitmapFactory.decodeFile(out, opts);
 			}
 			
-			if(!_data.items.isEmpty())
+			if(!objData.items.isEmpty())
 			{
 				int numberedArrowId = 1;
 				
@@ -145,7 +145,7 @@ public class clsCombineAnnotateImage {
 				
 				int minScreenDim = Math.min(maxWidth, maxHeight);
 				
-				for(clsAnnotationData.clsAnnotationItem item: _data.items)
+				for(clsAnnotationData.clsAnnotationItem item: objData.items)
 				{
 					// simplified version because all supported shapes have 
 					// two reference points
@@ -159,7 +159,7 @@ public class clsCombineAnnotateImage {
 						case RECTANGLE:
 						{
 							clsShapeRectangle shape = 
-							new clsShapeRectangle(_context, item.getAttributes(), coord, 
+							new clsShapeRectangle(objContext, item.getAttributes(), coord, 
 									  imageBitmap.getWidth(), imageBitmap.getHeight(),
 									  minScreenDim);
 							
@@ -170,7 +170,7 @@ public class clsCombineAnnotateImage {
 						case ARROW:
 						{
 							clsShapeArrow shape = 
-								new clsShapeArrow(_context, item.getAttributes(), coord, 
+								new clsShapeArrow(objContext, item.getAttributes(), coord, 
 												  imageBitmap.getWidth(), imageBitmap.getHeight(),
 												  minScreenDim);
 							
@@ -181,7 +181,7 @@ public class clsCombineAnnotateImage {
 						case NUMBERED_ARROW:
 						{
 							clsShapeNumberedArrow shape = 
-							new clsShapeNumberedArrow(_context, item.getAttributes(), item.getAnnotationText(), coord, 
+							new clsShapeNumberedArrow(objContext, item.getAttributes(), item.getAnnotationText(), coord, 
 											  			imageBitmap.getWidth(), imageBitmap.getHeight(), 
 											  			minScreenDim, numberedArrowId);
 							numberedArrowId++;
