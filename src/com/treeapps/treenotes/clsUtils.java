@@ -692,6 +692,21 @@ public class clsUtils {
 			// handle error
 		}
 	}
+	
+	public static void ShareUrl(Activity activity, String subject, String text) {
+		
+		Intent share = new Intent(android.content.Intent.ACTION_SEND);
+	    share.setType("text/plain");
+	    share.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+	 
+	    // Add data to the intent, the receiving app will decide
+	    // what to do with it.
+	    share.putExtra(Intent.EXTRA_SUBJECT, subject);
+	    share.putExtra(Intent.EXTRA_TEXT, text);
+	 
+	    activity.startActivity(Intent.createChooser(share, "Share link!"));
+			
+	}
 
 	public static int GetDefaultTabWidthInDp(Context objContext) {
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);

@@ -100,9 +100,13 @@ public class clsExportToMail implements clsExportNoteAsWebPageAsyncTask.OnWebPag
 	private void generateMailRequest()
 	{
 		String strSubject = objTreeview.getRepository().getName();
-		String strBody = "<font face='verdana' size='3'>Please press <a href='<<TREENOTES:WEB_PAGE_URL>>'>here</a> for the message.</font><br><br><font face='verdana' size='2' color='blue'>Message sent using <a src='" + strServerUrl + "'>TreeNotes</a></font>";
+		String strBody;
+//		String strBody = "<font face='verdana' size='3'>Please press <a href='<<TREENOTES:WEB_PAGE_URL>>'>here</a> for the message.</font><br><br><font face='verdana' size='2' color='blue'>Message sent using <a src='" + strServerUrl + "'>TreeNotes</a></font>";
+//		strBody = strBody.replace("<<TREENOTES:WEB_PAGE_URL>>", objExportNoteAsWebPage.GetWebPageUrl());
+//		clsUtils.SendGmail(objActivity, strSubject, strBody );
+		strBody = "Hi there, for your message, please click on: \n<<TREENOTES:WEB_PAGE_URL>>.\n\nMessage sent using TreeNotes.";
 		strBody = strBody.replace("<<TREENOTES:WEB_PAGE_URL>>", objExportNoteAsWebPage.GetWebPageUrl());
-		clsUtils.SendGmail(objActivity, strSubject, strBody );
+		clsUtils.ShareUrl(objActivity, strSubject, strBody);
 	}
 	
 	public clsExportToMail(Activity objActivity, clsTreeview objTreeview, clsMessaging objMessaging, clsGroupMembers objGroupMembers) {
