@@ -1211,8 +1211,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		List<clsListItem> objListItems = objExplorerTreeview.getListItems();
 		objListItemAdapter.clear();
 		objListItemAdapter.addAll(objListItems);
-		ListView objListView = getListView();
-		objListView.invalidateViews();
+		objListItemAdapter.notifyDataSetChanged();
 		invalidateOptionsMenu();
 	}
 

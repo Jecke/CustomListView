@@ -963,9 +963,7 @@ public class ActivityNoteStartup extends ListActivity {
 		 SaveFile();
 		 List<clsListItem> objListItems = objNoteTreeview.getListItems(); 
 		 objListItemAdapter.clear(); objListItemAdapter.addAll(objListItems);
-		 final ListView objListView = getListView();  
-		 objListView.invalidateViews();
-		 objListItemAdapter.notifyDataSetChanged();	 
+		 objListItemAdapter.notifyDataSetChanged();		  
 		 invalidateOptionsMenu();
 	}
 	
