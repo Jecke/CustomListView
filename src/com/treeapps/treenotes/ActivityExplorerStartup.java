@@ -203,9 +203,21 @@ public class ActivityExplorerStartup extends ListActivity {
 	public void onCreate(Bundle savedInstanceState) {
 
 		super.onCreate(savedInstanceState);
+		
+		// Prevent two instances of same application running
+		if (!isTaskRoot()) {
+		    Intent intent = getIntent();
+		    String action = intent.getAction();
+		    if (intent.hasCategory(Intent.CATEGORY_LAUNCHER) && action != null && action.equals(Intent.ACTION_MAIN)) {
+		        finish();
+		        return;
+		    }
+		}
 
+		// Save context
 		objContext = this;
 
+		// Get work folder location
 		fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
 		if (!fileTreeNodesDir.exists()) {
 			fileTreeNodesDir.mkdirs();
