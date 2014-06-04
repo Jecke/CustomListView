@@ -185,6 +185,10 @@
     <string name="url_download_image_file">"/api/TreeManager/DownloadImageFile"</string>
     <string name="url_upload_webpage_html">"/api/TreeManager/UploadWebPageHtml"</string>
     <string name="url_send_gcm_reg_id">"/api/TreeManager/SendGcmRegistrationId"</string>
+    <string name="url_get_note_sharers">"/api/TreeManager/GetNoteSharers"</string>
+    <string name="url_set_note_sharers">"/api/TreeManager/SetNoteSharers"</string>
+    
+    
     
     
     

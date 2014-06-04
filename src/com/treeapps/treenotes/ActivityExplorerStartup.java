@@ -31,6 +31,8 @@ import com.treeapps.android.in_app_billing.util.IabHelper;
 import com.treeapps.android.in_app_billing.util.IabResult;
 import com.treeapps.android.in_app_billing.util.Inventory;
 import com.treeapps.android.in_app_billing.util.Purchase;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsyncTask.OnGetNoteSharedUsersResponseListener;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsSetNoteSharedUsersAsyncTask.OnSetNoteSharedUsersResponseListener;
 import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsShareUser;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
@@ -39,6 +41,10 @@ import com.treeapps.treenotes.clsTreeview.enumItemType;
 import com.treeapps.treenotes.export.ActivityFacebookExport;
 import com.treeapps.treenotes.export.clsExportData;
 import com.treeapps.treenotes.export.clsMainExport;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageCommand;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage;
 import com.treeapps.treenotes.sharing.ActivityGroupMembers;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
@@ -154,6 +160,8 @@ public class ActivityExplorerStartup extends ListActivity {
 	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
 	clsDownloadImageFileAsyncTask objMyDownloadImageFileAsyncTask;
 	static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
+	clsGetNoteSharedUsersAsyncTask objGetNoteSharedUsersAsyncTask;
+	clsSetNoteSharedUsersAsyncTask objSetNoteSharedUsersAsyncTask;
 
 	// Billing data
 	// To be persisted
@@ -857,40 +865,47 @@ public class ActivityExplorerStartup extends ListActivity {
 				MessageBoxOk("Please select a note first");
 				return false;
 			}
+			// Async task which gets current shared users for this note from server
+			try {
+				urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+						+ getResources().getString(R.string.url_get_note_sharers));
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return true;
+			} catch (NotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return true;
+			} 
 			clsTreeNode objSelectedTreeNode = objSelectedTreeNodes.get(0);
-			Intent intentShareGroupMembers = new Intent(ActivityExplorerStartup.this, ActivityGroupMembers.class);
-			intentShareGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_CHOOSE_MEMBERS);
-			clsIntentMessaging objIntentMessaging = new clsIntentMessaging();
-			clsIntentMessaging.clsChosenMembers objChosenMembers = objIntentMessaging.new clsChosenMembers();
-			objChosenMembers.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
-
-			File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
-			File objNoteFile = clsUtils
-					.BuildNoteFilename(fileTreeNodesDir, objSelectedTreeNode.guidTreeNode.toString());
-			if (objNoteFile.exists()) {
-				clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
-				if (objNoteRepository != null) {
-					if (objNoteRepository.getObjSharedUsers() != null) {
-						for (clsShareUser objShareUser : objNoteRepository.getObjSharedUsers()) {
-							if (objShareUser.strUserUuid != null) {
-								objChosenMembers.strUserUuids.add(objShareUser.strUserUuid);
-							}
-						}
+			clsGetNoteSharedUsersCommand objCommand = new clsGetNoteSharedUsersCommand();
+			objCommand.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
+			clsGetNoteSharedUsersResponse objResponse = new clsGetNoteSharedUsersResponse(); 
+			objGetNoteSharedUsersAsyncTask = new clsGetNoteSharedUsersAsyncTask(this, urlFeed, objCommand, objResponse);
+			objGetNoteSharedUsersAsyncTask.SetOnResponseListener(new OnGetNoteSharedUsersResponseListener() {
+				
+				@Override
+				public void onResponse(clsGetNoteSharedUsersResponse objResponse) {
+					if (objResponse.intErrorCode == clsGetNoteSharedUsersResponse.ERROR_NONE) {
+						// Data received, can start selection activity now
+						Intent intentShareGroupMembers = new Intent(ActivityExplorerStartup.this, ActivityGroupMembers.class);
+						intentShareGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_CHOOSE_MEMBERS);
+						clsIntentMessaging objIntentMessaging = new clsIntentMessaging();
+						clsIntentMessaging.clsChosenMembers objChosenMembers = objIntentMessaging.new clsChosenMembers();
+						objChosenMembers.strNoteUuid = objResponse.strNoteUuid;
+						String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
+						intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
+						intentShareGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
+								objMessaging.GetServerUrl(objExplorerTreeview));
+						startActivityForResult(intentShareGroupMembers, SHARE_CHOOSE_GROUP_MEMBERS);
+					} else {
+						clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
 					}
-				} else {
-					MessageBoxOk("Selected note could not be read from file");
-					return false;
+					return;
 				}
-			} else {
-				MessageBoxOk("Selected note does not exist");
-				return false;
-			}
-
-			String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
-			intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
-			intentShareGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
-					objMessaging.GetServerUrl(objExplorerTreeview));
-			startActivityForResult(intentShareGroupMembers, SHARE_CHOOSE_GROUP_MEMBERS);
+			});
+			objGetNoteSharedUsersAsyncTask.execute(null, null, null);
 			return true;
 		case R.id.actionShareSyncAll:
 			if (objMessaging.IsNetworkAvailable(this) == false) {
@@ -1366,32 +1381,37 @@ public class ActivityExplorerStartup extends ListActivity {
 				clsIntentMessaging.clsChosenMembers objResults = clsUtils.DeSerializeFromString(strChooseResultGson,
 						clsIntentMessaging.clsChosenMembers.class);
 
+				// Inform server about the selection
+				try {
+					urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+							+ getResources().getString(R.string.url_get_note_sharers));
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return;
+				} catch (NotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return;
+				}
 				clsTreeNode objSelectedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(UUID
 						.fromString(objResults.strNoteUuid));
-				File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
-				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
-						objSelectedTreeNode.guidTreeNode.toString());
-				if (objNoteFile.exists()) {
-					clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
-					if (objNoteRepository != null) {
-						objNoteRepository.setObjSharedUsers(new ArrayList<clsShareUser>()); // Create
-																							// empty
-																							// list
-						for (String strUserUuid : objResults.strUserUuids) {
-							clsShareUser objShareUser = objExplorerTreeview.new clsShareUser(strUserUuid,
-									objGroupMembers.GetRegisteredUser().strUserUuid, clsUtils.GetStrCurrentDateTime());
-							objNoteRepository.objSharedUsers.add(objShareUser);
+				clsSetNoteSharedUsersCommand objCommand = new clsSetNoteSharedUsersCommand();
+				objCommand.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
+				objCommand.objSharedUsers = objResults.strUserUuids;
+				clsSetNoteSharedUsersResponse objResponse = new clsSetNoteSharedUsersResponse();
+				objSetNoteSharedUsersAsyncTask = new clsSetNoteSharedUsersAsyncTask(this, urlFeed, objCommand, objResponse);
+				objSetNoteSharedUsersAsyncTask.SetOnResponseListener(new OnSetNoteSharedUsersResponseListener() {
+					
+					@Override
+					public void onResponse(clsSetNoteSharedUsersResponse objResponse) {
+						if (objResponse.intErrorCode == clsSetNoteSharedUsersResponse.ERROR_NETWORK ) {
+							clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
 						}
-						objExplorerTreeview.SerializeNoteToFile(objNoteRepository, objNoteFile);
 						RefreshListView();
-					} else {
-						MessageBoxOk("Selected note could not be read from file");
-						break;
 					}
-				} else {
-					MessageBoxOk("Selected note does not exist");
-					break;
-				}
+				});
+				objSetNoteSharedUsersAsyncTask.execute(null,null,null);			
 				break;
 			default:
 			}
@@ -2428,5 +2448,214 @@ public class ActivityExplorerStartup extends ListActivity {
 
 		}.execute(null, null, null);
 	}
+	
+	
+	// ------------------------ Shared Users Management -------------------------------------
+	// ------------------------ Get Shared Users for specific note from server and let user add/edit/remove
+	
+	// Input to async task
+	public static class clsGetNoteSharedUsersCommand {
+		public String strNoteUuid;
+	}
+
+	// Output from async task
+	public static class clsGetNoteSharedUsersResponse {
+		public static final int ERROR_NONE = 0;
+		public static final int ERROR_NETWORK = 1;
+		public int intErrorCode;
+		public String strErrorMessage = "";
+		public String strNoteUuid;
+		public ArrayList<clsShareUser> objSharedUsers;
+	}
+
+	public static class clsGetNoteSharedUsersAsyncTask extends AsyncTask<Void, Void, clsGetNoteSharedUsersResponse> {
+		static clsGetNoteSharedUsersCommand objCommand;
+		static clsGetNoteSharedUsersResponse objResponse;
+		static URL urlFeed;
+		ProgressDialog objProgressDialog;
+		public OnGetNoteSharedUsersResponseListener objOnResponseListener;
+
+		public clsGetNoteSharedUsersAsyncTask(Activity objActivity, URL urlFeed,
+				clsGetNoteSharedUsersCommand objCommand, clsGetNoteSharedUsersResponse objResponse) {
+			clsGetNoteSharedUsersAsyncTask.urlFeed = urlFeed;
+			clsGetNoteSharedUsersAsyncTask.objCommand = objCommand;
+			clsGetNoteSharedUsersAsyncTask.objResponse = objResponse;
+			objProgressDialog = new ProgressDialog(objActivity);
+		}
+
+		public void SetOnResponseListener(OnGetNoteSharedUsersResponseListener objOnResponseListener) {
+			this.objOnResponseListener = objOnResponseListener;
+		}
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			objProgressDialog.setMessage("Processing..., please wait.");
+			objProgressDialog.show();
+		}
+
+		@Override
+		protected clsGetNoteSharedUsersResponse doInBackground(Void... arg0) {
+			Gson gson = new Gson();
+			JSONObject objJsonResult = null;
+
+			try {
+				InputStream stream = null;
+				String strJsonCommand = gson.toJson(objCommand);
+
+				try {
+					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					// Makes sure that the InputStream is closed after finished
+					// using it.
+				} catch (JSONException e) {
+					objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+					objResponse.strErrorMessage = "JSON exception. " + e;
+					return objResponse;
+				} finally {
+					if (stream != null) {
+						stream.close();
+					}
+				}
+			} catch (MalformedURLException e) {
+				objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+				objResponse.strErrorMessage = "Feed URL is malformed. " + e;
+				return objResponse;
+			} catch (IOException e) {
+				objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+				objResponse.strErrorMessage = "IO Exception from network. " + e;
+				return objResponse;
+			}
+			// Analyze data from server
+			objResponse = gson.fromJson(objJsonResult.toString(), clsGetNoteSharedUsersResponse.class);
+			return objResponse;
+		}
+
+		@Override
+		protected void onPostExecute(clsGetNoteSharedUsersResponse objResponse) {
+			super.onPostExecute(objResponse);
+			if (objProgressDialog.isShowing()) {
+				objProgressDialog.dismiss();
+			}
+			objOnResponseListener.onResponse(objResponse);
+		}
+
+		public interface OnGetNoteSharedUsersResponseListener {
+			public void onResponse(clsGetNoteSharedUsersResponse objResponse);
+		}
+
+		@Override
+		protected void onCancelled() {
+			super.onCancelled();
+
+			if (objProgressDialog.isShowing()) {
+				objProgressDialog.dismiss();
+			}
+		}
+
+	}
+	
+	// ------------------------ Set selected Shared Users for specific note on server
+	
+		// Input to async task
+		public static class clsSetNoteSharedUsersCommand {
+			public String strNoteUuid;
+			public ArrayList<String> objSharedUsers;
+		}
+
+		// Output from async task
+		public static class clsSetNoteSharedUsersResponse {
+			public static final int ERROR_NONE = 0;
+			public static final int ERROR_NETWORK = 1;
+			public int intErrorCode;
+			public String strErrorMessage = "";
+		}
+
+		public static class clsSetNoteSharedUsersAsyncTask extends AsyncTask<Void, Void, clsSetNoteSharedUsersResponse> {
+			static clsSetNoteSharedUsersCommand objCommand;
+			static clsSetNoteSharedUsersResponse objResponse;
+			static URL urlFeed;
+			ProgressDialog objProgressDialog;
+			public OnSetNoteSharedUsersResponseListener objOnResponseListener;
+
+			public clsSetNoteSharedUsersAsyncTask(Activity objActivity, URL urlFeed,
+					clsSetNoteSharedUsersCommand objCommand, clsSetNoteSharedUsersResponse objResponse) {
+				clsSetNoteSharedUsersAsyncTask.urlFeed = urlFeed;
+				clsSetNoteSharedUsersAsyncTask.objCommand = objCommand;
+				clsSetNoteSharedUsersAsyncTask.objResponse = objResponse;
+				objProgressDialog = new ProgressDialog(objActivity);
+			}
+
+			public void SetOnResponseListener(OnSetNoteSharedUsersResponseListener objOnResponseListener) {
+				this.objOnResponseListener = objOnResponseListener;
+			}
+
+			@Override
+			protected void onPreExecute() {
+				super.onPreExecute();
+				objProgressDialog.setMessage("Processing..., please wait.");
+				objProgressDialog.show();
+			}
+
+			@Override
+			protected clsSetNoteSharedUsersResponse doInBackground(Void... arg0) {
+				Gson gson = new Gson();
+				JSONObject objJsonResult = null;
+
+				try {
+					InputStream stream = null;
+					String strJsonCommand = gson.toJson(objCommand);
+
+					try {
+						stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
+						objJsonResult = clsMessaging.updateLocalFeedData(stream);
+						// Makes sure that the InputStream is closed after finished
+						// using it.
+					} catch (JSONException e) {
+						objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+						objResponse.strErrorMessage = "JSON exception. " + e;
+						return objResponse;
+					} finally {
+						if (stream != null) {
+							stream.close();
+						}
+					}
+				} catch (MalformedURLException e) {
+					objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+					objResponse.strErrorMessage = "Feed URL is malformed. " + e;
+					return objResponse;
+				} catch (IOException e) {
+					objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+					objResponse.strErrorMessage = "IO Exception from network. " + e;
+					return objResponse;
+				}
+				// Analyze data from server
+				objResponse = gson.fromJson(objJsonResult.toString(), clsSetNoteSharedUsersResponse.class);
+				return objResponse;
+			}
+
+			@Override
+			protected void onPostExecute(clsSetNoteSharedUsersResponse objResponse) {
+				super.onPostExecute(objResponse);
+				if (objProgressDialog.isShowing()) {
+					objProgressDialog.dismiss();
+				}
+				objOnResponseListener.onResponse(objResponse);
+			}
+
+			public interface OnSetNoteSharedUsersResponseListener {
+				public void onResponse(clsSetNoteSharedUsersResponse objResponse);
+			}
+
+			@Override
+			protected void onCancelled() {
+				super.onCancelled();
+
+				if (objProgressDialog.isShowing()) {
+					objProgressDialog.dismiss();
+				}
+			}
+
+		}
 
 }
