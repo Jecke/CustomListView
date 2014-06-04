@@ -5,6 +5,7 @@ import java.util.UUID;
 
 
 
+
 import com.treeapps.treenotes.R;
 import com.treeapps.treenotes.clsIndentableTextView;
 import com.treeapps.treenotes.clsListItem;
@@ -14,6 +15,7 @@ import com.treeapps.treenotes.clsUtils;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumItemType;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.View;
 import android.view.View.OnDragListener;
@@ -115,5 +117,14 @@ public class clsGroupMembersArrayAdapter extends clsListItemArrayAdapter  {
 		 }
 	}
 	
+	
+	@Override
+	protected void RefreshListView() {
+		List<clsListItem> objListItems = objTreeview.getListItems();
+		clear();
+		addAll(objListItems);
+		notifyDataSetChanged();
+		((Activity) _context).invalidateOptionsMenu();
+	}
 	
 }

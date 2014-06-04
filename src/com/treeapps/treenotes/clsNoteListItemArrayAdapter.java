@@ -1,7 +1,11 @@
 package com.treeapps.treenotes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+
+
 
 
 import com.treeapps.treenotes.ActivityNoteStartup.clsNoteItemStatus;
@@ -53,16 +57,16 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 			if (!((objListItem.getFolderHasHiddenItems() == true) && objTreeview.getRepository().boolIsHiddenActive)) {
 				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode,
 						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-						false,objTreenode.boolIsNew);
+						false,objListItem.intNewItemType);
 			} else {
 				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
 						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-						true,objTreenode.boolIsNew);
+						true,objListItem.intNewItemType);
 			}
 		} else {
 			DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
 					((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-					false,objTreenode.boolIsNew);
+					false,objListItem.intNewItemType);
 		}
 	}
 	
@@ -144,6 +148,17 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 
 		((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
 		
+	}
+	
+	@Override
+	protected void RefreshListView() {
+		ArrayList<clsListItem> objListItems = objTreeview.getListItems();
+		clear();
+		addAll(objListItems);
+		notifyDataSetChanged();
+		clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)((Activity) context).findViewById(R.id.newitems_indicator_view);
+		objClsNewItemsIndicatorView.UpdateListItems(objListItems);
+		((Activity) context).invalidateOptionsMenu();
 	}
 
 }

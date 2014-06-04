@@ -12,6 +12,7 @@ import java.util.UUID;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.treeapps.treenotes.clsListItem.enumNewItemType;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
@@ -859,6 +860,39 @@ public class clsTreeview {
 				|| (objListItem.getItemType() == enumItemType.FOLDER_EXPANDED)) {
 			objListItem.setFolderHasHiddenItems(IsAnyHiddenItems(objTreeNode));
 		}
+		// Fill in the NewItem property
+		objListItem.intNewItemType = enumNewItemType.OLD;
+		// If topmost item, determine if any children are new
+		if (getParentTreeNode(objTreeNode) == null) {			
+			if (objTreeNode.boolIsNew) {
+				// Topmost item, new
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.NEW_AND_ROOT_PARENT_OF_NEW;
+				} else {
+					objListItem.intNewItemType = enumNewItemType.NEW;
+				}
+			} else {
+				// Topmost item, old
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.ROOT_PARENT_OF_NEW;
+				}
+			}			
+		} else {
+			// Leave item
+			if (objTreeNode.boolIsNew) {
+				// Leave item, new
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.NEW_AND_PARENT_OF_NEW;
+				} else {
+					objListItem.intNewItemType = enumNewItemType.NEW;
+				}
+			} else {
+				// Leave item, old
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.PARENT_OF_NEW;
+				}
+			}
+		}
 
 		objListItems.add(objListItem);
 
@@ -870,6 +904,19 @@ public class clsTreeview {
 		}
 
 		return objListItems;
+	}
+
+	private boolean IsChildItemNewItem(clsTreeNode objTreeNode) {
+		// TODO Auto-generated method stub
+		for (clsTreeNode objChildTreeNode: objTreeNode.objChildren ) {
+			if (objChildTreeNode.boolIsNew) {
+				return true;
+			}
+			if (IsChildItemNewItem(objChildTreeNode)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public boolean IsNoteShared() {

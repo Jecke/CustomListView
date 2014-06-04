@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.UUID;
 
 
+
 import com.treeapps.treenotes.ActivityNoteStartup.clsNoteItemStatus;
 import com.treeapps.treenotes.ActivityViewImage.clsListViewState;
+import com.treeapps.treenotes.clsListItem.enumNewItemType;
 import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumItemType;
@@ -339,8 +341,9 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 
 	public abstract void SelectItemTypeFolder(clsListItem objListItem, ImageView myImageView);
 	
-	public void DrawIcon (ImageView myImageView, int intBackgroundIconRid, boolean boolIsHidden, boolean boolIsNew  ) {
+	public void DrawIcon (ImageView myImageView, int intBackgroundIconRid, boolean boolIsHidden, enumNewItemType intNewItemType  ) {
 		int intLayerCount = 1;
+		boolean boolIsNew = (intNewItemType != enumNewItemType.OLD) ? true: false;
 		if (boolIsHidden) intLayerCount +=1;
 		if (boolIsNew) intLayerCount +=1;
 			
@@ -354,7 +357,23 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 		layers[0] = r.getDrawable(intBackgroundIconRid);
 		if (intLayerCount ==  2) {
 			if (boolIsHidden) layers[1] = r.getDrawable(R.drawable.icon_overlay_hidden);
-			if (boolIsNew) layers[1] = r.getDrawable(R.drawable.icon_overlay_new);
+			if (boolIsNew)  {
+				switch (intNewItemType) {
+				case ROOT_PARENT_OF_NEW:
+				case PARENT_OF_NEW:
+					layers[1] = r.getDrawable(R.drawable.icon_overlay_new_yellow);
+					break;
+				case NEW_AND_ROOT_PARENT_OF_NEW:
+				case NEW_AND_PARENT_OF_NEW:
+					layers[1] = r.getDrawable(R.drawable.icon_overlay_new_redyellow);
+					break;				
+				case NEW:
+					layers[1] = r.getDrawable(R.drawable.icon_overlay_new);
+					break;
+				default:
+					break;
+				}				
+			}
 		} else {
 			layers[1] = r.getDrawable(R.drawable.icon_overlay_hidden);
 			layers[2] = r.getDrawable(R.drawable.icon_overlay_new);
@@ -564,15 +583,7 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 		}
 	}
 
-	protected void RefreshListView() {
-		List<clsListItem> objListItems = objTreeview.getListItems();
-		clear();
-		addAll(objListItems);
-
-		ListView objListView = ((ListActivity) context).getListView();
-		objListView.invalidateViews();
-		((Activity) context).invalidateOptionsMenu();
-	}
+	protected abstract void RefreshListView();
 
 	private class MyTextOnLongClickListener implements View.OnLongClickListener {
 		public boolean onLongClick(View v) {

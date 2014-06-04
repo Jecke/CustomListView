@@ -177,5 +177,12 @@
         android:icon="@drawable/ic_action_settings"
         android:showAsAction="never|withText"
     />
+    
+    <item
+        android:id="@+id/actionTestNote"
+        android:title="Special test"
+        android:icon="@drawable/ic_action_settings"
+        android:showAsAction="never|withText"
+    />
 
 </menu>

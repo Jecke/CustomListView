@@ -117,7 +117,7 @@ public class ActivityNoteStartup extends ListActivity {
 	 static Context objContext;
 	 static ArrayList<clsImageLoadData> objImageLoadDatas;
 	 String strRegistrationId;  // Device ID for GCM purposes
-	 
+ 
 	 
 	 // Temporarily locals
 	 ImageView myPreviewImageView;
@@ -171,13 +171,17 @@ public class ActivityNoteStartup extends ListActivity {
 	        
 	        setContentView(R.layout.activity_note_startup);
 	        
-	        //---List View---
+	        // List View 
 	        int resID = R.layout.note_list_item;
 			int intTabWidthInDp = clsUtils.GetDefaultTabWidthInDp(this);			
 			int intTabWidthInPx = clsUtils.dpToPx(this, intTabWidthInDp);     
 	        objListItemAdapter = new clsNoteListItemArrayAdapter(this, resID, listItems, objNoteTreeview, intTabWidthInPx);
 	        setListAdapter(objListItemAdapter);
 	        
+	        // NewItemsIndicator View
+	        clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)findViewById(R.id.newitems_indicator_view);
+			objClsNewItemsIndicatorView.UpdateListItems(listItems);
+	       	                
 	        // Actionbar
 	        ActionBar actionBar = getActionBar();
 	        actionBar.show();
@@ -872,6 +876,21 @@ public class ActivityNoteStartup extends ListActivity {
 	    	 intent = new Intent(this, ActivityNoteSettings.class);
 	    	 startActivityForResult(intent, ActivityNoteStartup.EDIT_SETTINGS);
 	    	 return true;
+         case R.id.actionTestNote:
+        	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
+        		 clsUtils.MessageBox(this, "Please add some items first.", false);
+        		 return false;
+        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
+        		 clsUtils.MessageBox(this, "Please select an item first.", false);
+        		 return false;
+        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
+        		 clsUtils.MessageBox(this, "Please select only one item at a time", false);
+        		 return false;     		 
+        	 }
+        	 clsTreeNode objNewTreeNode = objSelectedTreeNodes.get(0);
+        	 objNewTreeNode.boolIsNew = !objNewTreeNode.boolIsNew;
+        	 RefreshListView();
+        	 return true;
          default:
              return super.onOptionsItemSelected(item);
     	 }
@@ -960,10 +979,12 @@ public class ActivityNoteStartup extends ListActivity {
 
 
 	public void RefreshListView() {
-		 SaveFile();
-		 List<clsListItem> objListItems = objNoteTreeview.getListItems(); 
+		 SaveFile(); 
+		 ArrayList<clsListItem> objListItems = objNoteTreeview.getListItems(); 
 		 objListItemAdapter.clear(); objListItemAdapter.addAll(objListItems);
-		 objListItemAdapter.notifyDataSetChanged();		  
+		 objListItemAdapter.notifyDataSetChanged();
+		 clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)findViewById(R.id.newitems_indicator_view);
+		 objClsNewItemsIndicatorView.UpdateListItems(objListItems);
 		 invalidateOptionsMenu();
 	}
 	

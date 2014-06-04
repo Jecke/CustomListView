@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 
+
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumItemType;
 
@@ -127,5 +128,14 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 			((ActivityExplorerStartup) context).AddEditFolder(objTreeNode.getName(), false, false, objUuid);
 		}
 		
+	}
+	
+	@Override
+	protected void RefreshListView() {
+		List<clsListItem> objListItems = objTreeview.getListItems();
+		clear();
+		addAll(objListItems);
+		notifyDataSetChanged();
+		((Activity) context).invalidateOptionsMenu();
 	}
 }
