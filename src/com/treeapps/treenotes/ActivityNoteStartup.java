@@ -13,16 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-
-
-
-
-
-
-
-
-
-
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.gson.reflect.TypeToken;
@@ -86,6 +76,7 @@ public class ActivityNoteStartup extends ListActivity {
 	public static final String READONLY = "com.treeapps.treenotes.read_only";
 	public static final String USE_ANNOTATED_IMAGE = "com.treeapps.treenotes.use_annotated_image";
 	public static final String ISDIRTY = "com.treeapps.treenotes.is_dirty";
+	public static final String TREENODE_PARENTNAME = "com.treeapps.treenotes.treenode_parentname";
 	
 
 	private static final int GET_DESCRIPTION_ADD_SAME_LEVEL = 0;
@@ -501,6 +492,24 @@ public class ActivityNoteStartup extends ListActivity {
    	    strRegistrationId = clsUtils.getRegistrationId(objContext);
 	}
 	
+	private String getParentDescription(clsTreeview.clsTreeNode objSelected)
+	{
+		// Return description of topmost name if no row is selected. That happens when the 
+		// first note is created.
+		if(objSelected == null)
+		{
+			return ActivityNoteStartup.objNoteTreeview.getRepository().getName();
+		}
+		
+		clsTreeNode objParentTreeNode = objNoteTreeview.getParentTreeNode(objSelected);
+		
+		String retval = (objParentTreeNode == null)?(ActivityNoteStartup.objNoteTreeview.getRepository().getName())
+					 							  :(objParentTreeNode.getName());
+
+		return retval;
+	}
+	
+	
 	public boolean onOptionsItemSelected(MenuItem item) {
     	// TODO Auto-generated method stub
 		 Intent intent;
@@ -524,6 +533,11 @@ public class ActivityNoteStartup extends ListActivity {
         	 intent = new Intent(this, ActivityNoteAddNew.class);
         	 intent.putExtra(DESCRIPTION, "");
         	 intent.putExtra(TREENODE_UID, "temp_uuid");
+        	 
+        	 // Search for parent of selected note and supply description to activity
+        	 String strParentDescription = getParentDescription((objSelectedTreeNodes.isEmpty())?(null):(objSelectedTreeNodes.get(0)));
+        	 intent.putExtra(ActivityNoteStartup.TREENODE_PARENTNAME, strParentDescription); 
+        	 
         	 startActivityForResult(intent,GET_DESCRIPTION_ADD_SAME_LEVEL);
              return true;            
          case R.id.actionButtonAddAtNextLevel:
@@ -538,6 +552,8 @@ public class ActivityNoteStartup extends ListActivity {
         	 intent = new Intent(this, ActivityNoteAddNew.class);
         	 intent.putExtra(DESCRIPTION, "");
         	 intent.putExtra(TREENODE_UID, "temp_uuid");
+        	 intent.putExtra(ActivityNoteStartup.TREENODE_PARENTNAME, objSelectedTreeNodes.get(0).getName()); 
+        	 
         	 startActivityForResult(intent,GET_DESCRIPTION_ADD_NEXT_LEVEL);
              return true;
              
@@ -946,7 +962,7 @@ public class ActivityNoteStartup extends ListActivity {
        	 intent.putExtra(RESOURCE_ID,   objEditTreeNode.resourceId);
        	 intent.putExtra(RESOURCE_PATH, objEditTreeNode.resourcePath);
        	 intent.putExtra(TREENODE_UID, objEditTreeNode.guidTreeNode.toString());
-       	 
+
        	 startActivityForResult(intent, EDIT_DESCRIPTION);
 		}
 	}
@@ -966,6 +982,7 @@ public class ActivityNoteStartup extends ListActivity {
        		clsUtils.MessageBox(objContext, "Please select only one item at a time", false);
        		 return;     		 
        	 }
+
        	 clsTreeNode objEditTreeNode = objSelectedTreeNodes.get(0);
        	 Intent intent = new Intent(ActivityNoteStartup.this, ActivityNoteAddNew.class);
        	 intent.putExtra(DESCRIPTION,   objEditTreeNode.getName());
