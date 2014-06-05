@@ -893,6 +893,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						intentShareGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_CHOOSE_MEMBERS);
 						clsIntentMessaging objIntentMessaging = new clsIntentMessaging();
 						clsIntentMessaging.clsChosenMembers objChosenMembers = objIntentMessaging.new clsChosenMembers();
+						objChosenMembers.strUserUuids = objResponse.strSharedUsers;
 						objChosenMembers.strNoteUuid = objResponse.strNoteUuid;
 						String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
 						intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
@@ -1384,7 +1385,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				// Inform server about the selection
 				try {
 					urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
-							+ getResources().getString(R.string.url_get_note_sharers));
+							+ getResources().getString(R.string.url_set_note_sharers));
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -2466,7 +2467,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		public int intErrorCode;
 		public String strErrorMessage = "";
 		public String strNoteUuid;
-		public ArrayList<clsShareUser> objSharedUsers;
+		public ArrayList<String> strSharedUsers;
 	}
 
 	public static class clsGetNoteSharedUsersAsyncTask extends AsyncTask<Void, Void, clsGetNoteSharedUsersResponse> {
