@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import com.google.gson.reflect.TypeToken;
+import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationText;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
@@ -86,7 +87,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	private ProgressDialog pd;
 	private clsResourceLoader objResourceLoader;
 	
-	private String imageDirectory;
 	private File strImageFilename;
 	private File strFullFilename; 
 	private File strAnnotatedFilename;
@@ -153,8 +153,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		objIntent = getIntent();
 		objContext = this;
 		
-		imageDirectory = new File(clsUtils.GetTreeNotesDirectoryName(this)).getAbsolutePath() + "/";
-		
 		Bundle objBundle = objIntent.getExtras();    		
 		strDescription  = objBundle.getString(ActivityNoteStartup.DESCRIPTION);
 		
@@ -170,6 +168,13 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		boolUseAnnotatedImage = objBundle.getBoolean(ActivityNoteStartup.USE_ANNOTATED_IMAGE);
 		boolIsDirty = objBundle.getBoolean(ActivityNoteStartup.ISDIRTY);
 		
+		// Set title of activity to prefix retrieved from config (strings.xml) plus
+		// the first 50 characters of the description associated with the parent note. 
+		String strParentName = objBundle.getString(ActivityNoteStartup.TREENODE_PARENTNAME);
+		String strActivityTitle = getResources().getString(R.string.title_activity_add_new_or_edit) + ": ";
+		strActivityTitle += (strParentName.length() > 50)?(strParentName.substring(0, 50)+"..."):(strParentName);
+		setTitle(strActivityTitle);
+
 		strImageFilename           = new File(clsUtils.GetThumbnailImageFileName(objContext, strTreeNodeUuid));
 		strFullFilename            = new File(clsUtils.GetFullImageFileName(objContext, strTreeNodeUuid));
 		strAnnotatedFilename       = new File(clsUtils.GetAnnotatedImageFileName(objContext, strTreeNodeUuid));

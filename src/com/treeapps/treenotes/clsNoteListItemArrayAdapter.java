@@ -20,6 +20,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ImageView;
@@ -115,11 +116,7 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, r.getDrawable(R.drawable.www));
 			}
 		}
-
-
 	}
-	
-	
 
 	@Override
 	public void OnClickExec(View v) {
@@ -141,6 +138,15 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 				((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview);
 		intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
 
+		// Send description of node's 
+		String strParentDescription;
+		clsTreeNode objParentTreeNode = objTreeview.getParentTreeNode(objTreeNode);
+		
+		strParentDescription = (objParentTreeNode == null)?(ActivityNoteStartup.objNoteTreeview.getRepository().getName())
+														  :(objParentTreeNode.getName());
+		
+		intent.putExtra(ActivityNoteStartup.TREENODE_PARENTNAME, strParentDescription); 
+		
 		String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
 		intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
 		intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());

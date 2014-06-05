@@ -168,6 +168,7 @@
     <string name="title_activity_activity_view_image">ActivityViewImage</string>
     <string name="title_activity_activity_web_browser">Select Page</string>
     <string name="title_activity_facebook_export">Export to Facebook</string>
+    <string name="title_activity_add_new_or_edit">Note</string>
     
     <!-- Messaging URLs -->
     <string name="url_register_user">"/api/TreeManager/LoginUser"</string>
