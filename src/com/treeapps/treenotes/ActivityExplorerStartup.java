@@ -1397,6 +1397,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				clsTreeNode objSelectedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(UUID
 						.fromString(objResults.strNoteUuid));
 				clsSetNoteSharedUsersCommand objCommand = new clsSetNoteSharedUsersCommand();
+				objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
 				objCommand.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
 				objCommand.objSharedUsers = objResults.strUserUuids;
 				clsSetNoteSharedUsersResponse objResponse = new clsSetNoteSharedUsersResponse();
@@ -2559,6 +2560,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	
 		// Input to async task
 		public static class clsSetNoteSharedUsersCommand {
+			public String strClientUserUuid;
 			public String strNoteUuid;
 			public ArrayList<String> objSharedUsers;
 		}

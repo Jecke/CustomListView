@@ -652,6 +652,9 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 				}
 				break;
 			case MotionEvent.ACTION_MOVE:
+				
+				if (pressedX < (2 * view.getWidth())/3) break;
+				
 				float fltDistance = distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY());
 				clsUtils.CustomLog("fltDistance =: " + fltDistance);
 				if (fltDistance > fltMaxClickDistance) {

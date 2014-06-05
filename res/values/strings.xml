@@ -95,8 +95,8 @@
     	 make no sense
     -->
     <integer name="line_width_divisor">100</integer>
-    <integer name="newitems_indicator_view_width_dp">6</integer>
-    <string name="newitems_indicator_view_width_dp">6dp</string>
+    <integer name="newitems_indicator_view_width_dp">4</integer>
+    <string name="newitems_indicator_view_width_dp">4dp</string>
     
 
     <!-- Selection -->

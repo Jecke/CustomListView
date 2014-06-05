@@ -93,7 +93,7 @@ public class clsNewItemsIndicatorView extends View {
 	    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 	    bmsMixedIndicator = new BitmapShader(bitmap, BitmapShader.TileMode.REPEAT, BitmapShader.TileMode.REPEAT);
 	    m = new Matrix();
-	    m.setRotate(45);
+	    m.setRotate(0);
 	    bmsMixedIndicator.setLocalMatrix(m);
 	    paint.setShader(bmsMixedIndicator);
 	   
