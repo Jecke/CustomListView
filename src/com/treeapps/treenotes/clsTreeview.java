@@ -112,8 +112,8 @@ public class clsTreeview {
 		public boolean boolHiddenSelectionIsActive = false;
 		public boolean boolIsHiddenActive = true;
 		// Data for sharing
-		public ArrayList<clsShareUser> objSharedUsers = new ArrayList<clsShareUser>();
 		private String strOwnerUserUuid = "";
+		public boolean boolIsShared = false;
 		public boolean boolIsSubscribed = false;
 		public ArrayList<clsImageLoadData> objImageLoadDatas = new ArrayList<clsImageLoadData>();
 
@@ -139,14 +139,6 @@ public class clsTreeview {
 
 		public boolean IsCheckList() {
 			return boolIsCheckList;
-		}
-
-		public ArrayList<clsShareUser> getObjSharedUsers() {
-			return objSharedUsers;
-		}
-
-		public void setObjSharedUsers(ArrayList<clsShareUser> objSharedUsers) {
-			this.objSharedUsers = objSharedUsers;
 		}
 
 		public String getNoteOwnerUserUuid() {
@@ -177,9 +169,9 @@ public class clsTreeview {
 			objclsSyncRepository.boolIsCheckedItemsMadeHidden = this.boolIsCheckedItemsMadeHidden;
 			objclsSyncRepository.boolHiddenSelectionIsActive = this.boolHiddenSelectionIsActive;
 			objclsSyncRepository.boolIsHiddenActive = this.boolIsHiddenActive;
-			objclsSyncRepository.objSharedUsers = this.objSharedUsers;
 			objclsSyncRepository.strOwnerUserUuid = this.strOwnerUserUuid;
 			objclsSyncRepository.boolIsDeleted = this.boolIsDeleted;
+			objclsSyncRepository.boolIsShared = this.boolIsShared;
 			objclsSyncRepository.boolIsSubscribed = this.boolIsSubscribed;
 			return objclsSyncRepository;
 		}
@@ -277,6 +269,7 @@ public class clsTreeview {
 		public ArrayList<clsShareUser> objSharedUsers = new ArrayList<clsShareUser>();
 		public String strOwnerUserUuid = "";
 		public boolean boolIsDeleted = false;
+		public boolean boolIsShared = false;
 		public boolean boolIsSubscribed = false;
 
 		public clsRepository getCopy() {
@@ -288,9 +281,9 @@ public class clsTreeview {
 			objRepository.boolIsCheckedItemsMadeHidden = this.boolIsCheckedItemsMadeHidden;
 			objRepository.boolHiddenSelectionIsActive = this.boolHiddenSelectionIsActive;
 			objRepository.boolIsHiddenActive = this.boolIsHiddenActive;
-			objRepository.objSharedUsers = this.objSharedUsers;
 			objRepository.strOwnerUserUuid = this.strOwnerUserUuid;
 			objRepository.boolIsDeleted = this.boolIsDeleted;
+			objRepository.boolIsShared = this.boolIsShared;
 			objRepository.boolIsSubscribed = this.boolIsSubscribed;
 			return objRepository;
 		}
@@ -920,8 +913,7 @@ public class clsTreeview {
 	}
 
 	public boolean IsNoteShared() {
-		if ((this.getRepository().getObjSharedUsers().size() != 0) ||
-				(this.getRepository().boolIsSubscribed)){
+		if (this.getRepository().boolIsShared || this.getRepository().boolIsSubscribed){
 			return true;
 		}
 		return false;
@@ -1315,7 +1307,9 @@ public class clsTreeview {
 				RemoveTreeNode(getRepository().objRootNodes.get(0), true);
 			}
 			getRepository().objImageLoadDatas.clear();
-			getRepository().objSharedUsers.clear();
+			getRepository().boolIsShared = false;
+			getRepository().boolIsSubscribed = false;
+			
 		} catch (Exception e) {
 			clsUtils.CustomLog("Error clearing repository. " + e.getStackTrace().toString());
 		}
@@ -1429,11 +1423,6 @@ public class clsTreeview {
 				return true;
 		}
 		return boolIsDirty;
-	}
-
-	public void AddShareUser(clsShareUser objShareUser) {
-		getRepository().objSharedUsers.add(objShareUser);
-		SetAllIsDirty(true);
 	}
 
 	public clsTreeNode GetSharingFolder() {

@@ -792,7 +792,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			Intent intentRegister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
 			intentRegister.putExtra(ActivityRegister.USERNAME,
 					objGroupMembers.objMembersRepository.getStrRegisteredUserName());
-			intentRegister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl(objExplorerTreeview));
+			intentRegister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
 			startActivityForResult(intentRegister, SHARE_REGISTER);
 			return true;
 		case R.id.actionShareReregister:
@@ -807,7 +807,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			Intent intentReregister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
 			intentReregister.putExtra(ActivityRegister.USERNAME,
 					objGroupMembers.objMembersRepository.getStrRegisteredUserName());
-			intentReregister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl(objExplorerTreeview));
+			intentReregister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
 			startActivityForResult(intentReregister, SHARE_REGISTER);
 			return true;
 		case R.id.actionShareManageGroups:
@@ -827,7 +827,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			}
 			final URL urlFeed;
 			try {
-				urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+				urlFeed = new URL(objMessaging.GetServerUrl()
 						+ getResources().getString(R.string.url_members_sync));
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
@@ -867,7 +867,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			}
 			// Async task which gets current shared users for this note from server
 			try {
-				urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+				urlFeed = new URL(objMessaging.GetServerUrl()
 						+ getResources().getString(R.string.url_get_note_sharers));
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
@@ -898,7 +898,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
 						intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
 						intentShareGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
-								objMessaging.GetServerUrl(objExplorerTreeview));
+								objMessaging.GetServerUrl());
 						startActivityForResult(intentShareGroupMembers, SHARE_CHOOSE_GROUP_MEMBERS);
 					} else {
 						clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
@@ -924,7 +924,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				return true;
 			}
 			try {
-				urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+				urlFeed = new URL(objMessaging.GetServerUrl()
 						+ getResources().getString(R.string.url_note_sync));
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
@@ -1010,7 +1010,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				public void onClick(DialogInterface dialog, int id) {
 					URL urlFeed;
 					try {
-						urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+						urlFeed = new URL(objMessaging.GetServerUrl()
 								+ getResources().getString(R.string.url_note_sync));
 					} catch (MalformedURLException e) {
 						// TODO Auto-generated catch block
@@ -1193,7 +1193,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			Intent intentManageGroupMembers = new Intent(this, ActivityGroupMembers.class);
 			intentManageGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_MANAGE_GROUPS);
 			intentManageGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
-					objMessaging.GetServerUrl(this.objExplorerTreeview));
+					objMessaging.GetServerUrl());
 			startActivityForResult(intentManageGroupMembers, SHARE_MANAGE_GROUP_MEMBERS);
 			return true;
 		default:
@@ -1353,7 +1353,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				// data
 				final URL urlFeed;
 				try {
-					urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+					urlFeed = new URL(objMessaging.GetServerUrl()
 							+ getResources().getString(R.string.url_members_sync));
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
@@ -1375,8 +1375,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				objAsyncTask.execute("");
 				break;
 			case SHARE_CHOOSE_GROUP_MEMBERS:
-				// Save return values to that specific note's repository share
-				// data
+				// Save return values to that specific note's repository share data
 				objBundle = data.getExtras();
 				String strChooseResultGson = objBundle.getString(ActivityGroupMembers.CHOOSE_MEMBERS_RESULT_GSON);
 				clsIntentMessaging.clsChosenMembers objResults = clsUtils.DeSerializeFromString(strChooseResultGson,
@@ -1384,7 +1383,7 @@ public class ActivityExplorerStartup extends ListActivity {
 
 				// Inform server about the selection
 				try {
-					urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+					urlFeed = new URL(objMessaging.GetServerUrl()
 							+ getResources().getString(R.string.url_set_note_sharers));
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
@@ -1401,6 +1400,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
 				objCommand.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
 				objCommand.objSharedUsers = objResults.strUserUuids;
+				final boolean boolIsNoteShared = (objResults.strUserUuids.size() == 0) ? false: true;
 				clsSetNoteSharedUsersResponse objResponse = new clsSetNoteSharedUsersResponse();
 				objSetNoteSharedUsersAsyncTask = new clsSetNoteSharedUsersAsyncTask(this, urlFeed, objCommand, objResponse);
 				objSetNoteSharedUsersAsyncTask.SetOnResponseListener(new OnSetNoteSharedUsersResponseListener() {
@@ -1409,6 +1409,12 @@ public class ActivityExplorerStartup extends ListActivity {
 					public void onResponse(clsSetNoteSharedUsersResponse objResponse) {
 						if (objResponse.intErrorCode == clsSetNoteSharedUsersResponse.ERROR_NETWORK ) {
 							clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+						} else {
+							if (boolIsNoteShared) {
+								objExplorerTreeview.getRepository().boolIsShared = true;
+							} else {
+								objExplorerTreeview.getRepository().boolIsShared = false;
+							}
 						}
 						RefreshListView();
 					}
@@ -2061,7 +2067,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				intentManageGroupMembers.putExtra(ActivityGroupMembers.ACTION,
 						ActivityGroupMembers.ACTION_MANAGE_GROUPS);
 				intentManageGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
-						objMessaging.GetServerUrl(context.objExplorerTreeview));
+						objMessaging.GetServerUrl());
 				context.startActivityForResult(intentManageGroupMembers, SHARE_MANAGE_GROUP_MEMBERS);
 			} else if ((objResult.getIntErrorNum() == ERROR_NONE_NEW_DATA_CREATED)
 					|| (objResult.getIntErrorNum() == ERROR_NONE_EXISTING_DATA_UPDATED)) {
@@ -2396,7 +2402,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
 				try {
 
-					URL urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+					URL urlFeed = new URL(objMessaging.GetServerUrl()
 							+ getResources().getString(R.string.url_send_gcm_reg_id));
 					String strJsonCommand = gson.toJson(objCommand);
 					try {
@@ -2466,6 +2472,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		public static final int ERROR_NETWORK = 1;
 		public int intErrorCode;
 		public String strErrorMessage = "";
+	
 		public String strNoteUuid;
 		public ArrayList<String> strSharedUsers;
 	}

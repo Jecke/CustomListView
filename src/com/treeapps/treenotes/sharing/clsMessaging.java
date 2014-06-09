@@ -306,7 +306,14 @@ public class clsMessaging {
     {
         private String strUsername = "";
         private String strPassword = "";
+        private String strRegistrationId = "";
         
+		public String getStrRegistrationId() {
+			return strRegistrationId;
+		}
+		public void setStrRegistrationId(String strRegistrationId) {
+			this.strRegistrationId = strRegistrationId;
+		}
 		public String getStrUsername() {
 			return strUsername;
 		}
@@ -334,39 +341,6 @@ public class clsMessaging {
 		}
     }
 
-
-    public class clsAddUserCmd  extends clsMsg
-    {
-    	private String strUsername = "";
-    	private String strPassword = "";
-        
-		public String getStrUsername() {
-			return strUsername;
-		}
-		public void setStrUsername(String strUsername) {
-			this.strUsername = strUsername;
-		}
-		public String getStrPassword() {
-			return strPassword;
-		}
-		public void setStrPassword(String strPassword) {
-			this.strPassword = strPassword;
-		}
-    }
-
-    public class clsAddUserResponse extends clsMsg
-    {
-    	private String strUserUuid = "";
-
-		public String getStrUserUuid() {
-			return strUserUuid;
-		}
-
-		public void setStrUserUuid(String strUserUuid) {
-			this.strUserUuid = strUserUuid;
-		}
-       
-    }
     
     public class clsRemoveUserCmd  extends clsMsg
     {
@@ -1358,7 +1332,7 @@ public class clsMessaging {
         return boolIsNetworkAvailable;
     }
     
-    public String GetServerUrl(clsTreeview objTreeView){
+    public String GetServerUrl(){
     	if(objRepository.boolIsServerIisExpress) {
     		return SERVER_URL_IIS_EXPRESS;
     	}

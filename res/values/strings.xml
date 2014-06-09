@@ -177,6 +177,7 @@
     <string name="url_publications_search">"/api/TreeManager/PublicationsSearch"</string>
     <string name="url_publications_by_author_search">"/api/TreeManager/PublicationsByAuthorSearch"</string>
     <string name="url_subscriptions_search">"/api/TreeManager/SubscriptionsSearch"</string>
+    <string name="url_subscriptions_remove">"/api/TreeManager/SubscriptionsRemove"</string>   
     <string name="url_publications_add">"/api/TreeManager/PublicationsAdd"</string>
     <string name="url_publications_remove">"/api/TreeManager/PublicationsRemove"</string>
     <string name="url_subscriptions_add">"/api/TreeManager/SubscriptionsAdd"</string>

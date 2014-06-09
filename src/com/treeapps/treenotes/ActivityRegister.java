@@ -212,7 +212,7 @@ public class ActivityRegister extends Activity {
         	clsLoginUserCmd objLoginUserCmd = objMessaging.new clsLoginUserCmd();
         	objLoginUserCmd.setStrUsername(mUsernameView.getText().toString());
         	objLoginUserCmd.setStrPassword(mPasswordView.getText().toString());
-        	objLoginUserCmd.setIntSeqNum(0);
+        	objLoginUserCmd.setStrRegistrationId(clsUtils.getRegistrationId(objContext));
     		Gson gson = new Gson();
     		String strJsonCommand = gson.toJson(objLoginUserCmd);
         	InputStream stream = null;

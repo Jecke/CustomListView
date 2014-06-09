@@ -12,6 +12,12 @@ import org.json.JSONObject;
 
 
 
+
+
+
+
+
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.treeapps.treenotes.ActivityRegister;
@@ -22,16 +28,24 @@ import com.treeapps.treenotes.clsNoteTreeview;
 import com.treeapps.treenotes.clsUtils;
 import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
+import com.treeapps.treenotes.clsTreeview.enumItemType;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsMessaging.clsMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
+import com.treeapps.treenotes.sharing.clsWebServiceComms;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnWebPagePostedListener;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
@@ -66,8 +80,13 @@ public class ActivitySubscriptions extends ListActivity {
 	public static final String INTENT_DATA = "com.treeapps.treenotes.sharing.subscriptions_intentdata";
 	private static final int SEARCH = 0;
 
-	static Context objContext;
+	static Activity objContext;
 	static clsSubcriptionsIntentData objSubcriptionsIntentData;
+	class clsSubscriptionsRemoveCommandMsg extends clsWebServiceCommand {
+		public String strRegisteredUserUuid = "";
+		public ArrayList<String> lstRemoveNoteSubscriptions = new ArrayList<String>();	
+	}
+	clsSubscriptionsRemoveCommandMsg objSubscriptionsRemoveCommand;
 	public static ArrayList<clsListViewState> objListViewStates = new ArrayList<clsListViewState>();
 	public static clsActivitySubscriptionArrayAdapter objArrayAdapter;
 	public static clsMessaging objMessaging = new clsMessaging();
@@ -134,6 +153,65 @@ public class ActivitySubscriptions extends ListActivity {
 		int id = item.getItemId();
 		switch (id) {
 		case R.id.action_subscriptions_remove:
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setMessage(R.string.dlg_are_you_sure_about_delete);
+			builder.setCancelable(true);
+			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					final URL urlFeed;
+					try {
+						urlFeed = new URL(objMessaging.GetServerUrl()
+								+ getResources().getString(R.string.url_subscriptions_remove));
+					} catch (MalformedURLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						return;
+					} catch (NotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						return;
+					}
+					clsSubscriptionsRemoveCommandMsg objSubscriptionsRemoveCommand = new clsSubscriptionsRemoveCommandMsg();
+					objSubscriptionsRemoveCommand.strRegisteredUserUuid = objSubcriptionsIntentData.strRegisteredUserUuid;
+					for (clsListViewState objListViewState:  objListViewStates) {
+						if (objListViewState.boolIsChecked) {
+							objSubscriptionsRemoveCommand.lstRemoveNoteSubscriptions.add(objListViewState.strNoteUuid);
+						}
+					}
+					clsWebServiceCommsAsyncTask objMyAsyncTask = new clsWebServiceCommsAsyncTask(objContext, 
+							urlFeed, objSubscriptionsRemoveCommand);
+					objMyAsyncTask.SetOnWebPagePostedListener(new OnWebPagePostedListener() {
+						
+						@Override
+						public void onPosted(JSONObject objJsonResponse) {
+							// TODO Auto-generated method stub
+							clsWebServiceResponse objResponse = clsUtils.DeSerializeFromString(objJsonResponse.toString(),
+									clsWebServiceResponse.class);
+							if (objResponse.intErrorCode != clsWebServiceComms.ERROR_NONE) {
+								clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+							} else {
+								for (clsListViewState objListViewState:  objListViewStates) {
+									if (objListViewState.boolIsChecked) {
+										objListViewStates.remove(objListViewState);
+									}
+								}
+								objArrayAdapter.clear(); objArrayAdapter.addAll(ActivitySubscriptions.objListViewStates);
+								objArrayAdapter.notifyDataSetChanged();
+								clsUtils.MessageBox(objContext, "Subscriptions successfully deleted", true);
+							}
+						}
+					});
+					objMyAsyncTask.execute(null,null,null);
+				}
+			});
+			builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					return;
+				}
+			});
+			AlertDialog dialog = builder.create();
+			dialog.show();	
+			
 
 		case R.id.action_settings:
 			return true;
@@ -432,8 +510,7 @@ public class ActivitySubscriptions extends ListActivity {
 					}
 				}
 				objArrayAdapter.clear(); objArrayAdapter.addAll(ActivitySubscriptions.objListViewStates);
-				ListView objListView = ((ActivitySubscriptions) objContext).getListView();  
-				objListView.invalidateViews();
+				objArrayAdapter.notifyDataSetChanged();
 			} else {
 				clsUtils.MessageBox(objContext, objResponseMsg.strErrorMessage, false);
 			}	
@@ -553,8 +630,7 @@ public class ActivitySubscriptions extends ListActivity {
 
 			if (objResponseMsg.intErrorCode == ERROR_NONE) {
 				objArrayAdapter.clear(); objArrayAdapter.addAll(ActivitySubscriptions.objListViewStates);
-				ListView objListView = ((ActivitySubscriptions) objContext).getListView(); 
-				objListView.invalidateViews();
+				objArrayAdapter.notifyDataSetInvalidated();
 			} else {
 				Toast.makeText((ActivitySubscriptions) objContext, objResponseMsg.strErrorMessage, Toast.LENGTH_LONG).show();
 			}	

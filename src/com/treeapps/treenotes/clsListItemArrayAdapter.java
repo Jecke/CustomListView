@@ -233,29 +233,34 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 						} else {
 							if (objDialogListItem.getItemType() != enumItemType.FOLDER_EMPTY) {
 
-								// If checkbox is on a parent, ask user if he
-								// wants all children unchecked
-								AlertDialog.Builder builder = new AlertDialog.Builder(context);
-								builder.setTitle("All items below will be unchecked also. Do you want to proceed?");
-								builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+								if (objDialogTreeNode.objChildren.size() != 0) {
+									// If checkbox is on a parent, ask user if he
+									// wants all children unchecked
+									AlertDialog.Builder builder = new AlertDialog.Builder(context);
+									builder.setTitle("All items below will be unchecked also. Do you want to proceed?");
+									builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 
-									@Override
-									public void onClick(DialogInterface dialog, int which) {
-										// TODO Auto-generated method stub
-										objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, false);
-										RefreshListView();
-									}
-								});
-								builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											// TODO Auto-generated method stub
+											objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, false);
+											RefreshListView();
+										}
+									});
+									builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 
-									@Override
-									public void onClick(DialogInterface dialog, int which) {
-										objDialogTreeNode.setChecked(true);
-										dialog.cancel();
-										RefreshListView();
-									}
-								});
-								builder.show();
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											objDialogTreeNode.setChecked(true);
+											dialog.cancel();
+											RefreshListView();
+										}
+									});
+									builder.show();
+								} else {
+									objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, false);
+									RefreshListView();
+								}
 							}
 
 							// If checkbox is on a child, just carry on

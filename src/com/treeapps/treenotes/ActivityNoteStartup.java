@@ -833,7 +833,7 @@ public class ActivityNoteStartup extends ListActivity {
         		 return true;
         	 }
         	 try {
-				urlFeed = new URL(objMessaging.GetServerUrl(objNoteTreeview) + getResources().getString(R.string.url_note_sync));
+				urlFeed = new URL(objMessaging.GetServerUrl() + getResources().getString(R.string.url_note_sync));
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -917,7 +917,7 @@ public class ActivityNoteStartup extends ListActivity {
 		SaveFile();
 		 URL urlFeed;
 		 try {
-			urlFeed = new URL(objMessaging.GetServerUrl(objNoteTreeview) + getResources().getString(R.string.url_note_sync));
+			urlFeed = new URL(objMessaging.GetServerUrl() + getResources().getString(R.string.url_note_sync));
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1154,22 +1154,7 @@ public class ActivityNoteStartup extends ListActivity {
     				objGroupMembers.SaveFile();
     				Toast.makeText(getApplicationContext(),"Registration successfull",Toast.LENGTH_SHORT).show();
     				RefreshListView();
-    				break;
-    			case SHARE_CHOOSE_GROUP_MEMBERS:
-        			// Save return values to that specific note's repository share data
-    				objBundle = data.getExtras();    		
-    				String strChooseResultGson    = objBundle.getString(ActivityGroupMembers.CHOOSE_MEMBERS_RESULT_GSON);
-    				clsIntentMessaging.clsChosenMembers objResults = 
-    						clsUtils.DeSerializeFromString(strChooseResultGson, clsIntentMessaging.clsChosenMembers.class);
-    				objNoteTreeview.getRepository().setObjSharedUsers(new ArrayList<clsShareUser>()); // Create empty list
-    				for (String strUserUuid: objResults.strUserUuids) {
-    					clsShareUser clsShareUser = objNoteTreeview.new clsShareUser(strUserUuid,
-    							objGroupMembers.GetRegisteredUser().strUserUuid,clsUtils.GetStrCurrentDateTime());
-    					objNoteTreeview.AddShareUser(clsShareUser);
-    				}
-    				RefreshListView();
-        			break;
-					
+    				break;				
     			case ANNOTATE_IMAGE:
     				String annotation = objBundle.getString(clsAnnotationData.DATA);
     				// retrieve annotation data from Intent
