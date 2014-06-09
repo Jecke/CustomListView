@@ -106,10 +106,9 @@ public class ActivityNoteStartup extends ListActivity {
 	 boolean boolIsUserRegistered = false;
 	 private boolean boolUserIsNoteOwner = false;
 	 static Context objContext;
-	 static ArrayList<clsImageLoadData> objImageLoadDatas;
+	 public static ArrayList<clsImageLoadData> objImageLoadDatas;
 	 String strRegistrationId;  // Device ID for GCM purposes
- 
-	 
+ 	 
 	 // Temporarily locals
 	 ImageView myPreviewImageView;
 	 static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
@@ -1391,6 +1390,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        	}
 	   	        	((ActivityNoteStartup)objContext).SaveFile();
 	   	        	clsUtils.MessageBox(objContext, strMessage, true);
+	   	        	clsUtils.ClearImageLoadDatas(objImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objContext).objMessaging,
 	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForUploads(((ActivityNoteStartup)objContext).objMessaging, 

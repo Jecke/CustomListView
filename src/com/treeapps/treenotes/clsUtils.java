@@ -594,6 +594,15 @@ public class clsUtils {
 
 		return path;
 	}
+	
+	public static void ClearImageLoadDatas(ArrayList<clsImageLoadData> objImageLoadDatas) {
+		for (clsImageLoadData objImageLoadData : objImageLoadDatas) {
+			objImageLoadData.objImageToBeUploadedDatas.clear();
+			objImageLoadData.strImagesToBeDownloaded.clear();
+		}
+		objImageLoadDatas.clear();
+	}
+	
 
 	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsNoteTreeview objNoteTreeview,
 			File fileTreeNodesDir, ArrayList<clsImageLoadData> objImageLoadDatas) {
@@ -631,6 +640,7 @@ public class clsUtils {
 		// Collect the items that needs to be downloaded (local file checks)
 		boolean boolAlreadyExists = false;
 		for (clsImageLoadData objImageLoadData : objImageLoadDatas) {
+			// Append if structure already exists
 			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
 				boolAlreadyExists = true;
 				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview,
@@ -639,6 +649,7 @@ public class clsUtils {
 			}
 		}
 		if (!boolAlreadyExists) {
+			// Create new one if not existing yet
 			clsImageLoadData objImageLoadData = objMessaging.new clsImageLoadData();
 			objImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
 			objImageLoadDatas.add(objImageLoadData);
@@ -724,7 +735,7 @@ public class clsUtils {
 	}
 
 	public static boolean IsLastCharacterFullstop(String strVal) {
-
+		if (strVal.isEmpty()) return true;
 		if (strVal.charAt(strVal.length() - 1) == '.') {
 			return true;
 		}
