@@ -226,7 +226,7 @@ public class ActivityNoteStartup extends ListActivity {
 	        	String strNoteUuid = extras.getString(BROADCAST_DATA_NOTE_UUID);
 	        	if (objNoteTreeview.getRepository().uuidRepository.toString().equals(strNoteUuid)) {
 	        		// Will only auto-sync an open and same repository, otherwise ignore
-		        	ExecuteNoteSync(true);
+		        	ExecuteNoteSync(true, false);
 	        	}
 	        }
 	    }
@@ -822,7 +822,7 @@ public class ActivityNoteStartup extends ListActivity {
         		 Toast.makeText(this, "You need to register first before you can sync",Toast.LENGTH_SHORT).show();
         		 return true;
         	 }
-        	 ExecuteNoteSync(false);
+        	 ExecuteNoteSync(false, true);
         	 return true;
          case R.id.actionShareRestoreFromServer: 
         	 URL urlFeed;
@@ -853,7 +853,7 @@ public class ActivityNoteStartup extends ListActivity {
         	 objSyncCommandMsg.strRegistrationId = strRegistrationId;
         	 objSyncCommandMsg.boolIsMergeNeeded = false;
         	 objSyncCommandMsg.boolIsAutoSyncCommand = false;
-        	 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
+        	 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true, true);
         	 objSyncAsyncTask.execute("");
         	 return true;
          case R.id.actionClearAll:
@@ -913,7 +913,7 @@ public class ActivityNoteStartup extends ListActivity {
     }
 
 
-	private void ExecuteNoteSync(boolean boolIsAutoSyncCommand) {
+	private void ExecuteNoteSync(boolean boolIsAutoSyncCommand, boolean boolDisplayProgress) {
 		SaveFile();
 		 URL urlFeed;
 		 try {
@@ -937,7 +937,7 @@ public class ActivityNoteStartup extends ListActivity {
 		 objSyncCommandMsg.strRegistrationId = strRegistrationId;
 		 objSyncCommandMsg.boolIsMergeNeeded = true;
 		 objSyncCommandMsg.boolIsAutoSyncCommand = boolIsAutoSyncCommand;
-		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true);
+		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true, boolDisplayProgress);
 		 objSyncAsyncTask.execute("");
 	}
 	
@@ -1353,8 +1353,8 @@ public class ActivityNoteStartup extends ListActivity {
 		static boolean boolDisplayToasts;
 		
 		public ActivityNoteStartupSyncAsyncTask(Activity objActivity, URL urlFeed, clsSyncNoteCommandMsg objSyncCommandMsg,
-				clsMessaging objMessaging, boolean boolDisplayToasts) {
-			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts);
+				clsMessaging objMessaging, boolean boolDisplayToasts, boolean boolDisplayProgress) {
+			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts, boolDisplayProgress);
 			// TODO Auto-generated constructor stub
 			ActivityNoteStartupSyncAsyncTask.boolDisplayToasts = boolDisplayToasts;
 		}

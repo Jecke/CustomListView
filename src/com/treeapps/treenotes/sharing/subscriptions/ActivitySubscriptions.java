@@ -171,7 +171,7 @@ public class ActivitySubscriptions extends ListActivity {
 						e.printStackTrace();
 						return;
 					}
-					clsSubscriptionsRemoveCommandMsg objSubscriptionsRemoveCommand = new clsSubscriptionsRemoveCommandMsg();
+					objSubscriptionsRemoveCommand = new clsSubscriptionsRemoveCommandMsg();
 					objSubscriptionsRemoveCommand.strRegisteredUserUuid = objSubcriptionsIntentData.strRegisteredUserUuid;
 					for (clsListViewState objListViewState:  objListViewStates) {
 						if (objListViewState.boolIsChecked) {

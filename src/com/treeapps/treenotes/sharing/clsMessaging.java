@@ -1043,6 +1043,7 @@ public class clsMessaging {
    		static Exception mException = null;
    		static clsSyncNoteCommandMsg objCommand;
    		static boolean boolDisplayToasts;
+   		static boolean boolDisplayProgress;
    		static URL urlFeed;
    		clsSyncResult objResult;
    		ProgressDialog objProgressDialog;
@@ -1050,10 +1051,11 @@ public class clsMessaging {
 
    		
    		public NoteSyncAsyncTask (Activity objActivity, URL urlFeed, clsSyncNoteCommandMsg objSyncCommandMsg, 
-   				clsMessaging objMessaging, boolean boolDisplayToasts) {
+   				clsMessaging objMessaging, boolean boolDisplayToasts, boolean boolDisplayProgress) {
    			NoteSyncAsyncTask.objCommand = objSyncCommandMsg;
    			NoteSyncAsyncTask.urlFeed = urlFeed;
    			NoteSyncAsyncTask.boolDisplayToasts = boolDisplayToasts;
+   			NoteSyncAsyncTask.boolDisplayProgress = boolDisplayProgress;
    			objResult  = objMessaging.new clsSyncResult();
    			objProgressDialog = new ProgressDialog(objActivity);
    		}
@@ -1064,8 +1066,11 @@ public class clsMessaging {
    	    {
    	        super.onPreExecute();
    	        mException = null;
-   	        objProgressDialog.setMessage("Processing..., please wait.");
-	        objProgressDialog.show();
+   	        if (boolDisplayProgress) {
+   	   	        objProgressDialog.setMessage("Processing..., please wait.");
+   		        objProgressDialog.show();
+   	        }
+
    	    }
 
    		@Override

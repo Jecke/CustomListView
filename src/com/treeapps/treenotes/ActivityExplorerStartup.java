@@ -252,6 +252,10 @@ public class ActivityExplorerStartup extends ListActivity {
 		objListItemAdapter = new clsExplorerListItemArrayAdapter(this, resID, listItems, objExplorerTreeview,
 				intTabWidthInPx);
 		setListAdapter(objListItemAdapter);
+		
+		// NewItemsIndicator View
+        clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)findViewById(R.id.newitems_indicator_view);
+		objClsNewItemsIndicatorView.UpdateListItems(listItems);
 
 		// Actionbar
 		ActionBar actionBar = getActionBar();
@@ -1224,10 +1228,12 @@ public class ActivityExplorerStartup extends ListActivity {
 
 	public void RefreshListView() {
 		SaveFile();
-		List<clsListItem> objListItems = objExplorerTreeview.getListItems();
+		ArrayList<clsListItem> objListItems = objExplorerTreeview.getListItems();
 		objListItemAdapter.clear();
 		objListItemAdapter.addAll(objListItems);
 		objListItemAdapter.notifyDataSetChanged();
+		clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)findViewById(R.id.newitems_indicator_view);
+		objClsNewItemsIndicatorView.UpdateListItems(objListItems);
 		invalidateOptionsMenu();
 	}
 
@@ -1814,7 +1820,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		public ActivityExplorerStartupSyncAsyncTask(Activity objActivity, URL urlFeed,
 				clsSyncNoteCommandMsg objSyncCommandMsg, clsMessaging objMessaging, boolean boolDisplayToasts,
 				clsGroupMembers objGroupMembers) {
-			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts);
+			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts, true );
 			// TODO Auto-generated constructor stub
 			ActivityExplorerStartupSyncAsyncTask.boolDisplayResults = boolDisplayToasts;
 			ActivityExplorerStartupSyncAsyncTask.objGroupMembers = objGroupMembers;
