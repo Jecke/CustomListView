@@ -52,7 +52,6 @@ import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsMembersRepository;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsUser;
 import com.treeapps.treenotes.sharing.clsMessaging.NoteSyncAsyncTask;
-import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileAsyncTask;
 import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
@@ -63,7 +62,6 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
-import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileAsyncTask;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileResponseMsg;
 import com.treeapps.treenotes.sharing.subscriptions.ActivityPublications;
@@ -157,8 +155,6 @@ public class ActivityExplorerStartup extends ListActivity {
 	private boolean boolDoNotSaveFile = false;
 	private static Activity objContext;
 
-	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
-	clsDownloadImageFileAsyncTask objMyDownloadImageFileAsyncTask;
 	static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
 	clsGetNoteSharedUsersAsyncTask objGetNoteSharedUsersAsyncTask;
 	clsSetNoteSharedUsersAsyncTask objSetNoteSharedUsersAsyncTask;

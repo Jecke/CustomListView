@@ -14,6 +14,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.nio.channels.FileChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,7 +70,7 @@ public class clsUtils {
 		LS_RUBBERBAND
 	}
 
-	static String strDateTimeFormat = "dd/MM/yyyy hh:mm:ss Z";
+	static String strDateTimeFormat = "dd MM yyyy hh:mm:ss Z";
 
 	public static void MessageBox(Context context, String strMessage, boolean boolDisplayAsToast) {
 
@@ -403,6 +405,51 @@ public class clsUtils {
 		crc.update(strValue.getBytes());
 		return (int) (crc.getValue());
 	}
+	
+	public static String GetMd5Code(String strFullFilename) {
+		
+		MessageDigest md;
+		BufferedInputStream in = null;
+		try {
+			try {
+
+				md = MessageDigest.getInstance("MD5");
+
+				in = new BufferedInputStream(new FileInputStream(strFullFilename));
+
+				int theByte = 0;
+				while ((theByte = in.read()) != -1) {
+					md.update((byte) theByte);
+				}
+				byte[] theDigest = md.digest();
+				return ByteArray2String(theDigest);
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				if (in != null) {
+					in.close();
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
+	public static String ByteArray2String(byte [] arrByte) {
+		//converting byte array to Hexadecimal String 
+		StringBuilder sb = new StringBuilder(2*arrByte.length);
+		for(byte b : arrByte) { 
+			sb.append(String.format("%02x", b&0xff)); 
+		} 
+		return sb.toString();
+	}
+	
 
 	public static long getCurrentTimeInMilliSeconds() {
 		long timestamp = System.currentTimeMillis();
@@ -519,6 +566,13 @@ public class clsUtils {
 		}
 		return null;
 	}
+	
+	public static String DateToRfc822(Date dtDate) {
+		String pubDate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z",Locale.US).format(dtDate);
+		return pubDate;
+	}
+	
+	
 
 	public static boolean IsUserNameValid(String mUsername) {
 		return true;
@@ -650,7 +704,7 @@ public class clsUtils {
 		}
 		if (!boolAlreadyExists) {
 			// Create new one if not existing yet
-			clsImageLoadData objImageLoadData = objMessaging.new clsImageLoadData();
+			clsImageLoadData objImageLoadData = new clsImageLoadData();
 			objImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
 			objImageLoadDatas.add(objImageLoadData);
 			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir,
@@ -680,7 +734,7 @@ public class clsUtils {
 			}
 			if (!boolEntryExists) {
 				// Does not exist, so create a new entry
-				clsImageLoadData objClientImageLoadData = objMessaging.new clsImageLoadData();
+				clsImageLoadData objClientImageLoadData = new clsImageLoadData();
 				objClientImageLoadData.strNoteUuid = strServerNoteUuid;
 				objClientImageLoadData.objImageToBeUploadedDatas = objServerImageLoadData.objImageToBeUploadedDatas;
 				objClientImageLoadDatas.add(objClientImageLoadData);
@@ -754,6 +808,7 @@ public class clsUtils {
 		// }
 		// return base64EncodedPublicKeyScrambled.replaceFirst(strBefore,
 		// strAfter);
+		
 		// Do nothing for now
 		return base64EncodedPublicKeyScrambled;
 	}
@@ -941,5 +996,11 @@ public class clsUtils {
 		editor.putString(ActivityExplorerStartup.PROPERTY_REG_ID, regId);
 		editor.putInt(ActivityExplorerStartup.PROPERTY_APP_VERSION, appVersion);
 		editor.commit();
+	}
+
+	public static String GetFileLastModifiedDate(String strFile) {
+		File file = new File(strFile);
+		Date lastModDate = new Date(file.lastModified());
+		return DateToRfc822(lastModDate);
 	}
 }

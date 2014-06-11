@@ -22,6 +22,7 @@ import com.treeapps.treenotes.clsTreeview.clsSyncRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumCutCopyPasteState;
 import com.treeapps.treenotes.export.clsExportData;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.OnImageUploadFinishedListener;
 import com.treeapps.treenotes.export.clsExportToMail;
 import com.treeapps.treenotes.export.clsMainExport;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
@@ -1404,7 +1405,17 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        }
 	   	        // Start background image syncing
 				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objContext, ((ActivityNoteStartup)objContext).objMessaging, 
-						true, ActivityNoteStartup.objImageLoadDatas, null, null);
+						true, ActivityNoteStartup.objImageLoadDatas, new OnImageUploadFinishedListener() {
+							
+							@Override
+							public void imageUploadFinished(boolean success, String errorMessage) {
+								if (!success) {
+									clsUtils.MessageBox(objContext, errorMessage, true);
+								}						
+								((ActivityNoteStartup)objContext).RefreshListView();
+								
+							}
+						}, null);
 				objImageUpDownloadAsyncTask.execute();
 
 	   	    }

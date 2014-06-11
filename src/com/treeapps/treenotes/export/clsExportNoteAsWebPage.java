@@ -260,7 +260,7 @@ public class clsExportNoteAsWebPage {
 	public void UploadRequiredImages(OnImageUploadFinishedListener cbFinished, OnImageUploadProgressListener cbProgress)
 	{
 		objImageLoadDatas = new ArrayList<clsImageLoadData>();
-		objImageLoadData = objMessaging.new clsImageLoadData();
+		objImageLoadData = new clsImageLoadData();
 		objImageLoadData.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
 		objImageLoadDatas.add(objImageLoadData);
 		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview) {		
