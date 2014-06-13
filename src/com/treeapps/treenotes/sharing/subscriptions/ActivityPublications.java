@@ -240,7 +240,7 @@ public class ActivityPublications extends ListActivity {
 					clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
 					// Add to sync repository
 					if (objNoteRepository != null) {
-						objPublishRepositories.add(objNoteRepository.getCopy());
+						objPublishRepositories.add(objNoteRepository.getCopy(this));
 					}
 				}
 			}

@@ -9,6 +9,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import android.app.Activity;
+import android.content.Context;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -16,6 +18,7 @@ import com.treeapps.treenotes.clsListItem.enumNewItemType;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
+import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedConfigData;
 
 public class clsTreeview {
 
@@ -30,15 +33,21 @@ public class clsTreeview {
 
 	private clsRepository _objRepository = new clsRepository();
 	public ArrayList<clsTreeNode> objClipboardTreeNodes = new ArrayList<clsTreeNode>();
+	
+	public clsGroupMembers objGroupMembers;
 	public enumCutCopyPasteState intCutCopyPasteState;
 	public UUID uuidLastAddedTreeNode;
+	public Activity objActivity;
 
-	public clsTreeview(clsGroupMembers objGroupMembers) {
+	public clsTreeview(Activity objActivity, clsGroupMembers objGroupMembers) {
+		this.objActivity = objActivity;
+		this.objGroupMembers = objGroupMembers;
 		intCutCopyPasteState = enumCutCopyPasteState.INACTIVE;
 	}
 
-	public void UpdateEnvironment(enumCutCopyPasteState intCutCopyPasteState,
+	public void UpdateEnvironment(Activity objActivity, enumCutCopyPasteState intCutCopyPasteState,
 			ArrayList<clsTreeNode> objClipboardTreeNodes) {
+		this.objActivity = objActivity;
 		this.intCutCopyPasteState = intCutCopyPasteState;
 		this.objClipboardTreeNodes = objClipboardTreeNodes;
 	}
@@ -152,31 +161,31 @@ public class clsTreeview {
 			this.strOwnerUserUuid = strOwnerUserUuid;
 		}
 
-		public ArrayList<clsSyncTreeNode> getRootNodesCopy() {
+		public ArrayList<clsSyncTreeNode> getRootNodesCopy(Activity objActivity) {
 			ArrayList<clsSyncTreeNode> objNewRootNodes = new ArrayList<clsSyncTreeNode>();
 			for (clsTreeNode objTreeNode : this.objRootNodes) {
-				objNewRootNodes.add(getTreeNode2SyncTreeNodeCopy(objTreeNode));
+				objNewRootNodes.add(getTreeNode2SyncTreeNodeCopy(objActivity, objTreeNode));
 			}
 			return objNewRootNodes;
 		}
 
-		public clsSyncRepository getCopy() {
-			clsSyncRepository objclsSyncRepository = new clsSyncRepository();
-			objclsSyncRepository.strRepositoryUuid = this.uuidRepository.toString();
-			objclsSyncRepository.strRepositoryName = this.strName;
-			objclsSyncRepository.objRootNodes = this.getRootNodesCopy();
-			objclsSyncRepository.boolIsCheckList = this.boolIsCheckList;
-			objclsSyncRepository.boolIsCheckedItemsMadeHidden = this.boolIsCheckedItemsMadeHidden;
-			objclsSyncRepository.boolHiddenSelectionIsActive = this.boolHiddenSelectionIsActive;
-			objclsSyncRepository.boolIsHiddenActive = this.boolIsHiddenActive;
-			objclsSyncRepository.strOwnerUserUuid = this.strOwnerUserUuid;
-			objclsSyncRepository.boolIsDeleted = this.boolIsDeleted;
-			objclsSyncRepository.boolIsShared = this.boolIsShared;
-			objclsSyncRepository.boolIsSubscribed = this.boolIsSubscribed;
-			return objclsSyncRepository;
+		public clsSyncRepository getCopy(Activity objActivity) {
+			clsSyncRepository objSyncRepository = new clsSyncRepository();
+			objSyncRepository.strRepositoryUuid = this.uuidRepository.toString();
+			objSyncRepository.strRepositoryName = this.strName;
+			objSyncRepository.objRootNodes = this.getRootNodesCopy(objActivity);
+			objSyncRepository.boolIsCheckList = this.boolIsCheckList;
+			objSyncRepository.boolIsCheckedItemsMadeHidden = this.boolIsCheckedItemsMadeHidden;
+			objSyncRepository.boolHiddenSelectionIsActive = this.boolHiddenSelectionIsActive;
+			objSyncRepository.boolIsHiddenActive = this.boolIsHiddenActive;
+			objSyncRepository.strOwnerUserUuid = this.strOwnerUserUuid;
+			objSyncRepository.boolIsDeleted = this.boolIsDeleted;
+			objSyncRepository.boolIsShared = this.boolIsShared;
+			objSyncRepository.boolIsSubscribed = this.boolIsSubscribed;
+			return objSyncRepository;
 		}
 
-		public clsSyncTreeNode getTreeNode2SyncTreeNodeCopy(clsTreeNode objTreeNode) {
+		public clsSyncTreeNode getTreeNode2SyncTreeNodeCopy(Activity objActivity, clsTreeNode objTreeNode) {
 			clsSyncTreeNode objNewTreeNode = new clsSyncTreeNode();
 			objNewTreeNode.guidTreeNode = objTreeNode.guidTreeNode;
 			objNewTreeNode.strName = objTreeNode.strName;
@@ -190,14 +199,50 @@ public class clsTreeview {
 			objNewTreeNode.strOwnerUserUuid = objTreeNode.strOwnerUserUuid;
 			objNewTreeNode.strLastChangedByUserUuid = objTreeNode.strLastChangedByUserUuid;
 			objNewTreeNode.strLastChangedDateTimeStamp = objTreeNode.strLastChangedDateTimeStamp;
-			objNewTreeNode.strLastResourceChangedDateTimeStamp = objTreeNode.strLastResourceChangedDateTimeStamp;
 			objNewTreeNode.boolIsDeleted = objTreeNode.boolIsDeleted;
 			objNewTreeNode.boolIsNew = objTreeNode.boolIsNew;
 			objNewTreeNode.strAnnotationGson = clsUtils.SerializeToString(objTreeNode.annotation);
 			for (clsTreeNode objChildTreeNode : objTreeNode.objChildren) {
-				objNewTreeNode.objChildren.add(this.getTreeNode2SyncTreeNodeCopy(objChildTreeNode));
+				objNewTreeNode.objChildren.add(this.getTreeNode2SyncTreeNodeCopy(objActivity, objChildTreeNode));
 			}
+			objNewTreeNode.objResourceGroupData = GetLatestResourceGroupData(objActivity, objTreeNode.guidTreeNode);
+			
 			return objNewTreeNode;
+		}
+
+		private clsResourceGroupData GetLatestResourceGroupData(Activity objActivity, UUID guidTreeNode) {
+			clsResourceGroupData objResourceGroupData = new clsResourceGroupData();
+			// Thumbnail image
+			String strImageVersionFullFilename = 
+					clsUtils.GetThumbnailImageFileName(objActivity, guidTreeNode.toString());			
+			File fileImageVersion = new File(strImageVersionFullFilename);
+			String fileName = fileImageVersion.getName();
+			
+			if (fileImageVersion.exists()) {
+				objResourceGroupData.strThumbnailChecksum = clsUtils.GetMd5Code(strImageVersionFullFilename);
+				objResourceGroupData.strThumbnailLastChanged = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			}
+			
+			// Annotated image
+			strImageVersionFullFilename = 
+					clsUtils.GetAnnotatedImageFileName(objActivity, guidTreeNode.toString());			
+			fileImageVersion = new File(strImageVersionFullFilename);
+			fileName = fileImageVersion.getName();
+
+			if (fileImageVersion.exists()) {
+				objResourceGroupData.strAnnotatedLastChanged = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			}
+
+			// Full image
+			strImageVersionFullFilename = 
+					clsUtils.GetFullImageFileName(objActivity, guidTreeNode.toString());		
+			fileImageVersion = new File(strImageVersionFullFilename);
+			fileName = fileImageVersion.getName();
+			
+			if (fileImageVersion.exists()) {
+				objResourceGroupData.strFullLastChanged = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			}
+			return objResourceGroupData;
 		}
 
 		public boolean isBoolIsNoteSyncable() {
@@ -304,6 +349,7 @@ public class clsTreeview {
 			objNewTreeNode.enumItemType = objItemType[objSyncTreeNode.intItemType];
 			objNewTreeNode.resourcePath = objSyncTreeNode.resourcePath;
 			objNewTreeNode.resourceId = objSyncTreeNode.resourceId;
+			objNewTreeNode.objResourceGroupData =objSyncTreeNode.objResourceGroupData;
 			objNewTreeNode.strWebPageURL = objSyncTreeNode.strWebPageURL;
 			objNewTreeNode.boolIsChecked = objSyncTreeNode.boolIsChecked;
 			objNewTreeNode.boolIsHidden = objSyncTreeNode.boolIsHidden;
@@ -311,7 +357,6 @@ public class clsTreeview {
 			objNewTreeNode.strOwnerUserUuid = objSyncTreeNode.strOwnerUserUuid;
 			objNewTreeNode.strLastChangedByUserUuid = objSyncTreeNode.strLastChangedByUserUuid;
 			objNewTreeNode.strLastChangedDateTimeStamp = objSyncTreeNode.strLastChangedDateTimeStamp;
-			objNewTreeNode.strLastResourceChangedDateTimeStamp = objSyncTreeNode.strLastResourceChangedDateTimeStamp;
 			objNewTreeNode.boolIsDeleted = objSyncTreeNode.boolIsDeleted;
 			objNewTreeNode.boolIsNew = objSyncTreeNode.boolIsNew;
 			objNewTreeNode.annotation = clsUtils.DeSerializeFromString(objSyncTreeNode.strAnnotationGson,
@@ -343,8 +388,8 @@ public class clsTreeview {
 		private String strName = "";
 		public enumItemType enumItemType;
 		public String resourcePath = "";
-		public String strLastResourceChangedDateTimeStamp = "";
 		public int resourceId;
+		public clsResourceGroupData objResourceGroupData; // Only used when returned from sever, filled with server data config data
 		public String strWebPageURL; // Used to save the URL in case resourceId indicates a webpage resource
 		public boolean boolIsSelected;
 		public ArrayList<clsTreeNode> objChildren = new ArrayList<clsTreeNode>();
@@ -401,7 +446,6 @@ public class clsTreeview {
 			this.strOwnerUserUuid = "";
 			this.strLastChangedByUserUuid = "";
 			this.strLastChangedDateTimeStamp = "";
-			this.strLastResourceChangedDateTimeStamp = "";
 		}
 
 		public clsTreeNode(String strName, enumItemType enumItemType, boolean boolIsSelected, String resourcePath,
@@ -420,7 +464,6 @@ public class clsTreeview {
 			this.strOwnerUserUuid = strOwnerUserUuid;
 			this.strLastChangedByUserUuid = strLastChangedByUserUuid;
 			this.strLastChangedDateTimeStamp = clsUtils.GetStrCurrentDateTime();
-			this.strLastResourceChangedDateTimeStamp = clsUtils.GetStrCurrentDateTime();;
 
 			if (resourcePath != "") {
 				// When created and not empty implies there could be a thumbnail
@@ -656,6 +699,15 @@ public class clsTreeview {
 			return boolAllChildrenDeleted;
 		}
 	}
+	
+	public class clsResourceGroupData {
+		public String strThumbnailChecksum;
+		public String strThumbnailLastChanged;
+		public String strAnnotatedLastChanged;
+		public String strFullLastChanged;
+	}
+	
+
 
 	public class clsSyncTreeNode implements Serializable {
 		public static final long serialVersionUID = 3336546898052586637L;
@@ -664,7 +716,7 @@ public class clsTreeview {
 		public ArrayList<clsSyncTreeNode> objChildren = new ArrayList<clsSyncTreeNode>();
 		public int intItemType;
 		public String resourcePath = "";
-		public String strLastResourceChangedDateTimeStamp = "";
+		public clsResourceGroupData objResourceGroupData;
 		public int resourceId;
 		public String strWebPageURL;
 		public boolean boolIsChecked;
@@ -705,7 +757,6 @@ public class clsTreeview {
 		objNewTreeNode.strOwnerUserUuid = objTreeNode.strOwnerUserUuid;
 		objNewTreeNode.strLastChangedByUserUuid = objTreeNode.strLastChangedByUserUuid;
 		objNewTreeNode.strLastChangedDateTimeStamp = objTreeNode.strLastChangedDateTimeStamp;
-		objNewTreeNode.strLastResourceChangedDateTimeStamp = objTreeNode.strLastResourceChangedDateTimeStamp;
 		objNewTreeNode.boolIsDeleted = objTreeNode.boolIsDeleted;
 		objNewTreeNode.boolIsNew = objTreeNode.boolIsNew;
 		objNewTreeNode.boolUseAnnotatedImage = objTreeNode.boolUseAnnotatedImage;

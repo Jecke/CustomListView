@@ -28,6 +28,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.treeapps.treenotes.ActivityExplorerStartup.clsIabLocalData;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
+import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
@@ -406,6 +407,19 @@ public class clsUtils {
 		return (int) (crc.getValue());
 	}
 	
+	public static long GetCrc32Code(String filepath) throws IOException {
+
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(filepath));
+		CRC32 crc = new CRC32();
+		int cnt;
+		while ((cnt = inputStream.read()) != -1) {
+			crc.update(cnt);
+		}
+		inputStream.close();
+		return crc.getValue();
+	}
+
+	
 	public static String GetMd5Code(String strFullFilename) {
 		
 		MessageDigest md;
@@ -572,6 +586,17 @@ public class clsUtils {
 		return pubDate;
 	}
 	
+	public static Date Rfc822ToDate(String strDate) {
+		SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z",Locale.US);
+		try {
+			return df.parse(strDate);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 	
 
 	public static boolean IsUserNameValid(String mUsername) {
@@ -658,8 +683,8 @@ public class clsUtils {
 	}
 	
 
-	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsNoteTreeview objNoteTreeview,
-			File fileTreeNodesDir, ArrayList<clsImageLoadData> objImageLoadDatas) {
+	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsGroupMembers objGroupMembers, clsNoteTreeview objNoteTreeview,
+			File fileTreeNodesDir, ArrayList<clsImageLoadData> objServerReturnedImageLoadDatas, ArrayList<clsImageLoadData> objImageLoadDatas) {
 		// Look for all images needed by note, if they already exist on client,
 		// collect all the missing ones
 		// Class that iterates
@@ -667,23 +692,65 @@ public class clsUtils {
 
 			clsImageLoadData objImageLoadData;
 			File fileTreeNodesDir;
+			clsTreeview objTreeview;
+			clsGroupMembers objGroupMembers;
 
-			public clsMyTreeviewIterator(clsTreeview objTreeview, File fileTreeNodesDir,
+			public clsMyTreeviewIterator(clsGroupMembers objGroupMembers, clsTreeview objTreeview, File fileTreeNodesDir,
 					clsImageLoadData objImageLoadData) {
 				super(objTreeview);
 				this.objImageLoadData = objImageLoadData;
 				this.fileTreeNodesDir = fileTreeNodesDir;
+				this.objTreeview = objTreeview;
+				this.objGroupMembers = objGroupMembers;
 			}
 
 			@Override
 			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
-				// TODO Auto-generated method stub
+				// Only process nodes with images
 				if (!objTreeNode.resourcePath.isEmpty()) {
-					File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
-					if (!fileImage.exists()) {
-						// Add only unique items
-						if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
-							objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+					// Only process nodes from foreign users (item owner not the registered phone user) for downloads
+					if (!objTreeNode.getStrOwnerUserUuid().equals(objGroupMembers.GetRegisteredUser().strUserUuid)) {
+						// Foreign user nodes
+						// If annotated image is missing locally, a download is definitely needed
+						File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + "_annotated.jpg");
+						if (!fileImage.exists() && objTreeNode.annotation != null) {
+							// Annotated, but local file is missing
+							// Add only unique items
+							if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
+								objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+							}
+							return;
+						}
+						
+						// Check only thumbnail for image config changes, other full file follow the thumbnail
+						fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
+						if (fileImage.exists()) {
+							// File already exists client side, check if different image by comparing checksums
+							String strLocalThumbnailChecksum = clsUtils.GetMd5Code(fileImage.getAbsolutePath());
+							if (objTreeNode.objResourceGroupData.strThumbnailChecksum.equals(strLocalThumbnailChecksum) ) {
+								// The same, so no need to update
+							} else {
+								// Different, if server version older than client, no need to upload, 
+								 Date dtLocalFileModDate = new Date(fileImage.lastModified());
+								 Date dtServerFileModDate = clsUtils.Rfc822ToDate(objTreeNode.objResourceGroupData.strThumbnailLastChanged);
+								 if (dtLocalFileModDate.after(dtServerFileModDate)) {
+									// Local file is newer (requires upload), which for a foreign owned note item is not possible
+								 } else if (dtLocalFileModDate.before (dtServerFileModDate)) {
+									// Local file older, so download required
+									// Add only unique items
+									if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
+										objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+									}
+								 } else {
+										// Same age, so no upload or download required
+								 }							
+							}
+						} else {
+							// File does not exist client side, files definitely needs to be downloaded
+							// Add only unique items
+							if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
+								objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+							}
 						}
 					}
 				}
@@ -691,25 +758,37 @@ public class clsUtils {
 		}
 
 		// Do work here
-		// Collect the items that needs to be downloaded (local file checks)
+		// Collect the items that needs to be downloaded (by checking local files against server provided config data)
 		boolean boolAlreadyExists = false;
+		clsImageLoadData objThisNoteImageLoadData = null;
 		for (clsImageLoadData objImageLoadData : objImageLoadDatas) {
 			// Append if structure already exists
 			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
-				boolAlreadyExists = true;
-				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview,
-						fileTreeNodesDir, objImageLoadData);
+				objThisNoteImageLoadData = objImageLoadData;
+				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objNoteTreeview,
+						fileTreeNodesDir, objThisNoteImageLoadData);
 				objMyTreeviewIterator.Execute();
+				break;
 			}
 		}
-		if (!boolAlreadyExists) {
+		if (objThisNoteImageLoadData == null) {
 			// Create new one if not existing yet
-			clsImageLoadData objImageLoadData = new clsImageLoadData();
-			objImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
-			objImageLoadDatas.add(objImageLoadData);
-			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir,
-					objImageLoadData);
+			objThisNoteImageLoadData = new clsImageLoadData();
+			objThisNoteImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
+			objImageLoadDatas.add(objThisNoteImageLoadData);
+			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objNoteTreeview, fileTreeNodesDir,
+					objThisNoteImageLoadData);
 			objMyTreeviewIterator.Execute();
+		}
+		
+		// If server detected and passed on a download is needed, add this here
+		for (clsImageLoadData objServerReturnedImageLoadData: objServerReturnedImageLoadDatas) {
+			for (String strImagesToBeDownloaded: objServerReturnedImageLoadData.strImagesToBeDownloaded) {
+				// Add only unique items
+				if (!objThisNoteImageLoadData.strImagesToBeDownloaded.contains(strImagesToBeDownloaded)) {
+					objThisNoteImageLoadData.strImagesToBeDownloaded.add(strImagesToBeDownloaded);
+				}
+			}
 		}
 
 	}
@@ -721,7 +800,7 @@ public class clsUtils {
 
 		for (clsImageLoadData objServerImageLoadData : objServerImageLoadDatas) {
 			String strServerNoteUuid = objServerImageLoadData.strNoteUuid;
-			// If note image data already exists on client side ...
+			// If note image data already exists on client side (ensure only unique and latest entry in table) ...
 			boolean boolEntryExists = false;
 			for (clsImageLoadData objClientImageLoadData : objClientImageLoadDatas) {
 				if (objClientImageLoadData.strNoteUuid.equals(strServerNoteUuid)) {
@@ -1003,4 +1082,6 @@ public class clsUtils {
 		Date lastModDate = new Date(file.lastModified());
 		return DateToRfc822(lastModDate);
 	}
+	
+	
 }

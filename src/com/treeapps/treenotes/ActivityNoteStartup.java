@@ -106,8 +106,8 @@ public class ActivityNoteStartup extends ListActivity {
 	 private boolean boolIsShortcut;
 	 boolean boolIsUserRegistered = false;
 	 private boolean boolUserIsNoteOwner = false;
-	 static Context objContext;
-	 public static ArrayList<clsImageLoadData> objImageLoadDatas;
+	 static Activity objActivity;
+	 public static ArrayList<clsImageLoadData> objLocalImageLoadDatas;
 	 String strRegistrationId;  // Device ID for GCM purposes
  	 
 	 // Temporarily locals
@@ -124,7 +124,7 @@ public class ActivityNoteStartup extends ListActivity {
 	    	    
 	        super.onCreate(savedInstanceState);
 	        
-	        objContext = this;
+	        objActivity = this;
 			 
 			objGroupMembers.LoadFile();
 			objMessaging.LoadFile(this);
@@ -137,12 +137,12 @@ public class ActivityNoteStartup extends ListActivity {
 			
 			String strImageLoadDatas = objBundle.getString(ActivityExplorerStartup.IMAGE_LOAD_DATAS);
 			java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
-			objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
+			objLocalImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
 			
-			strRegistrationId = clsUtils.getRegistrationId(objContext);
+			strRegistrationId = clsUtils.getRegistrationId(objActivity);
 
 			File objFile = clsUtils.BuildNoteFilename(ActivityExplorerStartup.fileTreeNodesDir, strUuid );
-			objNoteTreeview = new clsNoteTreeview(objGroupMembers);
+			objNoteTreeview = new clsNoteTreeview(objActivity, objGroupMembers);
 			if (objFile.exists()) {
 				objNoteTreeview.DeserializeFromFile(objFile);
 				objNoteTreeview.SetAllIsDirty(false);		
@@ -181,7 +181,7 @@ public class ActivityNoteStartup extends ListActivity {
 	        
 	        // AdMob
 			// AdMob, only when advert removal has not been purchased
-			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
+			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objActivity);
 			objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
 			if (!(objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB)) {
 				// Look up the AdView as a resource and load a request.
@@ -189,7 +189,9 @@ public class ActivityNoteStartup extends ListActivity {
 				AdRequest adRequest = new AdRequest.Builder()
 		        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
 		        .addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
-		        .build();
+				.addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
+				.addTestDevice("A947D095EE036142160FD3D2D4D5034C").build();
+
 				adView.loadAd(adRequest);
 			} else {
 				RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.note_relative_layout);
@@ -465,7 +467,7 @@ public class ActivityNoteStartup extends ListActivity {
 		SharedPreferences sharedPref = this.getSharedPreferences("ActivityNoteStartup",Context.MODE_PRIVATE);
     	SharedPreferences.Editor editor = sharedPref.edit();
     	editor.putBoolean("boolIsShortcut",boolIsShortcut);
-    	String strImageLoadDatas = clsUtils.SerializeToString(objImageLoadDatas);
+    	String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
     	editor.putString("objImageLoadDatas", strImageLoadDatas);
     	editor.commit();
     	sharedPref = null;
@@ -473,8 +475,8 @@ public class ActivityNoteStartup extends ListActivity {
  
 	private void LoadFile() {
 		clsUtils.CustomLog("LoadFile");
-		objNoteTreeview = new clsNoteTreeview(objGroupMembers);
-		objNoteTreeview.UpdateEnvironment(clsExplorerTreeview.enumCutCopyPasteState.INACTIVE, new ArrayList<clsTreeNode>() ); // Must be persisted at a later stage
+		objNoteTreeview = new clsNoteTreeview(objActivity, objGroupMembers);
+		objNoteTreeview.UpdateEnvironment(this, clsExplorerTreeview.enumCutCopyPasteState.INACTIVE, new ArrayList<clsTreeNode>() ); // Must be persisted at a later stage
 		objNoteTreeview.DeserializeFromFile(clsUtils.BuildTempNoteFilename(ActivityExplorerStartup.fileTreeNodesDir));
 		objGroupMembers.LoadFile();
 		objGroupMembers.UpdateEnvironment(this);
@@ -482,14 +484,14 @@ public class ActivityNoteStartup extends ListActivity {
     	objListItemAdapter.UpdateEnvironment(objNoteTreeview);
     	objListItemAdapter.clear(); objListItemAdapter.addAll(objListItems);
    	    objMessaging.LoadFile(this);
-   	    objContext = this;
+   	    objActivity = this;
    	    SharedPreferences sharedPref = this.getSharedPreferences("ActivityNoteStartup",Context.MODE_PRIVATE);
    	    boolIsShortcut = sharedPref.getBoolean("boolIsShortcut",false);
    	    String strImageLoadDatas = sharedPref.getString("objImageLoadDatas", "");
    	    java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
-   	    objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
+   	    objLocalImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
    	    GetUserRegistrationStatus(); // Update boolIsUserRegistered and boolUserIsNoteOwner
-   	    strRegistrationId = clsUtils.getRegistrationId(objContext);
+   	    strRegistrationId = clsUtils.getRegistrationId(objActivity);
 	}
 	
 	private String getParentDescription(clsTreeview.clsTreeNode objSelected)
@@ -845,7 +847,7 @@ public class ActivityNoteStartup extends ListActivity {
 			}
         	 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
         	 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
-        	 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy();
+        	 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy(this);
         	 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
         	 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
         	 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
@@ -929,7 +931,7 @@ public class ActivityNoteStartup extends ListActivity {
 		}
 		 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
 		 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
-		 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy();
+		 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy(this);
 		 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
 		 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
 		 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
@@ -947,13 +949,13 @@ public class ActivityNoteStartup extends ListActivity {
 		 ArrayList<clsTreeNode> objSelectedTreeNodes = objNoteTreeview.getSelectedTreenodes();
 			// Only applicable if a row is selected
        	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-       		 clsUtils.MessageBox(objContext, "Please add some items first.", false);
+       		 clsUtils.MessageBox(objActivity, "Please add some items first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-       		clsUtils.MessageBox(objContext, "Please select an item first.", false);
+       		clsUtils.MessageBox(objActivity, "Please select an item first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-       		clsUtils.MessageBox(objContext, "Please select only one item at a time", false);
+       		clsUtils.MessageBox(objActivity, "Please select only one item at a time", false);
        		 return;     		 
        	 }
        	 clsTreeNode objEditTreeNode = objSelectedTreeNodes.get(0);
@@ -973,13 +975,13 @@ public class ActivityNoteStartup extends ListActivity {
 		 ArrayList<clsTreeNode> objSelectedTreeNodes = objNoteTreeview.getSelectedTreenodes();
 			// Only applicable if a row is selected
        	 if (objNoteTreeview.getRepository().objRootNodes.size() == 0) {
-       		 clsUtils.MessageBox(objContext, "Please add some items first.", false);
+       		 clsUtils.MessageBox(objActivity, "Please add some items first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() == 0) {
-       		clsUtils.MessageBox(objContext, "Please select an item first.", false);
+       		clsUtils.MessageBox(objActivity, "Please select an item first.", false);
        		 return;
        	 } else if (objNoteTreeview.getRepository().objRootNodes.size() != 0 && objSelectedTreeNodes.size() > 1) {
-       		clsUtils.MessageBox(objContext, "Please select only one item at a time", false);
+       		clsUtils.MessageBox(objActivity, "Please select only one item at a time", false);
        		 return;     		 
        	 }
 
@@ -1312,7 +1314,7 @@ public class ActivityNoteStartup extends ListActivity {
 				objNoteTreeview.getRepository().SerializeToFile(clsUtils.BuildNoteFilename(ActivityExplorerStartup.fileTreeNodesDir, objNoteTreeview.getRepository().uuidRepository.toString()));
 				// Return to caller
 				Intent objIntent = getIntent();
-				String strImageLoadDatas = clsUtils.SerializeToString(objImageLoadDatas);
+				String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
 				objIntent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS, strImageLoadDatas);
 				if (boolIsShortcut) {
 					objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, true);
@@ -1379,7 +1381,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   			   	   	    	strMessage += "This note has been replaced with an updated version";
 	   			   	   	    }
 	   			   	   	    objNoteTreeview.UpdateItemTypes();
-	   	   	   	        	((ActivityNoteStartup) objContext).RefreshListView();
+	   	   	   	        	((ActivityNoteStartup) objActivity).RefreshListView();
 	   	   	   	        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
 	   	   	   	        	break;
@@ -1389,30 +1391,30 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	        	break;
 	   	   	   	    	}
 	   	        	}
-	   	        	((ActivityNoteStartup)objContext).SaveFile();
-	   	        	clsUtils.MessageBox(objContext, strMessage, true);
-	   	        	clsUtils.ClearImageLoadDatas(objImageLoadDatas);
-	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objContext).objMessaging,
-	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objImageLoadDatas);
-	   	        	clsUtils.UpdateImageLoadDatasForUploads(((ActivityNoteStartup)objContext).objMessaging, 
-	   	        			objResult.objImageLoadDatas, objImageLoadDatas);
+	   	        	((ActivityNoteStartup)objActivity).SaveFile();
+	   	        	clsUtils.MessageBox(objActivity, strMessage, true);
+	   	        	clsUtils.ClearImageLoadDatas(objLocalImageLoadDatas);
+	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objActivity).objMessaging, ((ActivityNoteStartup)objActivity).objGroupMembers,
+	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas, objLocalImageLoadDatas);
+	   	        	clsUtils.UpdateImageLoadDatasForUploads(((ActivityNoteStartup)objActivity).objMessaging, 
+	   	        			objResult.objImageLoadDatas, objLocalImageLoadDatas);
 	   	        		
 	   	        } else {
 	   	        	if (boolDisplayToasts) {
-	   	        		clsUtils.MessageBox(objContext, objResult.strErrorMessage, true);
+	   	        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, true);
 	   	        	}
 
 	   	        }
 	   	        // Start background image syncing
-				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objContext, ((ActivityNoteStartup)objContext).objMessaging, 
-						true, ActivityNoteStartup.objImageLoadDatas, new OnImageUploadFinishedListener() {
+				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objActivity, ((ActivityNoteStartup)objActivity).objMessaging, 
+						true, ActivityNoteStartup.objLocalImageLoadDatas, new OnImageUploadFinishedListener() {
 							
 							@Override
 							public void imageUploadFinished(boolean success, String errorMessage) {
 								if (!success) {
-									clsUtils.MessageBox(objContext, errorMessage, true);
+									clsUtils.MessageBox(objActivity, errorMessage, true);
 								}						
-								((ActivityNoteStartup)objContext).RefreshListView();
+								((ActivityNoteStartup)objActivity).RefreshListView();
 								
 							}
 						}, null);

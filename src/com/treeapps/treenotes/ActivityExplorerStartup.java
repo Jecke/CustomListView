@@ -454,24 +454,28 @@ public class ActivityExplorerStartup extends ListActivity {
 			adView.destroy();
 		}
 		super.onDestroy();
+		clsUtils.CustomLog("ActivityExplorerStartup onDestroy SaveFile");
 	}
 
 	@Override
 	protected void onStart() {
 		super.onStart();
 		LoadFile();
+		clsUtils.CustomLog("ActivityExplorerStartup onStart LoadFile");
 	}
 
 	@Override
 	protected void onStop() {
 		SaveFile();
 		super.onStop();
+		clsUtils.CustomLog("ActivityExplorerStartup onStop SaveFile");
 	}
 
 	@Override
 	protected void onRestart() {
 		LoadFile();
 		super.onRestart();
+		clsUtils.CustomLog("ActivityExplorerStartup onRestart LoadFile");
 	}
 
 	@Override
@@ -486,6 +490,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		if (!clsUtils.RunsOnEmu(objContext)) {
 			checkPlayServices();
 		}
+		clsUtils.CustomLog("ActivityExplorerStartup onResume LoadFile");
 	}
 
 	@Override
@@ -496,20 +501,15 @@ public class ActivityExplorerStartup extends ListActivity {
 			adView.pause();
 		}
 		super.onPause();
+		clsUtils.CustomLog("ActivityExplorerStartup onPause SaveFile");
 	}
 
 	private void LoadFile() {
 		objExplorerTreeview = new clsExplorerTreeview(this, objGroupMembers);
 		objExplorerTreeview.DeserializeFromFile(clsUtils.BuildExplorerFilename(fileTreeNodesDir, getResources()
 				.getString(R.string.working_file_name)));
-		objExplorerTreeview.UpdateEnvironment(clsExplorerTreeview.enumCutCopyPasteState.INACTIVE,
-				new ArrayList<clsTreeNode>()); // Must
-												// be
-												// persisted
-												// at
-												// a
-												// later
-												// stage
+		objExplorerTreeview.UpdateEnvironment(this, clsExplorerTreeview.enumCutCopyPasteState.INACTIVE,
+				new ArrayList<clsTreeNode>()); 
 		objGroupMembers.LoadFile();
 		objGroupMembers.UpdateEnvironment(this);
 		ArrayList<clsListItem> objListItems = objExplorerTreeview.getListItems();
@@ -523,7 +523,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
 		clsUtils.SerializeToSharedPreferences("ActivityExplorerStartup", "strRegistrationId", this, strRegistrationId);
 		strRegistrationId = clsUtils.getRegistrationId(objContext);
-		clsUtils.CustomLog("ActivityExplorerStartup LoadFile");
+		clsUtils.CustomLog("LoadFile");
 	}
 
 	private void SaveFile() {
@@ -534,7 +534,7 @@ public class ActivityExplorerStartup extends ListActivity {
 		objMessaging.SaveFile(this);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 		clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
-		clsUtils.CustomLog("ActivityExplorerStartup SaveFile");
+		clsUtils.CustomLog("SaveFile");
 
 	}
 
@@ -1854,7 +1854,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						}
 						break;
 					case clsMessaging.SERVER_INSTRUCT_REPLACE_ORIGINAL:
-						clsNoteTreeview objNoteTreeview = new clsNoteTreeview(objGroupMembers);
+						clsNoteTreeview objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
 						File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
 						File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
@@ -1865,9 +1865,9 @@ public class ActivityExplorerStartup extends ListActivity {
 									+ "' has been replaced with an updated version.\n";
 						}
 						clsUtils.UpdateImageLoadDatasForDownloads(
-								((ActivityExplorerStartup) objContext).objMessaging,
+								((ActivityExplorerStartup) objContext).objMessaging, ((ActivityExplorerStartup) objContext).objGroupMembers,
 								objNoteTreeview,
-								fileTreeNodesDir,
+								fileTreeNodesDir, objResult.objImageLoadDatas,
 								((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
@@ -1885,7 +1885,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						clsTreeNode objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Shared note",
 								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid,
 								strOwnerUserUuid);
-						objNoteTreeview = new clsNoteTreeview(objGroupMembers);
+						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
 						objExplorerNoteTreeNode.setName(objNoteTreeview.getRepository().getName());
 						objExplorerNoteTreeNode.guidTreeNode = objNoteTreeview.getRepository().uuidRepository;
@@ -1899,9 +1899,9 @@ public class ActivityExplorerStartup extends ListActivity {
 									+ "' has been created locally.\n";
 						}
 						clsUtils.UpdateImageLoadDatasForDownloads(
-								((ActivityExplorerStartup) objContext).objMessaging,
+								((ActivityExplorerStartup) objContext).objMessaging, ((ActivityExplorerStartup) objContext).objGroupMembers,
 								objNoteTreeview,
-								fileTreeNodesDir,
+								fileTreeNodesDir, objResult.objImageLoadDatas,
 								((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
@@ -1918,7 +1918,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed note",
 								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid,
 								strOwnerUserUuid);
-						objNoteTreeview = new clsNoteTreeview(objGroupMembers);
+						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
 						objExplorerNoteTreeNode.setName(objNoteTreeview.getRepository().getName());
 						objExplorerNoteTreeNode.guidTreeNode = objNoteTreeview.getRepository().uuidRepository;
@@ -1932,9 +1932,9 @@ public class ActivityExplorerStartup extends ListActivity {
 									+ "' has been created locally.\n";
 						}
 						clsUtils.UpdateImageLoadDatasForDownloads(
-								((ActivityExplorerStartup) objContext).objMessaging,
+								((ActivityExplorerStartup) objContext).objMessaging, ((ActivityExplorerStartup) objContext).objGroupMembers,
 								objNoteTreeview,
-								fileTreeNodesDir,
+								fileTreeNodesDir, objResult.objImageLoadDatas,
 								((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
 						break;
 					case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:

@@ -41,7 +41,7 @@ import com.treeapps.treenotes.clsTreeview.clsSyncRepository;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsSyncMembersRepository;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
-import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedFileData;
+import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedConfigData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageUpDownloadResult.clsError;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
@@ -68,9 +68,8 @@ import android.widget.Toast;
 
 public class clsMessaging {
 	
-	private static final int NET_CONNECT_TIMEOUT_MILLIS = 15000;  // 15 seconds
-    private static final int NET_READ_TIMEOUT_MILLIS = 10000;  // 10 seconds
-    private static final int FILE_CONVERT_TIMEOUT_MILLIS = 20000;  // 20 seconds
+	private static final int NET_CONNECT_TIMEOUT_MILLIS = 5000;  // 15 seconds
+    private static final int NET_READ_TIMEOUT_MILLIS = 300000;  // 10 seconds
     
     public static String SERVER_URL_AZURE = "http://treenotes.azurewebsites.net";
     public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.14";
@@ -135,9 +134,8 @@ public class clsMessaging {
 			public String strResourcePath;
 		}
 		
-		public static class clsImageToBeUploadedFileData {
+		public static class clsImageToBeUploadedConfigData {
 			public String strImageFilenameWithExt;
-			public String strCheckSum;
 			public String strDateLastModified;
 		}
 		
@@ -555,11 +553,11 @@ public class clsMessaging {
    	}
    	
    	static class clsGetIfServerFilesExistCommand {
-   		public ArrayList<clsImageToBeUploadedFileData> objImageToBeUploadedFileDatas;
+   		public ArrayList<clsImageToBeUploadedConfigData> objImageToBeUploadedFileDatas;
    	}
    	
    	static class clsGetIfServerFilesExistResponse extends clsWebServiceResponse {
-   		public ArrayList<clsImageToBeUploadedFileData> objImageToBeUploadedFileDatas;
+   		public ArrayList<clsImageToBeUploadedConfigData> objImageToBeUploadedFileDatas;
    	}
    	
    	
@@ -630,8 +628,8 @@ public class clsMessaging {
 						callbackProgress.imageUploadProgress(++countUploads, objImageLoadData.objImageToBeUploadedDatas.size());
 					}
 					
-					// See if the required image to be uploaded actualy exists locally
-					ArrayList<clsImageToBeUploadedFileData> objImagesToBeUploadedFileDatas = new ArrayList<clsImageToBeUploadedFileData>();
+					// See if the required image to be uploaded actually exists locally
+					ArrayList<clsImageToBeUploadedConfigData> objImagesToBeUploadedFileDatas = new ArrayList<clsImageToBeUploadedConfigData>();
 					String strReturnMsg = EnsureUploadImageVersionsExists(objImageToBeUploadedData, objImagesToBeUploadedFileDatas);
 					if (!strReturnMsg.isEmpty()) {
 						// Nope, so error
@@ -640,35 +638,22 @@ public class clsMessaging {
 						objError.strDescription = strReturnMsg;
 						objImageUpDownloadResult.strUploadErrors.add(objError);
 					} else {
-						// Yes, so continue
-						// Update the objImagesToBeUploadedFileDatas from server in case its already on server.
-						clsGetIfServerFilesExistCommand objGetIfServerFilesExistCommand = new clsGetIfServerFilesExistCommand();
-						objGetIfServerFilesExistCommand.objImageToBeUploadedFileDatas = objImagesToBeUploadedFileDatas;
-						clsGetIfServerFilesExistResponse objGetIfServerFilesExistResponse = GetIfServerFilesExist(strGetIfServerFilesExistUrl, objGetIfServerFilesExistCommand);
-						if (objGetIfServerFilesExistResponse.intErrorCode != clsMessaging.ERROR_NONE) {
-							// Get the updated list of non-existing files
-							objImagesToBeUploadedFileDatas = objGetIfServerFilesExistResponse.objImageToBeUploadedFileDatas;							
-							// Do the actual image upload
-							for (clsImageToBeUploadedFileData objImageToBeUploadedLocalData: objImagesToBeUploadedFileDatas ) {
-								// Run through each file type and upload
-								clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
-								objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeUploadedLocalData.strImageFilenameWithExt;
-								objUploadCommand.strImageUuid = objImageToBeUploadedLocalData.strImageFilenameWithExt;
-								String strUploadReturn = UploadImageToServer(strUploadUrl, objUploadCommand);
-								if (!strUploadReturn.isEmpty()) {
-									clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
-									objError.strNoteUuid = objImageToBeUploadedLocalData.strImageFilenameWithExt;
-									objError.strDescription = strUploadReturn;
-									objImageUpDownloadResult.strUploadErrors.add(objError);
-								}	
-							}
-						} else {
-							// Error, so report
-							clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
-							objError.strNoteUuid = objImageToBeUploadedData.strUuid;
-							objError.strDescription = objGetIfServerFilesExistResponse.strErrorMessage;
-							objImageUpDownloadResult.strUploadErrors.add(objError);
-						}
+						// Yes, so continue							
+						// Do the actual image upload
+						for (clsImageToBeUploadedConfigData objImageToBeUploadedLocalData: objImagesToBeUploadedFileDatas ) {
+							// Run through each file type and upload
+							clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
+							objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeUploadedLocalData.strImageFilenameWithExt;
+							objUploadCommand.strImageUuid = objImageToBeUploadedLocalData.strImageFilenameWithExt;
+							objUploadCommand.strModificationDate = objImageToBeUploadedLocalData.strDateLastModified;
+							String strUploadReturn = UploadImageToServer(strUploadUrl, objUploadCommand);
+							if (!strUploadReturn.isEmpty()) {
+								clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
+								objError.strNoteUuid = objImageToBeUploadedLocalData.strImageFilenameWithExt;
+								objError.strDescription = strUploadReturn;
+								objImageUpDownloadResult.strUploadErrors.add(objError);
+							}						
+						} 
 					}				
 				}	
 				
@@ -694,7 +679,7 @@ public class clsMessaging {
 
 
 		private String EnsureUploadImageVersionsExists(
-				clsImageToBeUploadedData objImageToBeUploadedData, ArrayList<clsImageToBeUploadedFileData> objImagesToBeUploadedLocalData) {
+				clsImageToBeUploadedData objImageToBeUploadedData, ArrayList<clsImageToBeUploadedConfigData> objImagesToBeUploadedConfigDatas) {
 			
 			String fileName;
 			String strImageVersionFullFilename;
@@ -710,11 +695,10 @@ public class clsMessaging {
 			if (!fileImageVersion.exists()) {
 				return fileName + " does not exist on client";
 			}
-			clsImageToBeUploadedFileData objImageToBeUploadedLocalData = new clsImageToBeUploadedFileData();
-			objImageToBeUploadedLocalData.strImageFilenameWithExt = fileName;
-			objImageToBeUploadedLocalData.strCheckSum = clsUtils.GetMd5Code(strImageVersionFullFilename);
-			objImageToBeUploadedLocalData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
-			objImagesToBeUploadedLocalData.add(objImageToBeUploadedLocalData);
+			clsImageToBeUploadedConfigData objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+			objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
+			objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
 			
 			// Annotated image
 			strImageVersionFullFilename = 
@@ -724,11 +708,10 @@ public class clsMessaging {
 			fileName = fileImageVersion.getName();
 
 			if (fileImageVersion.exists()) {
-				objImageToBeUploadedLocalData = new clsImageToBeUploadedFileData();
-				objImageToBeUploadedLocalData.strImageFilenameWithExt = fileName;
-				objImageToBeUploadedLocalData.strCheckSum = clsUtils.GetMd5Code(strImageVersionFullFilename);
-				objImageToBeUploadedLocalData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
-				objImagesToBeUploadedLocalData.add(objImageToBeUploadedLocalData);
+				objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+				objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
+				objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+				objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
 			}
 
 			// Full image
@@ -741,11 +724,10 @@ public class clsMessaging {
 			if (!fileImageVersion.exists()) {
 				return fileName + " does not exist on client";
 			} else {
-				objImageToBeUploadedLocalData = new clsImageToBeUploadedFileData();
-				objImageToBeUploadedLocalData.strImageFilenameWithExt = fileName;
-				objImageToBeUploadedLocalData.strCheckSum = clsUtils.GetMd5Code(strImageVersionFullFilename);
-				objImageToBeUploadedLocalData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
-				objImagesToBeUploadedLocalData.add(objImageToBeUploadedLocalData);
+				objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+				objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
+				objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+				objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
 			}
 			return "";
 		}
