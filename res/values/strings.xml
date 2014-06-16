@@ -189,7 +189,7 @@
     <string name="url_send_gcm_reg_id">"/api/TreeManager/SendGcmRegistrationId"</string>
     <string name="url_get_note_sharers">"/api/TreeManager/GetNoteSharers"</string>
     <string name="url_set_note_sharers">"/api/TreeManager/SetNoteSharers"</string>
-    <string name="url_get_if_server_files_exist">"/api/TreeManager/GetIfServerFilesExist"</string>
+    <string name="url_instruct_uploads_complete">"/api/TreeManager/InstructUploadsComplete"</string>
     
     
     

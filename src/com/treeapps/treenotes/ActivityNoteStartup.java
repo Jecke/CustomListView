@@ -1392,7 +1392,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	    	}
 	   	        	}
 	   	        	((ActivityNoteStartup)objActivity).SaveFile();
-	   	        	clsUtils.MessageBox(objActivity, strMessage, true);
+	   	        	clsUtils.MessageBox(objActivity, strMessage, false);
 	   	        	clsUtils.ClearImageLoadDatas(objLocalImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objActivity).objMessaging, ((ActivityNoteStartup)objActivity).objGroupMembers,
 	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas, objLocalImageLoadDatas);
@@ -1401,7 +1401,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        		
 	   	        } else {
 	   	        	if (boolDisplayToasts) {
-	   	        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, true);
+	   	        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, false);
 	   	        	}
 
 	   	        }

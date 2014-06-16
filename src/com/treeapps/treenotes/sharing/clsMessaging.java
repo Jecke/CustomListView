@@ -545,6 +545,7 @@ public class clsMessaging {
    	class clsImageUpDownloadResult {
    		ArrayList<clsError> strUploadErrors = new ArrayList<clsError>();
    		ArrayList<clsError> strDownloadErrors = new ArrayList<clsError>();
+   		ArrayList<String> strGeneralErrors = new ArrayList<String>();
    		
    		class clsError {
    			public String strNoteUuid;
@@ -552,13 +553,11 @@ public class clsMessaging {
    		}
    	}
    	
-   	static class clsGetIfServerFilesExistCommand {
-   		public ArrayList<clsImageToBeUploadedConfigData> objImageToBeUploadedFileDatas;
+   	static class clsInstructUploadCompleteCommand {
+   		public String strRegistrationId;
    	}
    	
-   	static class clsGetIfServerFilesExistResponse extends clsWebServiceResponse {
-   		public ArrayList<clsImageToBeUploadedConfigData> objImageToBeUploadedFileDatas;
-   	}
+   	static class clsInstructUploadCompleteResponse extends clsWebServiceResponse {}
    	
    	
     public static class clsImageUpDownloadAsyncTask extends AsyncTask<Void, Void, Void> {
@@ -571,7 +570,7 @@ public class clsMessaging {
    		static boolean boolDisplayProgress = true;
    		static String strUploadUrl;
    		static String strDownloadUrl;
-   		static String strGetIfServerFilesExistUrl;
+   		static String strInstructUploadCompleteUrl;
 
    		static String strResourceLoaderSaveFileFullFilename = "";
    		static boolean boolLoadTaskCompleted = false;
@@ -600,7 +599,7 @@ public class clsMessaging {
 			}
 			strUploadUrl = strServerUrl + objActivity.getResources().getString(R.string.url_upload_image_file);
 			strDownloadUrl = strServerUrl + objActivity.getResources().getString(R.string.url_download_image_file);	
-			strGetIfServerFilesExistUrl = strServerUrl + objActivity.getResources().getString(R.string.url_get_if_server_files_exist);
+			strInstructUploadCompleteUrl = strServerUrl + objActivity.getResources().getString(R.string.url_instruct_uploads_complete);
 			callbackFinished = cbFinished;
 			callbackProgress = cbProgress;
 		}
@@ -655,7 +654,18 @@ public class clsMessaging {
 							}						
 						} 
 					}				
-				}	
+				}
+				// Indicate to server uploads are complete, so as to start with notifications to other sharers
+				if (objImageLoadData.objImageToBeUploadedDatas.size()!= 0) {
+					clsInstructUploadCompleteCommand objInstructUploadCompleteCommand = new clsInstructUploadCompleteCommand();
+					objInstructUploadCompleteCommand.strRegistrationId = clsUtils.getRegistrationId(objActivity);
+					clsInstructUploadCompleteResponse objInstructUploadCompleteResponse = InstructUploadComplete(strInstructUploadCompleteUrl, 
+							objInstructUploadCompleteCommand);
+					if (objInstructUploadCompleteResponse.intErrorCode != clsMessaging.ERROR_NONE) {
+						objImageUpDownloadResult.strGeneralErrors.add(objInstructUploadCompleteResponse.strErrorMessage);
+					}
+				}
+
 				
 				for(String strImageToBeDownloaded: objImageLoadData.strImagesToBeDownloaded) {
 					clsDownloadImageFileCommandMsg objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
@@ -767,11 +777,18 @@ public class clsMessaging {
    	        			strMessage += "File: " +  objError.strNoteUuid + ". " + objError.strDescription + "\n";
    	   	        	}
    	        	}
+   	        	
+   	        	if (objImageUpDownloadResult.strGeneralErrors.size() != 0) {
+   	        		strMessage += "General:\n";
+   	        		for (String strError:objImageUpDownloadResult.strGeneralErrors) {
+   	        			strMessage += strError + "\n";
+   	   	        	}
+   	        	}
 
    	        	// If no callback is provided then just toast the error message.
    	        	if(callbackFinished == null)
    	   	        {
-   	        		clsUtils.MessageBox(objActivity, strMessage, true);
+   	        		clsUtils.MessageBox(objActivity, strMessage, false);
    	   	        }
    	        }
    	        
@@ -1004,7 +1021,9 @@ public class clsMessaging {
 			
 			outputStream
 					.writeBytes("Content-Disposition: form-data; name=\"UploadImageFile\";filename=\""
-							+ strImageFilename + "\"; modification-date=\"" + strModificationDate + "\"" + lineEnd);
+							+ strImageFilename +
+							"\"; modification-date=\"" + strModificationDate + "\"" +
+							lineEnd);
 			outputStream.writeBytes(lineEnd);
 
 			bytesAvailable = fileInputStream.available();
@@ -1100,17 +1119,17 @@ public class clsMessaging {
 		return "";
 	}
 	
-	public static  clsGetIfServerFilesExistResponse GetIfServerFilesExist(String strUrl,
-			clsGetIfServerFilesExistCommand objGetIfServerFilesExistCommand) {
+	public static  clsInstructUploadCompleteResponse InstructUploadComplete(String strUrl,
+			clsInstructUploadCompleteCommand objInstructUploadCompleteCommand) {
 		// TODO Auto-generated method stub
 		Gson gson = new Gson();
 		JSONObject objJsonResult = null;
-		clsGetIfServerFilesExistResponse objGetIfServerFilesExistResponse = new clsGetIfServerFilesExistResponse();
+		clsInstructUploadCompleteResponse objInstructUploadCompleteResponse = new clsInstructUploadCompleteResponse();
 
 		try {
 			InputStream stream = null;
 			URL urlFeed = new URL(strUrl);
-			String strJsonCommand = gson.toJson(objGetIfServerFilesExistCommand);
+			String strJsonCommand = gson.toJson(objInstructUploadCompleteCommand);
 
 			try {
 				stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
@@ -1118,26 +1137,26 @@ public class clsMessaging {
 				// Makes sure that the InputStream is closed after the app is
 				// finished using it.
 			} catch (JSONException e) {
-				objGetIfServerFilesExistResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
-				objGetIfServerFilesExistResponse.strErrorMessage = "JSON exception. " + e;
-				return objGetIfServerFilesExistResponse;
+				objInstructUploadCompleteResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
+				objInstructUploadCompleteResponse.strErrorMessage = "JSON exception. " + e;
+				return objInstructUploadCompleteResponse;
 			} finally {
 				if (stream != null) {
 					stream.close();
 				}
 			}
 		} catch (MalformedURLException e) {
-			objGetIfServerFilesExistResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
-			objGetIfServerFilesExistResponse.strErrorMessage = "Feed URL is malformed. " + e;
-			return objGetIfServerFilesExistResponse;
+			objInstructUploadCompleteResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
+			objInstructUploadCompleteResponse.strErrorMessage = "Feed URL is malformed. " + e;
+			return objInstructUploadCompleteResponse;
 		} catch (IOException e) {
-			objGetIfServerFilesExistResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
-			objGetIfServerFilesExistResponse.strErrorMessage = "Error reading from network. " + e;
-			return objGetIfServerFilesExistResponse;
+			objInstructUploadCompleteResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
+			objInstructUploadCompleteResponse.strErrorMessage = "Error reading from network. " + e;
+			return objInstructUploadCompleteResponse;
 		}
 		// Analize data from server
-		objGetIfServerFilesExistResponse = gson.fromJson(objJsonResult.toString(), clsGetIfServerFilesExistResponse.class);
-		return objGetIfServerFilesExistResponse;
+		objInstructUploadCompleteResponse = gson.fromJson(objJsonResult.toString(), clsInstructUploadCompleteResponse.class);
+		return objInstructUploadCompleteResponse;
 	}
 
 	public static JSONObject updateLocalFeedData(InputStream inStream)	throws IOException, JSONException {

@@ -242,7 +242,7 @@ public class clsExportNoteAsWebPage {
 			url = new URL(strUrl);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
-			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, true);
+			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, false);
 			return;
 		}
 		clsExportNoteAsWebPageCommand objCommand = new clsExportNoteAsWebPageCommand();

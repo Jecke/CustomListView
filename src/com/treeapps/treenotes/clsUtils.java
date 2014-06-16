@@ -687,7 +687,8 @@ public class clsUtils {
 			File fileTreeNodesDir, ArrayList<clsImageLoadData> objServerReturnedImageLoadDatas, ArrayList<clsImageLoadData> objImageLoadDatas) {
 		// Look for all images needed by note, if they already exist on client,
 		// collect all the missing ones
-		// Class that iterates
+		
+		// Class that iterates. Work starts below.
 		class clsMyTreeviewIterator extends clsTreeviewIterator {
 
 			clsImageLoadData objImageLoadData;
@@ -726,25 +727,29 @@ public class clsUtils {
 						fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
 						if (fileImage.exists()) {
 							// File already exists client side, check if different image by comparing checksums
-							String strLocalThumbnailChecksum = clsUtils.GetMd5Code(fileImage.getAbsolutePath());
-							if (objTreeNode.objResourceGroupData.strThumbnailChecksum.equals(strLocalThumbnailChecksum) ) {
-								// The same, so no need to update
+							if (objTreeNode.objResourceGroupData.strThumbnailChecksum == null) {
+								// No data on server, so nothing to download to client either
 							} else {
-								// Different, if server version older than client, no need to upload, 
-								 Date dtLocalFileModDate = new Date(fileImage.lastModified());
-								 Date dtServerFileModDate = clsUtils.Rfc822ToDate(objTreeNode.objResourceGroupData.strThumbnailLastChanged);
-								 if (dtLocalFileModDate.after(dtServerFileModDate)) {
-									// Local file is newer (requires upload), which for a foreign owned note item is not possible
-								 } else if (dtLocalFileModDate.before (dtServerFileModDate)) {
-									// Local file older, so download required
-									// Add only unique items
-									if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
-										objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
-									}
-								 } else {
-										// Same age, so no upload or download required
-								 }							
-							}
+								String strLocalThumbnailChecksum = clsUtils.GetMd5Code(fileImage.getAbsolutePath());
+								if (objTreeNode.objResourceGroupData.strThumbnailChecksum.equals(strLocalThumbnailChecksum) ) {
+									// The same, so no need to update
+								} else {
+									// Different, if server version older than client, no need to upload, 
+									 Date dtLocalFileModDate = new Date(fileImage.lastModified());
+									 Date dtServerFileModDate = clsUtils.Rfc822ToDate(objTreeNode.objResourceGroupData.strThumbnailLastChanged);
+									 if (dtLocalFileModDate.after(dtServerFileModDate)) {
+										// Local file is newer (requires upload), which for a foreign owned note item is not possible
+									 } else if (dtLocalFileModDate.before (dtServerFileModDate)) {
+										// Local file older, so download required
+										// Add only unique items
+										if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
+											objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+										}
+									 } else {
+											// Same age, so no upload or download required
+									 }							
+								}
+							}						
 						} else {
 							// File does not exist client side, files definitely needs to be downloaded
 							// Add only unique items

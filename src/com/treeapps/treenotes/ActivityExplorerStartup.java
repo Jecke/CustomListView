@@ -901,7 +901,7 @@ public class ActivityExplorerStartup extends ListActivity {
 								objMessaging.GetServerUrl());
 						startActivityForResult(intentShareGroupMembers, SHARE_CHOOSE_GROUP_MEMBERS);
 					} else {
-						clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+						clsUtils.MessageBox(objContext, objResponse.strErrorMessage, false);
 					}
 					return;
 				}
@@ -1410,7 +1410,7 @@ public class ActivityExplorerStartup extends ListActivity {
 					@Override
 					public void onResponse(clsSetNoteSharedUsersResponse objResponse) {
 						if (objResponse.intErrorCode == clsSetNoteSharedUsersResponse.ERROR_NETWORK ) {
-							clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+							clsUtils.MessageBox(objContext, objResponse.strErrorMessage, false);
 						} else {
 							if (boolIsNoteShared) {
 								objExplorerTreeview.getRepository().boolIsShared = true;
@@ -1959,7 +1959,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				}
 
 			}
-			clsUtils.MessageBox(objContext, strMessage, true);
+			clsUtils.MessageBox(objContext, strMessage, false);
 
 			// Start background image syncing
 			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(objContext,

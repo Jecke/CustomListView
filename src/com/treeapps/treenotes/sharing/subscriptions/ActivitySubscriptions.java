@@ -188,7 +188,7 @@ public class ActivitySubscriptions extends ListActivity {
 							clsWebServiceResponse objResponse = clsUtils.DeSerializeFromString(objJsonResponse.toString(),
 									clsWebServiceResponse.class);
 							if (objResponse.intErrorCode != clsWebServiceComms.ERROR_NONE) {
-								clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+								clsUtils.MessageBox(objContext, objResponse.strErrorMessage, false);
 							} else {
 								for (clsListViewState objListViewState:  objListViewStates) {
 									if (objListViewState.boolIsChecked) {
