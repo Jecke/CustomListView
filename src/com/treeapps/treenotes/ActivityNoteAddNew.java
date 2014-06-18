@@ -193,26 +193,9 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			clsUtils.CreateBackupFromFile(strAnnotatedFilename);
 		}
 
-		// Hide items when in readonly mode
-		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
-		if (boolIsReadOnly) {
-			rg.setVisibility(View.INVISIBLE);
-		}
+		// Hide items when in read only mode
+		HideUnhideUiItems(boolIsReadOnly);
 		
-		RelativeLayout objRelativeLayout = (RelativeLayout)findViewById(R.id.relativeLayoutAnnotation);
-		if (boolIsReadOnly) {
-			objRelativeLayout.setVisibility(View.INVISIBLE);
-		}
-		
-		LinearLayout ll = (LinearLayout)findViewById(R.id.my_image_button);
-		if (boolIsReadOnly) {
-			ll.setVisibility(View.INVISIBLE);
-		}
-		
-		TextView tv = (TextView)findViewById(R.id.textViewURLNote);
-		if (boolIsReadOnly) {
-			tv.setVisibility(View.INVISIBLE);
-		}
 		
 		// set description field
 		EditText objEditText = (EditText)findViewById(R.id.editTextNoteName);
@@ -235,6 +218,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		objEditThumbnail.setImageBitmap(null);	
 		
 		// Annotation display
+		RelativeLayout objRelativeLayout = (RelativeLayout) findViewById(R.id.relativeLayoutAnnotation);
 		TextView lblImageAnotationStatus = (TextView)findViewById(R.id.lblImageAnotationStatus);
 		lblImageAnotationStatus.setVisibility(View.INVISIBLE);
 		TextView lblNumberedArrows = (TextView)findViewById(R.id.lblNumberedArrows);
@@ -406,6 +390,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			}
 		});
 		
+		
+		RadioGroup rg = (RadioGroup) findViewById(R.id.radioItemType);
 		switch(resourceId)
 		{
 			case clsTreeview.IMAGE_RESOURCE:
@@ -444,6 +430,33 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	    rg.setFocusableInTouchMode(true);     
 	    rg.requestFocus();
 	    
+	}
+	
+	private void HideUnhideUiItems(boolean boolIsReadOnly) {		
+		RadioGroup rg = (RadioGroup) findViewById(R.id.radioItemType);
+		RelativeLayout objRelativeLayout = (RelativeLayout) findViewById(R.id.relativeLayoutAnnotation);
+		Button objButtonEditArrow = (Button)findViewById(R.id.buttonEditArrowText);
+		Button objButtonAnnotateImage = (Button)findViewById(R.id.buttonAnnotateImage);
+		CheckBox objCheckUseAnnotatedImage = (CheckBox) findViewById(R.id.checkBoxUseAnnotatedImage);
+		LinearLayout ll = (LinearLayout) findViewById(R.id.my_image_button);
+		TextView tv = (TextView) findViewById(R.id.textViewURLNote);
+		if (boolIsReadOnly) {
+			rg.setVisibility(View.INVISIBLE);
+			objRelativeLayout.setVisibility(View.INVISIBLE);
+			ll.setVisibility(View.INVISIBLE);
+			tv.setVisibility(View.INVISIBLE);
+			objButtonEditArrow.setVisibility(View.INVISIBLE);
+			objButtonAnnotateImage.setVisibility(View.INVISIBLE);
+			objCheckUseAnnotatedImage.setVisibility(View.INVISIBLE);
+		} else {
+			rg.setVisibility(View.VISIBLE);
+			objRelativeLayout.setVisibility(View.VISIBLE);
+			ll.setVisibility(View.VISIBLE);
+			tv.setVisibility(View.VISIBLE);
+			objButtonEditArrow.setVisibility(View.VISIBLE);
+			objButtonAnnotateImage.setVisibility(View.VISIBLE);
+			objCheckUseAnnotatedImage.setVisibility(View.VISIBLE);
+		}
 	}
 	
 	public class RadioGroupOnCheckedChangeListener implements RadioGroup.OnCheckedChangeListener {

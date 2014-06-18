@@ -218,7 +218,7 @@ public class clsExplorerTreeview extends clsTreeview {
 		return strNoteOwnerUserName;
 	}
 	
-	public clsRepository DeserializeNoteFromFile(File objFile){
+	public static clsRepository DeserializeNoteFromFile(File objFile){
 		clsRepository objRepository;
 		if (objFile.exists()== false) {
 			clsUtils.CustomLog("Note file does not exist");

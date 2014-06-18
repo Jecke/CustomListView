@@ -31,15 +31,23 @@ import org.json.JSONTokener;
 
 
 
+
+
+
+
 import com.google.gson.Gson;
 import com.treeapps.treenotes.R;
+import com.treeapps.treenotes.clsExplorerTreeview;
 import com.treeapps.treenotes.clsResourceLoader;
 import com.treeapps.treenotes.clsTreeview;
+import com.treeapps.treenotes.clsTreeview.clsRepository;
+import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsUtils;
 import com.treeapps.treenotes.ActivityNoteAddNew.RadioGroupOnCheckedChangeListener;
 import com.treeapps.treenotes.clsTreeview.clsSyncRepository;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsSyncMembersRepository;
+import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeDownLoadedData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedConfigData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageUpDownloadResult.clsError;
@@ -126,7 +134,12 @@ public class clsMessaging {
 	public static class clsImageLoadData {
 		public String strNoteUuid;
 		public ArrayList<clsImageToBeUploadedData> objImageToBeUploadedDatas = new ArrayList<clsImageToBeUploadedData>();
-		public ArrayList<String> strImagesToBeDownloaded = new ArrayList<String>(); 
+		public ArrayList<clsImageToBeDownLoadedData> objImageToBeDownLoadedDatas = new ArrayList<clsImageToBeDownLoadedData>(); 
+		
+		public class clsImageToBeDownLoadedData {
+			public String strImageUuid;
+			public boolean boolIsAnnotatedImageToBeDownloaded;
+		}
 		
 		public class clsImageToBeUploadedData {
 			public String strUuid;
@@ -135,6 +148,7 @@ public class clsMessaging {
 		}
 		
 		public static class clsImageToBeUploadedConfigData {
+			public String strImageUuid;
 			public String strImageFilenameWithExt;
 			public String strDateLastModified;
 		}
@@ -146,6 +160,13 @@ public class clsMessaging {
 				}
 			}
 			throw new Exception("Server and Client item image ID does not tie up");
+		}
+		
+		public void AddToBeDownloadedImage (String strImageUuid, boolean boolIsAnnotatedImageToBeDownloaded) {
+			clsImageToBeDownLoadedData objImageToBeDownLoadedData = new clsImageToBeDownLoadedData();
+			objImageToBeDownLoadedData.strImageUuid = strImageUuid;
+			objImageToBeDownLoadedData.boolIsAnnotatedImageToBeDownloaded = boolIsAnnotatedImageToBeDownloaded;
+			objImageToBeDownLoadedDatas.add(objImageToBeDownLoadedData);
 		}
 	}
 	
@@ -620,6 +641,7 @@ public class clsMessaging {
 			for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
 				
 				int countUploads = 0;
+				// Uploads
 				for(clsImageToBeUploadedData objImageToBeUploadedData: objImageLoadData.objImageToBeUploadedDatas) {
 					
 					if(callbackProgress != null)
@@ -643,7 +665,7 @@ public class clsMessaging {
 							// Run through each file type and upload
 							clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
 							objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeUploadedLocalData.strImageFilenameWithExt;
-							objUploadCommand.strImageUuid = objImageToBeUploadedLocalData.strImageFilenameWithExt;
+							objUploadCommand.strImageUuid = objImageToBeUploadedLocalData.strImageUuid;
 							objUploadCommand.strModificationDate = objImageToBeUploadedLocalData.strDateLastModified;
 							String strUploadReturn = UploadImageToServer(strUploadUrl, objUploadCommand);
 							if (!strUploadReturn.isEmpty()) {
@@ -656,29 +678,59 @@ public class clsMessaging {
 					}				
 				}
 				// Indicate to server uploads are complete, so as to start with notifications to other sharers
-				if (objImageLoadData.objImageToBeUploadedDatas.size()!= 0) {
-					clsInstructUploadCompleteCommand objInstructUploadCompleteCommand = new clsInstructUploadCompleteCommand();
-					objInstructUploadCompleteCommand.strRegistrationId = clsUtils.getRegistrationId(objActivity);
-					clsInstructUploadCompleteResponse objInstructUploadCompleteResponse = InstructUploadComplete(strInstructUploadCompleteUrl, 
-							objInstructUploadCompleteCommand);
-					if (objInstructUploadCompleteResponse.intErrorCode != clsMessaging.ERROR_NONE) {
-						objImageUpDownloadResult.strGeneralErrors.add(objInstructUploadCompleteResponse.strErrorMessage);
-					}
+				clsInstructUploadCompleteCommand objInstructUploadCompleteCommand = new clsInstructUploadCompleteCommand();
+				objInstructUploadCompleteCommand.strRegistrationId = clsUtils.getRegistrationId(objActivity);
+				clsInstructUploadCompleteResponse objInstructUploadCompleteResponse = InstructUploadComplete(strInstructUploadCompleteUrl, 
+						objInstructUploadCompleteCommand);
+				if (objInstructUploadCompleteResponse.intErrorCode != clsMessaging.ERROR_NONE) {
+					objImageUpDownloadResult.strGeneralErrors.add(objInstructUploadCompleteResponse.strErrorMessage);
 				}
 
-				
-				for(String strImageToBeDownloaded: objImageLoadData.strImagesToBeDownloaded) {
+				// Downloads
+				File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
+				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objImageLoadData.strNoteUuid);
+				clsExplorerTreeview.clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
+				for(clsImageToBeDownLoadedData objImageToBeDownLoadedData: objImageLoadData.objImageToBeDownLoadedDatas) {
+					// Thumbnail image
 					clsDownloadImageFileCommandMsg objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
 					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
-					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + strImageToBeDownloaded +
+					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
 							"." + objDownloadCommand.strFileExtentionWithoutDot;				
-					objDownloadCommand.strImageUuid = strImageToBeDownloaded;
+					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
 					String strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
 					if (!strDownloadReturn.isEmpty()) {
 						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
-						objError.strNoteUuid = strImageToBeDownloaded;
+						objError.strNoteUuid = objImageToBeDownLoadedData.strImageUuid;
 						objError.strDescription = strDownloadReturn;
 						objImageUpDownloadResult.strDownloadErrors.add(objError);
+					} 
+					// Full image
+					objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
+					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
+					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
+							"_full." + objDownloadCommand.strFileExtentionWithoutDot;				
+					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+					strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
+					if (!strDownloadReturn.isEmpty()) {
+						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
+						objError.strNoteUuid = objImageToBeDownLoadedData.strImageUuid;
+						objError.strDescription = strDownloadReturn;
+						objImageUpDownloadResult.strDownloadErrors.add(objError);
+					} 
+					// Annotated image
+					if (objImageToBeDownLoadedData.boolIsAnnotatedImageToBeDownloaded) {
+						objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
+						objDownloadCommand.strFileExtentionWithoutDot = "jpg";
+						objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
+								"_annotated." + objDownloadCommand.strFileExtentionWithoutDot;				
+						objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+						strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
+						if (!strDownloadReturn.isEmpty()) {
+							clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
+							objError.strNoteUuid = objImageToBeDownLoadedData.strImageUuid;
+							objError.strDescription = strDownloadReturn;
+							objImageUpDownloadResult.strDownloadErrors.add(objError);
+						} 
 					}
 				}	
 			}
@@ -706,6 +758,7 @@ public class clsMessaging {
 				return fileName + " does not exist on client";
 			}
 			clsImageToBeUploadedConfigData objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+			objImageToBeUploadedConfigData.strImageUuid = objImageToBeUploadedData.strUuid;
 			objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
 			objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
 			objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
@@ -719,6 +772,7 @@ public class clsMessaging {
 
 			if (fileImageVersion.exists()) {
 				objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+				objImageToBeUploadedConfigData.strImageUuid = objImageToBeUploadedData.strUuid;
 				objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
 				objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
 				objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
@@ -735,6 +789,7 @@ public class clsMessaging {
 				return fileName + " does not exist on client";
 			} else {
 				objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+				objImageToBeUploadedConfigData.strImageUuid = objImageToBeUploadedData.strUuid;
 				objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
 				objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
 				objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
@@ -987,6 +1042,7 @@ public class clsMessaging {
 		DataOutputStream outputStream = null;
 		DataInputStream inputStream = null;
 		String pathToOurFile = objUploadCommand.strImageLocalFullPathName;
+		String strImageUuid = objUploadCommand.strImageUuid;
 		String urlServer = strUploadUrl;
 		String strModificationDate = objUploadCommand.strModificationDate;
 		String lineEnd = "\r\n";
@@ -1020,7 +1076,7 @@ public class clsMessaging {
 			String strImageFilename = new File(pathToOurFile).getName();
 			
 			outputStream
-					.writeBytes("Content-Disposition: form-data; name=\"UploadImageFile\";filename=\""
+					.writeBytes("Content-Disposition: form-data; name=\"" + strImageUuid + "\";filename=\""
 							+ strImageFilename +
 							"\"; modification-date=\"" + strModificationDate + "\"" +
 							lineEnd);
@@ -1115,7 +1171,7 @@ public class clsMessaging {
 		} catch (Exception e) {
 			return "Exception. " + e.getMessage() + ". " + e.getCause();
 		}
-
+		
 		return "";
 	}
 	

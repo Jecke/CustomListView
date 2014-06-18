@@ -1,9 +1,11 @@
 package com.treeapps.treenotes;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 
 
 
@@ -433,44 +435,39 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 				clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
 				if (objTreenode.annotation == null ||
 						((objTreenode.annotation != null) && (objTreenode.getBoolUseAnnotatedImage() == false))) { 
-					// Display using original source using stock viewer
-					Intent img_intent = new Intent();
-					img_intent.setAction(Intent.ACTION_VIEW);
+					// Display using original source using stock viewer if only image available
+					boolean boolIsRemoteImage;
+					File fileLocalImageUri;
+					if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
+						// Uri apears to be for a remote image, but, a local file could exist
+						fileLocalImageUri = new File (clsUtils.GetFullImageFileName(context, objListItem.getTreeNodeGuid().toString()));
+						if (!fileLocalImageUri.exists()) {
+							boolIsRemoteImage = true;
+						} else {
+							boolIsRemoteImage = false;
+						}
+					} else {
+						boolIsRemoteImage =  false;
+					}
+
 					// for remote images
 					// (local files start either with file:// or /)
-					if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
+					if (boolIsRemoteImage) {
 						// for remote image
+						Intent img_intent = new Intent();
+						img_intent.setAction(Intent.ACTION_VIEW);
 						img_intent.setData(Uri.parse(contentString));
-
 						context.startActivity(img_intent);
-					} else // for local images
+					} else // for local unannotated images
 					{
-						String resPath = clsUtils.getLocalPathFromUri(context, objListItem.getResourceId(), Uri.parse(contentString));
-						if (!resPath.isEmpty()) {
-							
-							String prefix;
-							
-							if(!resPath.startsWith("file:"))
-							{
-								if(resPath.startsWith("/"))
-								{
-									prefix = "file:/";
-								}
-								else
-								{
-									prefix = "file://";
-								}
-								img_intent.setDataAndType(Uri.parse(prefix + resPath), "image/*");
-							}
-							else
-							{
-								img_intent.setDataAndType(Uri.parse(resPath), "image/*");
-							}
-
-							context.startActivity(img_intent);
-						} else {
-							Toast.makeText(context, "Resourcepath is empty", Toast.LENGTH_SHORT).show();// Problem
-						}
+						// Local file, use custom viewer
+						Intent intentViewImage = new Intent(context, ActivityViewImage.class);
+						intentViewImage.putExtra(ActivityViewImage.URL, "");
+						intentViewImage.putExtra(ActivityNoteStartup.TREENODE_UID, objListItem.getTreeNodeGuid().toString());
+						intentViewImage.putExtra(ActivityViewImage.DESCRIPTION, objTreenode.getName());
+						intentViewImage.putExtra(ActivityViewImage.LISTVIEWSTATES_GSON, "");
+						intentViewImage.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, "");								
+						context.startActivity(intentViewImage);
 					}
 				} else {
 					// Annotated, display using custom viewer

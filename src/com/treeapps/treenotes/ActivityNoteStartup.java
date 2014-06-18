@@ -855,7 +855,7 @@ public class ActivityNoteStartup extends ListActivity {
         	 objSyncCommandMsg.strRegistrationId = strRegistrationId;
         	 objSyncCommandMsg.boolIsMergeNeeded = false;
         	 objSyncCommandMsg.boolIsAutoSyncCommand = false;
-        	 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true, true);
+        	 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, objNoteTreeview, urlFeed, objSyncCommandMsg,objMessaging, true, true);
         	 objSyncAsyncTask.execute("");
         	 return true;
          case R.id.actionClearAll:
@@ -939,7 +939,7 @@ public class ActivityNoteStartup extends ListActivity {
 		 objSyncCommandMsg.strRegistrationId = strRegistrationId;
 		 objSyncCommandMsg.boolIsMergeNeeded = true;
 		 objSyncCommandMsg.boolIsAutoSyncCommand = boolIsAutoSyncCommand;
-		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, urlFeed, objSyncCommandMsg,objMessaging, true, boolDisplayProgress);
+		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, objNoteTreeview, urlFeed, objSyncCommandMsg,objMessaging, true, boolDisplayProgress);
 		 objSyncAsyncTask.execute("");
 	}
 	
@@ -1279,6 +1279,9 @@ public class ActivityNoteStartup extends ListActivity {
 	}
 	
 	
+
+
+
 	@Override
 	public void onBackPressed() {
 		// TODO Auto-generated method stub
@@ -1353,12 +1356,14 @@ public class ActivityNoteStartup extends ListActivity {
 	public static class ActivityNoteStartupSyncAsyncTask extends NoteSyncAsyncTask {
 
 		static boolean boolDisplayToasts;
+		clsTreeview objTreeview;
 		
-		public ActivityNoteStartupSyncAsyncTask(Activity objActivity, URL urlFeed, clsSyncNoteCommandMsg objSyncCommandMsg,
+		public ActivityNoteStartupSyncAsyncTask(Activity objActivity, clsTreeview objTreeview, URL urlFeed, clsSyncNoteCommandMsg objSyncCommandMsg,
 				clsMessaging objMessaging, boolean boolDisplayToasts, boolean boolDisplayProgress) {
 			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts, boolDisplayProgress);
 			// TODO Auto-generated constructor stub
 			ActivityNoteStartupSyncAsyncTask.boolDisplayToasts = boolDisplayToasts;
+			this.objTreeview = objTreeview;
 		}
 		@Override
    	    protected void onPostExecute(clsSyncResult objResult){
@@ -1413,7 +1418,12 @@ public class ActivityNoteStartup extends ListActivity {
 							public void imageUploadFinished(boolean success, String errorMessage) {
 								if (!success) {
 									clsUtils.MessageBox(objActivity, errorMessage, true);
-								}						
+									return;
+								}
+								// Once successfully downloaded, update the ResourceUrl in the relevant treenode
+								clsUtils.UpdateTreeviewResourcePaths(objActivity, objTreeview, objLocalImageLoadDatas);		
+								
+								// Refresh
 								((ActivityNoteStartup)objActivity).RefreshListView();
 								
 							}
