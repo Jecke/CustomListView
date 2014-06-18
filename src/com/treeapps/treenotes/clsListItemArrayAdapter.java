@@ -427,27 +427,35 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 			ImageView folder = (ImageView) v.findViewById(R.id.media_preview);
 			clsListItem objListItem = (clsListItem) folder.getTag();
 			
+			// Determine the access rights of the node
+			clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
+			clsNoteItemStatus objStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
+			((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreenode, objStatus, ((ActivityNoteStartup) context).objGroupMembers, objTreeview);
+			
+			// Determine if image needs to display annotated or full image
+			boolean boolDisplayAnnotated = DetermineIfAnnotatedImageToBeDisplayed(objTreenode, objStatus);
+			
+			// Start the display
 			String contentString = objListItem.getResourcePath();
 
 			switch (objListItem.getResourceId()) {
 			case clsTreeview.IMAGE_RESOURCE:
-			case clsTreeview.WEB_RESOURCE:
-				clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
-				if (objTreenode.annotation == null ||
-						((objTreenode.annotation != null) && (objTreenode.getBoolUseAnnotatedImage() == false))) { 
+			case clsTreeview.WEB_RESOURCE:				
+				if (!boolDisplayAnnotated) { 
 					// Display using original source using stock viewer if only image available
 					boolean boolIsRemoteImage;
 					File fileLocalImageUri;
-					if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
-						// Uri apears to be for a remote image, but, a local file could exist
-						fileLocalImageUri = new File (clsUtils.GetFullImageFileName(context, objListItem.getTreeNodeGuid().toString()));
-						if (!fileLocalImageUri.exists()) {
-							boolIsRemoteImage = true;
+					fileLocalImageUri = new File (clsUtils.GetFullImageFileName(context, objListItem.getTreeNodeGuid().toString()));
+					if (!fileLocalImageUri.exists()) {
+						if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
+							// Uri appears to be for a remote image
+							boolIsRemoteImage = true;						
 						} else {
-							boolIsRemoteImage = false;
+							clsUtils.MessageBox(context, "Image does not exists locally and remotely", true);
+							return;
 						}
 					} else {
-						boolIsRemoteImage =  false;
+						boolIsRemoteImage = false;
 					}
 
 					// for remote images
@@ -457,7 +465,12 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 						Intent img_intent = new Intent();
 						img_intent.setAction(Intent.ACTION_VIEW);
 						img_intent.setData(Uri.parse(contentString));
-						context.startActivity(img_intent);
+						try {
+							context.startActivity(img_intent);
+						} catch (Exception e) {
+							clsUtils.MessageBox(context, "Unable to display remote image", true);
+							return;
+						}
 					} else // for local unannotated images
 					{
 						// Local file, use custom viewer
@@ -526,6 +539,37 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 			default:
 				assert (false);
 				break;
+			}
+		}
+
+		private boolean DetermineIfAnnotatedImageToBeDisplayed(clsTreeNode objTreenode, clsNoteItemStatus objStatus) {
+			// Annotated == true, full = false
+			if (objTreenode.annotation == null) {
+				// No annotation
+				return false;
+			} else {
+				// Annotated, determine if item has rights for optional display
+				if (objStatus.boolIsUserRegistered) {
+					// User is registered, so check rights
+					if (!objStatus.boolSelectedNoteItemBelongsToUser) {
+						// No option, just display annotation
+						return  true;
+					} else {
+						// Option exists, use option
+						if (objTreenode.getBoolUseAnnotatedImage()) {
+							return  true;
+						} else {
+							return  false;
+						}
+					}
+				} else {
+					// User not registered, so if item has rights by default for optional display
+					if (objTreenode.getBoolUseAnnotatedImage()) {
+						return  true;
+					} else {
+						return  false;
+					}
+				}
 			}
 		}
 

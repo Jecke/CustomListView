@@ -62,8 +62,7 @@ public class clsTreeview {
 
 	public void DeserializeFromFile(File objFile) {
 		if (objFile.exists() == false) {
-			clsUtils.CustomLog("Backup file does not exist");
-			ClearRepository();
+			clsUtils.CustomLog("Backup file: " + objFile.getAbsolutePath() + " does not exist");
 			return;
 		}
 		BufferedReader br = null;

@@ -557,6 +557,7 @@ public class clsMessaging {
     
     public class clsDownloadImageFileCommandMsg extends clsMsg {
     	public  String strImageUuid;
+    	public String strFileType; // Either "", "_full" or "_annotated"
     	public  String strFileExtentionWithoutDot;
     	public  String strImageLocalFullPathName;
     }
@@ -693,10 +694,12 @@ public class clsMessaging {
 				for(clsImageToBeDownLoadedData objImageToBeDownLoadedData: objImageLoadData.objImageToBeDownLoadedDatas) {
 					// Thumbnail image
 					clsDownloadImageFileCommandMsg objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
+					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+					objDownloadCommand.strFileType = "";
 					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
 					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
-							"." + objDownloadCommand.strFileExtentionWithoutDot;				
-					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+							objDownloadCommand.strFileType + "." + objDownloadCommand.strFileExtentionWithoutDot;				
+					
 					String strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
 					if (!strDownloadReturn.isEmpty()) {
 						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
@@ -706,10 +709,11 @@ public class clsMessaging {
 					} 
 					// Full image
 					objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
+					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+					objDownloadCommand.strFileType = "_full";
 					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
 					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
-							"_full." + objDownloadCommand.strFileExtentionWithoutDot;				
-					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+							objDownloadCommand.strFileType + "." + objDownloadCommand.strFileExtentionWithoutDot;
 					strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
 					if (!strDownloadReturn.isEmpty()) {
 						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
@@ -719,11 +723,11 @@ public class clsMessaging {
 					} 
 					// Annotated image
 					if (objImageToBeDownLoadedData.boolIsAnnotatedImageToBeDownloaded) {
-						objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
+						objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+						objDownloadCommand.strFileType = "_annotated";
 						objDownloadCommand.strFileExtentionWithoutDot = "jpg";
 						objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
-								"_annotated." + objDownloadCommand.strFileExtentionWithoutDot;				
-						objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+								objDownloadCommand.strFileType + "." + objDownloadCommand.strFileExtentionWithoutDot;
 						strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
 						if (!strDownloadReturn.isEmpty()) {
 							clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();

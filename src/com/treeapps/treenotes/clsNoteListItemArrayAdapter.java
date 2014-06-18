@@ -125,36 +125,11 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 		UUID objUuid = objListItem.getTreeNodeGuid();
 		clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
 
-		// Shell out to edit activity
-		Intent intent = new Intent(getContext(), ActivityNoteAddNew.class);
-		intent.putExtra(ActivityNoteStartup.DESCRIPTION, objTreeNode.getName());
-		intent.putExtra(ActivityNoteStartup.RESOURCE_ID, objTreeNode.resourceId);
-		intent.putExtra(ActivityNoteStartup.RESOURCE_PATH, objTreeNode.resourcePath);
-		intent.putExtra(ActivityNoteStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
-		intent.putExtra(ActivityNoteStartup.TREENODE_OWNERNAME, ((ActivityNoteStartup) context).objGroupMembers
-				.GetUserNameFomUuid(objTreeNode.getStrOwnerUserUuid()));
-		clsNoteItemStatus objNoteItemStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
-		((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreeNode, objNoteItemStatus,
-				((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview);
-		intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
-
-		// Send description of node's 
-		String strParentDescription;
-		clsTreeNode objParentTreeNode = objTreeview.getParentTreeNode(objTreeNode);
-		
-		strParentDescription = (objParentTreeNode == null)?(ActivityNoteStartup.objNoteTreeview.getRepository().getName())
-														  :(objParentTreeNode.getName());
-		
-		intent.putExtra(ActivityNoteStartup.TREENODE_PARENTNAME, strParentDescription); 
-		
-		String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
-		intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
-		intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());
-		intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
-
-		((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
+		((ActivityNoteStartup) context).StartNoteItemEditIntent(objTreeNode);
 		
 	}
+
+	
 	
 	@Override
 	protected void RefreshListView() {

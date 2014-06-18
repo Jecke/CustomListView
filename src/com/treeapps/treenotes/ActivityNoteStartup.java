@@ -573,16 +573,7 @@ public class ActivityNoteStartup extends ListActivity {
         	 }
         	         	 
         	 clsTreeNode objEditTreeNode = objSelectedTreeNodes.get(0);
-        	 intent = new Intent(this, ActivityNoteAddNew.class);
-        	 intent.putExtra(DESCRIPTION,   objEditTreeNode.getName());
-        	 intent.putExtra(RESOURCE_ID,   objEditTreeNode.resourceId);
-        	 intent.putExtra(RESOURCE_PATH, objEditTreeNode.resourcePath);
-        	 intent.putExtra(TREENODE_UID, objEditTreeNode.guidTreeNode.toString());
-        	 intent.putExtra(TREENODE_OWNERNAME, objGroupMembers.GetUserNameFomUuid(objEditTreeNode.getStrOwnerUserUuid()));
-             DetermineNoteItemStatus(objSelectedTreeNodes.get(0),objNoteItemStatus, objGroupMembers,objNoteTreeview);
-        	 intent.putExtra(READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser); 
-        	 intent.putExtra(USE_ANNOTATED_IMAGE, !objEditTreeNode.getBoolUseAnnotatedImage()); 
-        	 startActivityForResult(intent, EDIT_DESCRIPTION);
+        	 StartNoteItemEditIntent(objEditTreeNode);
              return true;
              
          case R.id.actionDelete:
@@ -1279,7 +1270,36 @@ public class ActivityNoteStartup extends ListActivity {
 	}
 	
 	
+	public void StartNoteItemEditIntent(clsTreeNode objTreeNode) {
+		// Shell out to edit activity
+		Intent intent = new Intent(objActivity, ActivityNoteAddNew.class);
+		intent.putExtra(ActivityNoteStartup.DESCRIPTION, objTreeNode.getName());
+		intent.putExtra(ActivityNoteStartup.RESOURCE_ID, objTreeNode.resourceId);
+		intent.putExtra(ActivityNoteStartup.RESOURCE_PATH, objTreeNode.resourcePath);
+		intent.putExtra(ActivityNoteStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
+		intent.putExtra(ActivityNoteStartup.TREENODE_OWNERNAME, objGroupMembers
+				.GetUserNameFomUuid(objTreeNode.getStrOwnerUserUuid()));
+		clsNoteItemStatus objNoteItemStatus = new clsNoteItemStatus();
+		DetermineNoteItemStatus(objTreeNode, objNoteItemStatus,
+				objGroupMembers, ActivityNoteStartup.objNoteTreeview);
+		intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
 
+		// Send description of node's 
+		String strParentDescription;
+		clsTreeNode objParentTreeNode = objNoteTreeview.getParentTreeNode(objTreeNode);
+		
+		strParentDescription = (objParentTreeNode == null)?(ActivityNoteStartup.objNoteTreeview.getRepository().getName())
+														  :(objParentTreeNode.getName());
+		
+		intent.putExtra(ActivityNoteStartup.TREENODE_PARENTNAME, strParentDescription); 
+		
+		String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
+		intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
+		intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());
+		intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
+
+		startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
+	}
 
 
 	@Override
@@ -1397,7 +1417,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	    	}
 	   	        	}
 	   	        	((ActivityNoteStartup)objActivity).SaveFile();
-	   	        	clsUtils.MessageBox(objActivity, strMessage, false);
+	   	        	clsUtils.MessageBox(objActivity, strMessage, true);
 	   	        	clsUtils.ClearImageLoadDatas(objLocalImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objActivity).objMessaging, ((ActivityNoteStartup)objActivity).objGroupMembers,
 	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas, objLocalImageLoadDatas);
@@ -1406,7 +1426,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        		
 	   	        } else {
 	   	        	if (boolDisplayToasts) {
-	   	        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, false);
+	   	        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, true);
 	   	        	}
 
 	   	        }
@@ -1417,7 +1437,7 @@ public class ActivityNoteStartup extends ListActivity {
 							@Override
 							public void imageUploadFinished(boolean success, String errorMessage) {
 								if (!success) {
-									clsUtils.MessageBox(objActivity, errorMessage, true);
+									clsUtils.MessageBox(objActivity, errorMessage, false);
 									return;
 								}
 								// Once successfully downloaded, update the ResourceUrl in the relevant treenode
