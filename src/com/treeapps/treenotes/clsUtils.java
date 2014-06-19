@@ -13,6 +13,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,8 +28,14 @@ import java.util.zip.CRC32;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsyncTask;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersCommand;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersResponse;
 import com.treeapps.treenotes.ActivityExplorerStartup.clsIabLocalData;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsyncTask.OnGetNoteSharedUsersResponseListener;
+import com.treeapps.treenotes.clsIntentMessaging.clsChosenMembers;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
+import com.treeapps.treenotes.sharing.ActivityGroupMembers;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
@@ -45,6 +53,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources.NotFoundException;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -166,8 +175,8 @@ public class clsUtils {
 		return objChildFile;
 	}
 
-	public static File BuildNoteFilename(File filePath, String strFilename) {
-		File objChildFile = new File(filePath, strFilename + ".treenote");
+	public static File BuildNoteFilename(File filePath, String strNoteUuid) {
+		File objChildFile = new File(filePath, strNoteUuid + ".treenote");
 		return objChildFile;
 	}
 
@@ -177,7 +186,7 @@ public class clsUtils {
 	}
 
 	public static File BuildTempNoteFilename(File filePath) {
-		File objChildFile = new File(filePath, "temp.treenote");
+		File objChildFile = new File(filePath, "current.treenote");
 		return objChildFile;
 	}
 
@@ -837,6 +846,23 @@ public class clsUtils {
 		}
 	}
 	
+	public static void SendLogGmail(Activity activity, String subject, String text, File fileAttachment) {
+
+		final Intent intent = new Intent(Intent.ACTION_SEND);
+		intent.setType("text/html");
+		String[] toArr = new String[] { activity.getResources().getString(R.string.log_file_developer_email)};
+		intent.putExtra(Intent.EXTRA_EMAIL, toArr);
+		intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+		intent.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(text));
+		intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(fileAttachment));
+
+		try {
+			activity.startActivity(intent);
+		} catch (ActivityNotFoundException ex) {
+			// handle error
+		}
+	}
+	
 	public static void ShareUrl(Activity activity, String subject, String text) {
 		
 		Intent share = new Intent(android.content.Intent.ACTION_SEND);
@@ -1100,8 +1126,60 @@ public class clsUtils {
 		}
 	}
 	
+	public static void StartActivityForShareSelect(final Activity objActivity, final clsMessaging objMessaging, String strNoteUuid,
+			clsGetNoteSharedUsersResponse objResponse ) {
+		// Async task which gets current shared users for this note from server
+		URL urlFeed;
+		try {
+			urlFeed = new URL(objMessaging.GetServerUrl()
+					+ objActivity.getResources().getString(R.string.url_get_note_sharers));
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (NotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} 
+
+		clsGetNoteSharedUsersCommand objCommand = new clsGetNoteSharedUsersCommand();
+		objCommand.strNoteUuid = strNoteUuid; 
+		clsGetNoteSharedUsersAsyncTask objGetNoteSharedUsersAsyncTask = new clsGetNoteSharedUsersAsyncTask(objActivity, urlFeed, objCommand, objResponse);
+		objGetNoteSharedUsersAsyncTask.SetOnResponseListener(new OnGetNoteSharedUsersResponseListener() {
+			
+			@Override
+			public void onResponse(clsGetNoteSharedUsersResponse objResponse) {
+				if (objResponse.intErrorCode == clsGetNoteSharedUsersResponse.ERROR_NONE) {
+					// Data received, can start selection activity now
+					Intent intentShareGroupMembers = new Intent(objActivity, ActivityGroupMembers.class);
+					intentShareGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_CHOOSE_MEMBERS);
+					clsIntentMessaging objIntentMessaging = new clsIntentMessaging();
+					clsIntentMessaging.clsChosenMembers objChosenMembers = objIntentMessaging.new clsChosenMembers();
+					objChosenMembers.strUserUuids = objResponse.strSharedUsers;
+					objChosenMembers.strNoteUuid = objResponse.strNoteUuid;
+					String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
+					intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
+					intentShareGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
+							objMessaging.GetServerUrl());
+					objActivity.startActivityForResult(intentShareGroupMembers, ActivityExplorerStartup.SHARE_CHOOSE_GROUP_MEMBERS);
+				} else {
+					clsUtils.MessageBox(objActivity, objResponse.strErrorMessage, false);
+				}
+				return;
+			}
+		});
+		objGetNoteSharedUsersAsyncTask.execute(null, null, null);
+	}
 	
-	// URI tools
+	public static void IndicateToServiceIntentSyncIsCompleted(Activity objActivity) {
+		Intent objIntent = new Intent (objActivity, GcmIntentService.class);
+		objIntent.putExtra(GcmIntentService.SYNC_COMPLETION, "Synched without_errors");
+		objActivity.startService(objIntent);
+	}
+	
+	
+	// ------------------- URI tools ------------------------------------------
 	
 	/**
 	 * Get a file path from a Uri. This will get the the path for Storage Access

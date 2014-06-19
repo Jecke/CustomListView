@@ -527,9 +527,9 @@ public class clsTreeview {
 		public void setName(String strName) {
 			int intNewHash = clsUtils.GetHashCode(strName);
 			if (intNewHash == intHash) {
-				_boolIsDirty = false;
+				setIsDirty(false);
 			} else {
-				_boolIsDirty = true;
+				setIsDirty(true);
 			}
 			this.strName = strName;
 		}
@@ -558,13 +558,13 @@ public class clsTreeview {
 			if (IsTreeViewPurposeIsToFindCheckStateOnly() == false) {
 				// Flag dirty conditionally if check changes
 				if (this.boolIsChecked != boolIsChecked) {
-					_boolIsDirty = true;
+					setIsDirty(true);
 				} else {
-					_boolIsDirty = false;
+					setIsDirty(false);
 				}
 			} else {
 				// Do not flag dirty if check changes
-				_boolIsDirty = false;
+				setIsDirty(false);
 			}
 			this.boolIsChecked = boolIsChecked;
 		}

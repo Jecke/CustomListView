@@ -630,14 +630,18 @@ public class clsMessaging {
    	    protected void onPreExecute()
    	    {
    	        super.onPreExecute();
-   	        objProgressDialog.setMessage("Processing..., please wait.");
+   	        objProgressDialog.setMessage("Synching note images ..., please wait.");
    	        if (boolDisplayProgress) {
-   		        objProgressDialog.show();
+   	        	if (!objProgressDialog.isShowing()) {
+   	   		        objProgressDialog.show();
+   	        	}
    	        }
    	    }
     	
     	@Override
 		protected Void doInBackground(Void... arg0) {
+    		
+    		clsUtils.CustomLog("UpDownLoadDoInBackground running");
     		
 			for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
 				
@@ -935,7 +939,7 @@ public class clsMessaging {
    	        super.onPreExecute();
    	        mException = null;
    	        if (boolDisplayProgress) {
-   	   	        objProgressDialog.setMessage("Processing..., please wait.");
+   	   	        objProgressDialog.setMessage("Synching note text ..., please wait.");
    		        objProgressDialog.show();
    	        }
 

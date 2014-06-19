@@ -142,8 +142,8 @@ public class ActivityExplorerStartup extends ListActivity {
 	public static final int REQUEST_BACKUP_PATH = 9;
 	public static final int REQUEST_RESTORE_PATH = 10;
 	private static final int SHARE_REGISTER = 11;
-	private static final int SHARE_MANAGE_GROUP_MEMBERS = 12;
-	private static final int SHARE_CHOOSE_GROUP_MEMBERS = 13;
+	public static final int SHARE_MANAGE_GROUP_MEMBERS = 12;
+	public static final int SHARE_CHOOSE_GROUP_MEMBERS = 13;
 	private static final int ANNOTATOR = 14;
 	private static final int SHARE_SUBSCRIPTIONS = 15;
 
@@ -1984,12 +1984,12 @@ public class ActivityExplorerStartup extends ListActivity {
 		static Exception mException = null;
 		static clsSyncMembersCommandMsg objCommand;
 		clsGroupMembers objGroupMembers;
-		ActivityExplorerStartup context;
+		Activity context;
 		clsMessaging objMessaging;
 		static URL urlFeed;
 		ProgressDialog objProgressDialog;
 
-		public ActivityExplorerSyncMembersAsyncTask(URL urlFeed, ActivityExplorerStartup context,
+		public ActivityExplorerSyncMembersAsyncTask(URL urlFeed, Activity context,
 				clsSyncMembersCommandMsg objSyncMembersCommandMsg, clsGroupMembers objGroupMembers,
 				clsMessaging objMessaging) {
 			ActivityExplorerSyncMembersAsyncTask.objCommand = objSyncMembersCommandMsg;

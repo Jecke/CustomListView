@@ -14,6 +14,14 @@
                 android:dialogTitle="@string/treenotes_default_user_indent_tab_width_summary_base" />
     
     </PreferenceCategory>
+    
+    <PreferenceCategory
+            android:title="Diagnostics">
+        <Preference 
+	      android:key="button_mail_log" 
+	      android:title="Mail log file to developer ..."></Preference>
+        
+    </PreferenceCategory>
     <PreferenceCategory
             android:title="Information">
         

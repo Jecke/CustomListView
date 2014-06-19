@@ -209,4 +209,8 @@
     <!-- TreeNote FB account app ID -->
     <string name="app_id">1395468317406813</string>
     
+    <!-- Logging -->
+    <string name="log_file_developer_email">hrbraasch@gmail.com</string>
+    
+    
 </resources>

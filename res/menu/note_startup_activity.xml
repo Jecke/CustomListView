@@ -143,6 +143,9 @@
         android:icon="@drawable/ic_action_check"
         android:showAsAction="never|withText">
         <menu>
+            <item android:id="@+id/actionShareSelect"
+                  android:icon="@drawable/ic_action_share"
+                  android:title="Select sharers"/>
             <item android:id="@+id/actionShareSync"
                   android:icon="@drawable/ic_action_send_now"
                   android:title="Send/Refresh"/>
