@@ -281,7 +281,7 @@ public class clsExportNoteAsWebPage {
 		objTreeviewIterator.Execute();
 		clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask = 
 			new clsImageUpDownloadAsyncTask(objActivity, objMessaging, false, objImageLoadDatas, 
-											cbFinished, cbProgress);
+											cbFinished, cbProgress, false);
 		objImageUpDownloadAsyncTask.execute();
 	}
 	

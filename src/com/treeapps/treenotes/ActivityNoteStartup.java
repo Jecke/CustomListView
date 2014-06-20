@@ -1010,7 +1010,8 @@ public class ActivityNoteStartup extends ListActivity {
 		 objSyncCommandMsg.strRegistrationId = strRegistrationId;
 		 objSyncCommandMsg.boolIsMergeNeeded = true;
 		 objSyncCommandMsg.boolIsAutoSyncCommand = boolIsAutoSyncCommand;
-		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, objNoteTreeview, urlFeed, objSyncCommandMsg,objMessaging, true, boolDisplayProgress);
+		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, objNoteTreeview, urlFeed,
+				 objSyncCommandMsg,objMessaging, true, boolDisplayProgress);
 		 objSyncAsyncTask.execute("");
 	}
 	
@@ -1495,13 +1496,16 @@ public class ActivityNoteStartup extends ListActivity {
 
 		static boolean boolDisplayToasts;
 		clsTreeview objTreeview;
+		clsSyncNoteCommandMsg objSyncCommand;
+		String strMessage = "";
 		
-		public ActivityNoteStartupSyncAsyncTask(Activity objActivity, clsTreeview objTreeview, URL urlFeed, clsSyncNoteCommandMsg objSyncCommandMsg,
+		public ActivityNoteStartupSyncAsyncTask(Activity objActivity, clsTreeview objTreeview, URL urlFeed, clsSyncNoteCommandMsg objSyncCommand,
 				clsMessaging objMessaging, boolean boolDisplayToasts, boolean boolDisplayProgress) {
-			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts, boolDisplayProgress);
+			super(objActivity, urlFeed, objSyncCommand, objMessaging, boolDisplayToasts, boolDisplayProgress);
 			// TODO Auto-generated constructor stub
 			ActivityNoteStartupSyncAsyncTask.boolDisplayToasts = boolDisplayToasts;
 			this.objTreeview = objTreeview;
+			this.objSyncCommand = objSyncCommand;
 		}
 		@Override
    	    protected void onPostExecute(clsSyncResult objResult){
@@ -1509,7 +1513,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        super.onPostExecute(objResult);
 	   	        // Do what needs to be done with the result
 	   	        if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
-	   	        	String strMessage = "";
+	   	        	
 	   	        	for (int i = 0; i < objResult.intServerInstructions.size(); i++ ) {
 	   	        	// Depending on server instructions
 	   	   	   	        switch (objResult.intServerInstructions.get(i)) {
@@ -1535,7 +1539,6 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	    	}
 	   	        	}
 	   	        	((ActivityNoteStartup)objActivity).SaveFile();
-	   	        	clsUtils.MessageBox(objActivity, strMessage, true);
 	   	        	clsUtils.ClearImageLoadDatas(objLocalImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objActivity).objMessaging, ((ActivityNoteStartup)objActivity).objGroupMembers,
 	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas, objLocalImageLoadDatas);
@@ -1545,8 +1548,8 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        } else {
 	   	        	if (boolDisplayToasts) {
 	   	        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, true);
-	   	        	}
-
+	   	        	} 
+	   	        	return;
 	   	        }
 	   	        // Start background image syncing
 				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objActivity, ((ActivityNoteStartup)objActivity).objMessaging, 
@@ -1560,6 +1563,8 @@ public class ActivityNoteStartup extends ListActivity {
 								if (!success) {
 									clsUtils.MessageBox(objActivity, errorMessage, false);
 									return;
+								} else {
+									clsUtils.MessageBox(objActivity, strMessage, true);
 								}
 								// Once successfully downloaded, update the ResourceUrl in the relevant treenode
 								clsUtils.UpdateTreeviewResourcePaths(objActivity, objTreeview, objLocalImageLoadDatas);		
@@ -1568,10 +1573,17 @@ public class ActivityNoteStartup extends ListActivity {
 								((ActivityNoteStartup)objActivity).RefreshListView();
 								
 							}
-						}, null);
+						}, null, !objSyncCommand.boolIsAutoSyncCommand);
 				objImageUpDownloadAsyncTask.execute();
 
 	   	    }
+		
+		@Override
+		protected void onCancelled() {
+			// TODO Auto-generated method stub
+			super.onCancelled();
+			clsUtils.IndicateToServiceIntentSyncIsCompleted(objActivity);
+		}
 	}
         
     

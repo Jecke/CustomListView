@@ -1965,7 +1965,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(objContext,
 					((ActivityExplorerStartup) objContext).objMessaging, true,
 					((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas, null,
-					null);
+					null, true );
 			objImageUpDownloadAsyncTask.execute();
 		}
 	}

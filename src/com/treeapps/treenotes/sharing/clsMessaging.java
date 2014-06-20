@@ -577,6 +577,7 @@ public class clsMessaging {
    	
    	static class clsInstructUploadCompleteCommand {
    		public String strRegistrationId;
+   		public boolean boolIsNeedForServerToSendNotifications;
    	}
    	
    	static class clsInstructUploadCompleteResponse extends clsWebServiceResponse {}
@@ -597,6 +598,7 @@ public class clsMessaging {
    		static String strResourceLoaderSaveFileFullFilename = "";
    		static boolean boolLoadTaskCompleted = false;
    		static String strLoadTaskCompletedStatus = "";
+   		static boolean boolIsNeedForServerToSendNotificationsAtEnd;
    		
    		private clsExportNoteAsWebPage.OnImageUploadFinishedListener callbackFinished;
    		private clsExportNoteAsWebPage.OnImageUploadProgressListener callbackProgress;
@@ -604,7 +606,8 @@ public class clsMessaging {
     	public clsImageUpDownloadAsyncTask (Activity objActivity, clsMessaging objMessaging, boolean boolDisplayProgress, 
     			ArrayList<clsImageLoadData> objImageLoadDatas, 
     			clsExportNoteAsWebPage.OnImageUploadFinishedListener cbFinished,
-    			clsExportNoteAsWebPage.OnImageUploadProgressListener cbProgress) 
+    			clsExportNoteAsWebPage.OnImageUploadProgressListener cbProgress,
+    			boolean boolIsNeedForServerToSendNotificationsAtEnd) 
     	{
     		clsImageUpDownloadAsyncTask.objActivity = objActivity;
     		clsImageUpDownloadAsyncTask.objImageLoadDatas = objImageLoadDatas;
@@ -624,6 +627,7 @@ public class clsMessaging {
 			strInstructUploadCompleteUrl = strServerUrl + objActivity.getResources().getString(R.string.url_instruct_uploads_complete);
 			callbackFinished = cbFinished;
 			callbackProgress = cbProgress;
+			clsImageUpDownloadAsyncTask.boolIsNeedForServerToSendNotificationsAtEnd = boolIsNeedForServerToSendNotificationsAtEnd;
 		}
     	
     	@Override
@@ -685,6 +689,7 @@ public class clsMessaging {
 				// Indicate to server uploads are complete, so as to start with notifications to other sharers
 				clsInstructUploadCompleteCommand objInstructUploadCompleteCommand = new clsInstructUploadCompleteCommand();
 				objInstructUploadCompleteCommand.strRegistrationId = clsUtils.getRegistrationId(objActivity);
+				objInstructUploadCompleteCommand.boolIsNeedForServerToSendNotifications = boolIsNeedForServerToSendNotificationsAtEnd;
 				clsInstructUploadCompleteResponse objInstructUploadCompleteResponse = InstructUploadComplete(strInstructUploadCompleteUrl, 
 						objInstructUploadCompleteCommand);
 				if (objInstructUploadCompleteResponse.intErrorCode != clsMessaging.ERROR_NONE) {
