@@ -83,10 +83,12 @@ import android.app.ListActivity;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnClickListener;
 import android.content.pm.PackageInfo;
@@ -96,6 +98,7 @@ import android.content.pm.Signature;
 import android.content.res.Configuration;
 import android.content.res.Resources.NotFoundException;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.text.InputType;
 import android.util.Base64;
@@ -192,6 +195,8 @@ public class ActivityExplorerStartup extends ListActivity {
 	public static final String PROPERTY_REG_ID = "com.treeapps.treenotes.gcm_registration_id";
 	public static final String PROPERTY_APP_VERSION = "com.treeapps.treenotes.gcm_application_version";
 	public static final String EXTRA_MESSAGE = "com.treeapps.treenotes.message";
+	public static final String BROADCAST_ACTION = "com.treeapps.treenotes.broadcast_sync";
+
 	GoogleCloudMessaging gcm;
 	AtomicInteger msgId = new AtomicInteger();
 	String strRegistrationId;
@@ -347,6 +352,13 @@ public class ActivityExplorerStartup extends ListActivity {
 	    } catch (NoSuchAlgorithmException e) {
 
 	    }
+	    
+		 // Broadcast from notification service
+		IntentFilter mStatusIntentFilter = new IntentFilter(ActivityExplorerStartup.BROADCAST_ACTION);
+	    // Instantiates a new DownloadStateReceiver
+	    ResponseReceiver objResponseReceiver = new ResponseReceiver();
+	    // Registers the DownloadStateReceiver and its intent filters
+	    LocalBroadcastManager.getInstance(this).registerReceiver(objResponseReceiver, mStatusIntentFilter);
 
 		// Session management
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
@@ -356,6 +368,32 @@ public class ActivityExplorerStartup extends ListActivity {
 			LoadFile();
 		}
 	}
+	
+	// Broadcast receiver for receiving status updates from the IntentService
+    private class ResponseReceiver extends BroadcastReceiver
+    {
+
+        // Called when the BroadcastReceiver gets an Intent it's registered to receive
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        	AlertDialog dialog;
+        	AlertDialog.Builder builder = new AlertDialog.Builder(objContext);
+			builder.setMessage("A sync request has been received. Do you want to sync now?");
+			builder.setCancelable(true);
+			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					ExecuteNotesSync();
+				}
+			});
+			builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					return;
+				}
+			});
+			dialog = builder.create();
+			dialog.show();	
+        }
+    }
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
@@ -363,6 +401,46 @@ public class ActivityExplorerStartup extends ListActivity {
 		super.onConfigurationChanged(newConfig);
 		clsIndentableTextView objMyTextView = (clsIndentableTextView) findViewById(R.id.row);
 		// objMyTextView.IndicateOrientationChanged();
+	}
+
+	public void ExecuteNotesSync() {
+		if (objMessaging.IsNetworkAvailable(this) == false) {
+			Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		if (objMessaging.IsServerAlive() == false) {
+			Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		clsUser  objRegisteredUser = objGroupMembers.GetRegisteredUser();
+		if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
+			// Not registered, cannot sync
+			Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		URL urlFeed;
+		try {
+			urlFeed = new URL(objMessaging.GetServerUrl()
+					+ getResources().getString(R.string.url_note_sync));
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (NotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
+		objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
+		objSyncCommandMsg.strRegistrationId = strRegistrationId;
+		objSyncCommandMsg.boolIsMergeNeeded = true;
+		objSyncCommandMsg.boolIsAutoSyncCommand = false;
+		objSyncCommandMsg.objSyncRepositoryCtrlDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
+
+		ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(this,
+				urlFeed, objSyncCommandMsg, objMessaging, true, objGroupMembers);
+		objSyncAsyncTask.execute("");		
 	}
 
 	@Override
@@ -909,42 +987,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			objGetNoteSharedUsersAsyncTask.execute(null, null, null);
 			return true;
 		case R.id.actionShareSyncAll:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
-				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			if (objMessaging.IsServerAlive() == false) {
-				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			objRegisteredUser = objGroupMembers.GetRegisteredUser();
-			if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
-				// Not registered, cannot sync
-				Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			try {
-				urlFeed = new URL(objMessaging.GetServerUrl()
-						+ getResources().getString(R.string.url_note_sync));
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return true;
-			} catch (NotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return true;
-			}
-			clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
-			objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
-			objSyncCommandMsg.strRegistrationId = strRegistrationId;
-			objSyncCommandMsg.boolIsMergeNeeded = true;
-			objSyncCommandMsg.boolIsAutoSyncCommand = false;
-			objSyncCommandMsg.objSyncRepositoryCtrlDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
-
-			ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(this,
-					urlFeed, objSyncCommandMsg, objMessaging, true, objGroupMembers);
-			objSyncAsyncTask.execute("");
+			ExecuteNotesSync();
 			return true;
 		case R.id.actionPublications:
 			if (objMessaging.IsNetworkAvailable(this) == false) {

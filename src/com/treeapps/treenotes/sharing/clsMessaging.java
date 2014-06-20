@@ -76,8 +76,8 @@ import android.widget.Toast;
 
 public class clsMessaging {
 	
-	private static final int NET_CONNECT_TIMEOUT_MILLIS = 5000;  // 15 seconds
-    private static final int NET_READ_TIMEOUT_MILLIS = 300000;  // 10 seconds
+	private static final int NET_CONNECT_TIMEOUT_MILLIS = 15000;  // 15 seconds
+    private static final int NET_READ_TIMEOUT_MILLIS = 15000;  // 15 seconds
     
     public static String SERVER_URL_AZURE = "http://treenotes.azurewebsites.net";
     public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.14";

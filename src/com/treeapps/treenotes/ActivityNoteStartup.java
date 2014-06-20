@@ -1559,7 +1559,7 @@ public class ActivityNoteStartup extends ListActivity {
 							public void imageUploadFinished(boolean success, String errorMessage) {
 								
 								clsUtils.IndicateToServiceIntentSyncIsCompleted(objActivity);
-								
+																
 								if (!success) {
 									clsUtils.MessageBox(objActivity, errorMessage, false);
 									return;

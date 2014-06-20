@@ -61,14 +61,25 @@ public class GcmIntentService extends IntentService {
 					enumNotificationType objNotificationType = enumNotificationType.getValue(strNotificationType);
 					if (objNotificationType == enumNotificationType.NOTIFY_AND_SYNC) {
 						if (!boolIsBusySyncing) {
-							if (isActivityRunning(ActivityNoteStartup.class)) {
-								boolIsBusySyncing = true;
-								Intent localIntent = new Intent(ActivityNoteStartup.BROADCAST_ACTION)
-								// Puts the status into the Intent
-										.putExtra(ActivityNoteStartup.BROADCAST_DATA_NOTE_UUID, strNoteUuid);
-								// Broadcasts the Intent to receivers in this app.
-								LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
-								clsUtils.CustomLog("GcmIntentService fired");
+							// Not busy syncing yet
+							if (isActivityRunningAndTop(ActivityNoteStartup.class)) {
+								// Note activity is running, check if the correct note is open
+								if (strNoteUuid.equals(ActivityNoteStartup.objNoteTreeview.getRepository().uuidRepository.toString())) {
+									// Correct note is open
+									boolIsBusySyncing = true;
+									Intent localIntent = new Intent(ActivityNoteStartup.BROADCAST_ACTION)
+									// Puts the status into the Intent
+											.putExtra(ActivityNoteStartup.BROADCAST_DATA_NOTE_UUID, strNoteUuid);
+									// Broadcasts the Intent to receivers in this app.
+									LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+									clsUtils.CustomLog("GcmIntentService fired");
+								} else {
+									// Wrong note is open, so display notification at top
+									sendNotification("Received: " + strMessage);
+								}
+							} else {
+								// Note activity not running, so display notification at top
+								sendNotification("Received: " + strMessage);
 							}
 						}
 					} else if (objNotificationType == enumNotificationType.NOTIFY_ONLY) {
@@ -106,9 +117,21 @@ public class GcmIntentService extends IntentService {
 
 		mBuilder.setContentIntent(contentIntent);
 		mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+		
+		if (!boolIsBusySyncing) {
+			if (isActivityRunningAndTop(ActivityExplorerStartup.class)) {
+				boolIsBusySyncing = true;
+				Intent localIntent = new Intent(ActivityExplorerStartup.BROADCAST_ACTION);
+				// Broadcasts the Intent to receivers in this app.
+				LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+				clsUtils.CustomLog("GcmIntentService fired");
+			} else {
+				// Post it to preferences so it can be accessed later when app is open
+			}
+		}
 	}
 	
-	protected Boolean isActivityRunning(Class<?> activityClass)
+	protected Boolean isActivityRunningAndTop(Class<?> activityClass)
 	{
 	        ActivityManager activityManager = (ActivityManager) getBaseContext().getSystemService(Context.ACTIVITY_SERVICE);
 	        List<ActivityManager.RunningTaskInfo> tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
