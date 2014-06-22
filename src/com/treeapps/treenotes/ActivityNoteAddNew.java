@@ -119,7 +119,7 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 	// interface from  implements clsResourceLoader.TaskCompletedInterface 
 	public void loadTaskComplete(Bitmap bm, Bitmap bmFull, Uri uri)
 	{
-		pd.dismiss();
+		
 		
 		if(bm == null)
 		{
@@ -127,9 +127,6 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		}
 		else
 		{
-			ImageView preview = (ImageView)findViewById(R.id.imagePreview);
-			preview.setImageBitmap(bm);			
-
 			// Create a thumbnail for the tree and annotation
 			SaveBitmapToFile(bm, strImageFilename.getAbsolutePath());
 
@@ -143,6 +140,12 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 		}
 		RadioGroup rg = (RadioGroup)findViewById(R.id.radioItemType);
 		rg.setOnCheckedChangeListener(new RadioGroupOnCheckedChangeListener());
+		
+		Bitmap bitmap = BitmapFactory.decodeFile(strImageFilename.getAbsolutePath());
+		ImageView preview = (ImageView)findViewById(R.id.imagePreview);
+		preview.setImageBitmap(bitmap);
+		clsUtils.CustomLog("Temp files created");
+		pd.dismiss();
 	}
 	
 	@Override

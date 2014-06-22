@@ -35,6 +35,7 @@ import org.json.JSONTokener;
 
 
 
+
 import com.google.gson.Gson;
 import com.treeapps.treenotes.R;
 import com.treeapps.treenotes.clsExplorerTreeview;
@@ -170,6 +171,17 @@ public class clsMessaging {
 		}
 	}
 	
+
+	public boolean IsImageLoadDatasEmpty(ArrayList<clsImageLoadData> objImageLoadDatas ) {
+		for(clsImageLoadData objImageLoadData: objImageLoadDatas) {
+			if (objImageLoadData.objImageToBeDownLoadedDatas.size() !=0 || 
+				objImageLoadData.objImageToBeUploadedDatas.size() !=0 ) {
+				return false;
+			}
+		}
+		return true;
+	}
+		
 	public boolean getBoolIsServerIisExpress() {
 		return objRepository.boolIsServerIisExpress;
 	}
@@ -583,7 +595,7 @@ public class clsMessaging {
    	static class clsInstructUploadCompleteResponse extends clsWebServiceResponse {}
    	
    	
-    public static class clsImageUpDownloadAsyncTask extends AsyncTask<Void, Void, Void> {
+    public static class clsImageUpDownloadAsyncTask extends AsyncTask<Void, String, Void> {
 
     	static Activity objActivity;
     	static clsMessaging objMessaging;
@@ -643,6 +655,15 @@ public class clsMessaging {
    	    }
     	
     	@Override
+    	protected void onProgressUpdate(String... values) {
+    		if (boolDisplayProgress) {
+   	        	if (objProgressDialog.isShowing()) {
+   	   		        objProgressDialog.setMessage(values[0]);
+   	        	}
+   	        }
+    	}
+    	
+    	@Override
 		protected Void doInBackground(Void... arg0) {
     		
     		clsUtils.CustomLog("UpDownLoadDoInBackground running");
@@ -657,6 +678,11 @@ public class clsMessaging {
 					{
 						callbackProgress.imageUploadProgress(++countUploads, objImageLoadData.objImageToBeUploadedDatas.size());
 					}
+					
+					publishProgress("Uploading (" + 
+							objImageLoadData.objImageToBeUploadedDatas.indexOf(objImageToBeUploadedData) +
+							" of " + objImageLoadData.objImageToBeUploadedDatas.size() + ")");
+
 					
 					// See if the required image to be uploaded actually exists locally
 					ArrayList<clsImageToBeUploadedConfigData> objImagesToBeUploadedFileDatas = new ArrayList<clsImageToBeUploadedConfigData>();
@@ -701,6 +727,10 @@ public class clsMessaging {
 				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objImageLoadData.strNoteUuid);
 				clsExplorerTreeview.clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
 				for(clsImageToBeDownLoadedData objImageToBeDownLoadedData: objImageLoadData.objImageToBeDownLoadedDatas) {
+					publishProgress("Downloading (" + 
+							objImageLoadData.objImageToBeDownLoadedDatas.indexOf(objImageToBeDownLoadedData) +
+							" of " + objImageLoadData.objImageToBeDownLoadedDatas.size() + ")");
+
 					// Thumbnail image
 					clsDownloadImageFileCommandMsg objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
 					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
@@ -750,8 +780,7 @@ public class clsMessaging {
 			
 			return null;
 		}
-    	
-
+    			
 
 		private String EnsureUploadImageVersionsExists(
 				clsImageToBeUploadedData objImageToBeUploadedData, ArrayList<clsImageToBeUploadedConfigData> objImagesToBeUploadedConfigDatas) {

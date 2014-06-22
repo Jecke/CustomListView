@@ -41,6 +41,7 @@ import com.treeapps.treenotes.clsTreeview.enumItemType;
 import com.treeapps.treenotes.export.ActivityFacebookExport;
 import com.treeapps.treenotes.export.clsExportData;
 import com.treeapps.treenotes.export.clsMainExport;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.OnImageUploadFinishedListener;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageCommand;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
@@ -161,6 +162,8 @@ public class ActivityExplorerStartup extends ListActivity {
 	static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
 	clsGetNoteSharedUsersAsyncTask objGetNoteSharedUsersAsyncTask;
 	clsSetNoteSharedUsersAsyncTask objSetNoteSharedUsersAsyncTask;
+	
+	public static ArrayList<clsImageLoadData> objLocalImageLoadDatas;
 
 	// Billing data
 	// To be persisted
@@ -601,6 +604,9 @@ public class ActivityExplorerStartup extends ListActivity {
 		objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
 		clsUtils.SerializeToSharedPreferences("ActivityExplorerStartup", "strRegistrationId", this, strRegistrationId);
 		strRegistrationId = clsUtils.getRegistrationId(objContext);
+		String strImageLoadDatas = sharedPref.getString("objImageLoadDatas", "");
+   	    java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
+   	    objLocalImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
 		clsUtils.CustomLog("LoadFile");
 	}
 
@@ -612,6 +618,12 @@ public class ActivityExplorerStartup extends ListActivity {
 		objMessaging.SaveFile(this);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 		clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
+
+		SharedPreferences.Editor editor = sharedPref.edit();
+		String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
+    	editor.putString("objImageLoadDatas", strImageLoadDatas);
+    	editor.commit();
+    	
 		clsUtils.CustomLog("SaveFile");
 
 	}
@@ -1855,6 +1867,8 @@ public class ActivityExplorerStartup extends ListActivity {
 
 		static boolean boolDisplayResults;
 		static clsGroupMembers objGroupMembers;
+		static clsMessaging objMessaging;
+		String strMessage = "";
 
 		public ActivityExplorerStartupSyncAsyncTask(Activity objActivity, URL urlFeed,
 				clsSyncNoteCommandMsg objSyncCommandMsg, clsMessaging objMessaging, boolean boolDisplayToasts,
@@ -1863,27 +1877,35 @@ public class ActivityExplorerStartup extends ListActivity {
 			// TODO Auto-generated constructor stub
 			ActivityExplorerStartupSyncAsyncTask.boolDisplayResults = boolDisplayToasts;
 			ActivityExplorerStartupSyncAsyncTask.objGroupMembers = objGroupMembers;
+			ActivityExplorerStartupSyncAsyncTask.objMessaging = objMessaging;
 			((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas.clear();
 		}
 
 		@Override
 		protected void onPostExecute(clsSyncResult objResult) {
-			String strMessage = "";
 			super.onPostExecute(objResult);
 			// Do what needs to be done with the result
 			if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
-				clsUtils.UpdateImageLoadDatasForUploads(((ActivityExplorerStartup) objContext).objMessaging,
-						objResult.objImageLoadDatas,
-						((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+   	        	clsNoteTreeview objNoteTreeview;
+   	        	clsRepository objRepositoryForImagesUpDownloadPurposes = null;
+   	        	boolean boolIsNeedToUpDownloadImages = false;
+   	        	objLocalImageLoadDatas = new ArrayList<clsImageLoadData>(); // Clear list
 				for (int i = 0; i < objResult.intServerInstructions.size(); i++) {
+					objNoteTreeview = null; // Will be an object if a local change took place
 					// Depending on server instructions
 					switch (objResult.intServerInstructions.get(i)) {
 					case clsMessaging.SERVER_INSTRUCT_KEEP_ORIGINAL:
-						if (boolDisplayResults) {
-							clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+						clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+						if (boolDisplayResults) {	
 							strMessage += "New note '" + objSyncRepository.strRepositoryName
 									+ "' has been created on server.\n";
 						}
+						// Setup for images updownload, needs to create a objRepository to pass on later
+						boolIsNeedToUpDownloadImages = true;
+						File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
+						File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
+								objSyncRepository.strRepositoryUuid);
+						objRepositoryForImagesUpDownloadPurposes = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
 						break;
 					case clsMessaging.SERVER_INSTRUCTION_REMOVE:
 						String strToDeleteRepositoryUuid = objResult.objSyncRepositories.get(i).strRepositoryUuid;
@@ -1892,26 +1914,24 @@ public class ActivityExplorerStartup extends ListActivity {
 						((ActivityExplorerStartup) objContext).objExplorerTreeview.RemoveTreeNode(objDeleteTreeNode,
 								true);
 						if (boolDisplayResults) {
-							clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+							objSyncRepository = objResult.objSyncRepositories.get(i);
 							strMessage += "New note '" + objSyncRepository.strRepositoryName + "' has been deleted.\n";
 						}
+						boolIsNeedToUpDownloadImages = false;
 						break;
 					case clsMessaging.SERVER_INSTRUCT_REPLACE_ORIGINAL:
-						clsNoteTreeview objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
+						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
-						File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
-						File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
+						fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
+						objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
 								objNoteTreeview.getRepository().uuidRepository.toString());
 						objNoteTreeview.getRepository().SerializeToFile(objNoteFile);
 						if (boolDisplayResults) {
 							strMessage += "Note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been replaced with an updated version.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(
-								((ActivityExplorerStartup) objContext).objMessaging, ((ActivityExplorerStartup) objContext).objGroupMembers,
-								objNoteTreeview,
-								fileTreeNodesDir, objResult.objImageLoadDatas,
-								((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+						boolIsNeedToUpDownloadImages = true;
+						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
 						clsExplorerTreeview objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1941,11 +1961,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New shared note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(
-								((ActivityExplorerStartup) objContext).objMessaging, ((ActivityExplorerStartup) objContext).objGroupMembers,
-								objNoteTreeview,
-								fileTreeNodesDir, objResult.objImageLoadDatas,
-								((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+						boolIsNeedToUpDownloadImages = true;
+						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
 						objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1974,42 +1991,82 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New subscribed note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(
-								((ActivityExplorerStartup) objContext).objMessaging, ((ActivityExplorerStartup) objContext).objGroupMembers,
-								objNoteTreeview,
-								fileTreeNodesDir, objResult.objImageLoadDatas,
-								((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+						boolIsNeedToUpDownloadImages = true;
+						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
 						break;
 					case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
 						if (boolDisplayResults) {
 							strMessage += "Sync completed.\n";
 						}
+						boolIsNeedToUpDownloadImages = false;
 						break;
 					case clsMessaging.SERVER_INSTRUCT_PROBLEM:
 						if (boolDisplayResults) {
-							clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+							objSyncRepository = objResult.objSyncRepositories.get(i);
 							strMessage += "Note '" + objSyncRepository.strRepositoryName + "' had a sync problem. "
 									+ objResult.strServerMessages.get(i) + ".\n";
 						}
+						boolIsNeedToUpDownloadImages = false;
 						break;
 					}
-
-					((ActivityExplorerStartup) objContext).RefreshListView();
+					
+					// Build list of images that needs upload and download
+	   	        	if (boolIsNeedToUpDownloadImages) {
+						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup) objContext).objMessaging,
+								((ActivityExplorerStartup) objContext).objGroupMembers, objRepositoryForImagesUpDownloadPurposes,
+								ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas,
+								objLocalImageLoadDatas);
+						clsUtils.UpdateImageLoadDatasForUploads(((ActivityExplorerStartup) objContext).objMessaging,
+								objResult.objImageLoadDatas, objLocalImageLoadDatas);
+					}
+					
 				}
 			} else {
 				if (boolDisplayResults) {
 					strMessage += objResult.strErrorMessage + ".\n";
 				}
-
+				return;
 			}
-			clsUtils.MessageBox(objContext, strMessage, false);
-
+			
+//			if (objMessaging.IsImageLoadDatasEmpty(objLocalImageLoadDatas)) {
+//				// No images need to be synced, all is done
+//				clsUtils.MessageBox(objContext, strMessage, true);
+//				return;
+//			}
+			
 			// Start background image syncing
-			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(objContext,
-					((ActivityExplorerStartup) objContext).objMessaging, true,
-					((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas, null,
-					null, true );
+			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((ActivityExplorerStartup) objContext, ((ActivityExplorerStartup) objContext).objMessaging, 
+					true, objLocalImageLoadDatas, new OnImageUploadFinishedListener() {
+						
+						@Override
+						public void imageUploadFinished(boolean success, String errorMessage) {
+							
+							clsUtils.IndicateToServiceIntentSyncIsCompleted(objContext);
+															
+							if (!success) {
+								clsUtils.MessageBox(objContext, errorMessage, false);
+								return;
+							} else {
+								// Once successfully downloaded, update the ResourceUrl in the relevant treenode
+								for (clsImageLoadData clsLocalImageLoadData: objLocalImageLoadDatas ) {
+									String strNoteUuid = clsLocalImageLoadData.strNoteUuid;
+									File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, strNoteUuid);
+									clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
+									clsUtils.UpdateTreeviewResourcePaths((Activity) objContext, objNoteRepository, clsLocalImageLoadData);
+									objNoteRepository.SerializeToFile(objNoteFile);
+								}
+
+								clsUtils.MessageBox(objContext, strMessage, true);
+								((ActivityExplorerStartup) objContext).RefreshListView();
+							}
+	
+							
+							
+						}
+					}, null, false);
 			objImageUpDownloadAsyncTask.execute();
+			
+
 		}
 	}
 

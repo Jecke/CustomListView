@@ -207,7 +207,7 @@ public class clsExportNoteAsWebPage {
 		intLevelAmount = GetLevelAmount(objTreeview);
 		strWebPageHtml  = "<div class='datagrid'>";
 		strWebPageHtml += "<table><tbody>";
-		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview) {		
+		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview.getRepository()) {		
 			@Override
 			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
 				strWebPageHtml += GenTableRow(intLevelAmount, intLevel, objTreeNode);			
@@ -263,7 +263,7 @@ public class clsExportNoteAsWebPage {
 		objImageLoadData = new clsImageLoadData();
 		objImageLoadData.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
 		objImageLoadDatas.add(objImageLoadData);
-		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview) {		
+		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview.getRepository()) {		
 			@Override
 			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
 				if ((objTreeNode.resourceId == clsTreeview.IMAGE_RESOURCE) || 

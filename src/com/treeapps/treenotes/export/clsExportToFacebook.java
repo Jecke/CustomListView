@@ -176,7 +176,7 @@ public class clsExportToFacebook extends Fragment
 		}
 
 		// Figure if there is an image on level 1 which can be used as the cover image for the link export to FB
-		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(clsExportData._objTreeview) {		
+		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(clsExportData._objTreeview.getRepository()) {		
 			@Override
 			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
 				if(objTreeNode.hasImage() && intLevel == 0 && topLevelImage.isEmpty())

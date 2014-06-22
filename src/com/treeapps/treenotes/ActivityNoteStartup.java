@@ -102,7 +102,7 @@ public class ActivityNoteStartup extends ListActivity {
 	
 	
 	// Variables that need to be persisted
-	String strNoteUuid;
+	 String strNoteUuid;
 	 public static ArrayList<clsListItem> listItems = new ArrayList<clsListItem>();
 	 public static clsNoteTreeview objNoteTreeview;
 	 public clsGroupMembers objGroupMembers = new clsGroupMembers(this);
@@ -1539,9 +1539,9 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	    	}
 	   	        	}
 	   	        	((ActivityNoteStartup)objActivity).SaveFile();
-	   	        	clsUtils.ClearImageLoadDatas(objLocalImageLoadDatas);
+	   	        	objLocalImageLoadDatas.clear();
 	   	        	clsUtils.UpdateImageLoadDatasForDownloads(((ActivityNoteStartup)objActivity).objMessaging, ((ActivityNoteStartup)objActivity).objGroupMembers,
-	   	        			objNoteTreeview, ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas, objLocalImageLoadDatas);
+	   	        			objNoteTreeview.getRepository(), ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas, objLocalImageLoadDatas);
 	   	        	clsUtils.UpdateImageLoadDatasForUploads(((ActivityNoteStartup)objActivity).objMessaging, 
 	   	        			objResult.objImageLoadDatas, objLocalImageLoadDatas);
 	   	        		
@@ -1553,7 +1553,7 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        }
 	   	        // Start background image syncing
 				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objActivity, ((ActivityNoteStartup)objActivity).objMessaging, 
-						true, ActivityNoteStartup.objLocalImageLoadDatas, new OnImageUploadFinishedListener() {
+						true, objLocalImageLoadDatas, new OnImageUploadFinishedListener() {
 							
 							@Override
 							public void imageUploadFinished(boolean success, String errorMessage) {
@@ -1565,10 +1565,15 @@ public class ActivityNoteStartup extends ListActivity {
 									return;
 								} else {
 									clsUtils.MessageBox(objActivity, strMessage, true);
+									// Once successfully downloaded, update the ResourceUrl in the relevant treenode
+									for (clsImageLoadData objImageLoadData: objLocalImageLoadDatas ) {
+										if (objImageLoadData.strNoteUuid.equals(objTreeview.getRepository().uuidRepository.toString())) {
+											clsUtils.UpdateTreeviewResourcePaths(objActivity, objTreeview.getRepository(), objImageLoadData);
+											((ActivityNoteStartup) objActivity).SaveFile();
+										}
+									}
 								}
-								// Once successfully downloaded, update the ResourceUrl in the relevant treenode
-								clsUtils.UpdateTreeviewResourcePaths(objActivity, objTreeview, objLocalImageLoadDatas);		
-								
+									
 								// Refresh
 								((ActivityNoteStartup)objActivity).RefreshListView();
 								

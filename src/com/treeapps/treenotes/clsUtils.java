@@ -34,6 +34,7 @@ import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersRespo
 import com.treeapps.treenotes.ActivityExplorerStartup.clsIabLocalData;
 import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsyncTask.OnGetNoteSharedUsersResponseListener;
 import com.treeapps.treenotes.clsIntentMessaging.clsChosenMembers;
+import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.sharing.ActivityGroupMembers;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
@@ -686,16 +687,10 @@ public class clsUtils {
 		return path;
 	}
 	
-	public static void ClearImageLoadDatas(ArrayList<clsImageLoadData> objImageLoadDatas) {
-		for (clsImageLoadData objImageLoadData : objImageLoadDatas) {
-			objImageLoadData.objImageToBeUploadedDatas.clear();
-			objImageLoadData.objImageToBeDownLoadedDatas.clear();
-		}
-		objImageLoadDatas.clear();
-	}
+
 	
 
-	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsGroupMembers objGroupMembers, clsNoteTreeview objNoteTreeview,
+	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsGroupMembers objGroupMembers, clsRepository objRepository,
 			File fileTreeNodesDir, ArrayList<clsImageLoadData> objServerReturnedImageLoadDatas, ArrayList<clsImageLoadData> objImageLoadDatas) {
 		// Look for all images needed by note, if they already exist on client,
 		// collect all the missing ones
@@ -705,15 +700,13 @@ public class clsUtils {
 
 			clsImageLoadData objImageLoadData;
 			File fileTreeNodesDir;
-			clsTreeview objTreeview;
 			clsGroupMembers objGroupMembers;
 
-			public clsMyTreeviewIterator(clsGroupMembers objGroupMembers, clsTreeview objTreeview, File fileTreeNodesDir,
+			public clsMyTreeviewIterator(clsGroupMembers objGroupMembers, clsRepository objRepository, File fileTreeNodesDir,
 					clsImageLoadData objImageLoadData) {
-				super(objTreeview);
+				super(objRepository);
 				this.objImageLoadData = objImageLoadData;
 				this.fileTreeNodesDir = fileTreeNodesDir;
-				this.objTreeview = objTreeview;
 				this.objGroupMembers = objGroupMembers;
 			}
 
@@ -773,9 +766,9 @@ public class clsUtils {
 		clsImageLoadData objThisNoteImageLoadData = null;
 		for (clsImageLoadData objImageLoadData : objImageLoadDatas) {
 			// Append if structure already exists
-			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
+			if (objImageLoadData.strNoteUuid.equals(objRepository.uuidRepository)) {
 				objThisNoteImageLoadData = objImageLoadData;
-				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objNoteTreeview,
+				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objRepository,
 						fileTreeNodesDir, objThisNoteImageLoadData);
 				objMyTreeviewIterator.Execute();
 				break;
@@ -784,9 +777,9 @@ public class clsUtils {
 		if (objThisNoteImageLoadData == null) {
 			// Create new one if not existing yet
 			objThisNoteImageLoadData = new clsImageLoadData();
-			objThisNoteImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
+			objThisNoteImageLoadData.strNoteUuid = objRepository.uuidRepository.toString();
 			objImageLoadDatas.add(objThisNoteImageLoadData);
-			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objNoteTreeview, fileTreeNodesDir,
+			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objRepository, fileTreeNodesDir,
 					objThisNoteImageLoadData);
 			objMyTreeviewIterator.Execute();
 		}
@@ -1109,18 +1102,18 @@ public class clsUtils {
 		return DateToRfc822(lastModDate);
 	}
 	
-	public static void UpdateTreeviewResourcePaths(Activity objActivity, clsTreeview objTreeview, ArrayList<clsImageLoadData> objImageLoadDatas) {
-		for (clsImageLoadData objImageLoadData : objImageLoadDatas) {
-			for (clsImageToBeDownLoadedData objImageToBeDownLoadedData : objImageLoadData.objImageToBeDownLoadedDatas) {
-				String strImageFullFilename = 
-						clsUtils.GetFullImageFileName(objActivity, objImageToBeDownLoadedData.strImageUuid);										
-				File fileImage = new File(strImageFullFilename);
-				if (fileImage.exists()) {
-					clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(UUID.fromString(objImageToBeDownLoadedData.strImageUuid));
-					if (objTreeNode != null) {
-						Uri contentUri = Uri.fromFile(fileImage);
-						objTreeNode.resourcePath = clsUtils.getPath(objActivity,contentUri);
-					}
+	public static void UpdateTreeviewResourcePaths(Activity objActivity, clsRepository objNoteRepository, clsImageLoadData objImageLoadData) {
+
+		for (clsImageToBeDownLoadedData objImageToBeDownLoadedData : objImageLoadData.objImageToBeDownLoadedDatas) {
+			String strImageFullFilename = clsUtils.GetFullImageFileName(objActivity,
+					objImageToBeDownLoadedData.strImageUuid);
+			File fileImage = new File(strImageFullFilename);
+			if (fileImage.exists()) {
+				clsTreeNode objTreeNode = objNoteRepository.getTreeNodeFromUuid(UUID
+						.fromString(objImageToBeDownLoadedData.strImageUuid));
+				if (objTreeNode != null) {
+					Uri contentUri = Uri.fromFile(fileImage);
+					objTreeNode.resourcePath = clsUtils.getPath(objActivity, contentUri);
 				}
 			}
 		}

@@ -298,7 +298,32 @@ public class clsTreeview {
 			}
 		}
 
+		
+		public clsTreeNode getTreeNodeFromUuid(UUID guidTreeNode) {
+			if (guidTreeNode == null)
+				return null;
+			clsTreeNode objFound;
+			for (clsTreeNode objTreeNode : objRootNodes) {
+				objFound = findTreeNodeByGuidRecursively(guidTreeNode, objTreeNode);
+				if (objFound != null)
+					return objFound;
+			}
+			return null;
+		}
 
+		private clsTreeNode findTreeNodeByGuidRecursively(UUID guidTreeNode, clsTreeNode objTreeNode) {
+			clsTreeNode objFound;
+			if (guidTreeNode.equals(objTreeNode.guidTreeNode)) {
+				return objTreeNode;
+			}
+			for (clsTreeNode objChildTreeNode : objTreeNode.objChildren) {
+				objFound = findTreeNodeByGuidRecursively(guidTreeNode, objChildTreeNode);
+				if (objFound != null)
+					return objFound;
+			}
+			return null;
+		}
+		
 	}
 
 	@SuppressWarnings("serial")
@@ -465,16 +490,27 @@ public class clsTreeview {
 			this.strLastChangedDateTimeStamp = clsUtils.GetStrCurrentDateTime();
 
 			if (resourcePath != "") {
+				clsUtils.CustomLog("Renaming temp files");
 				// When created and not empty implies there could be a thumbnail
 				// file for it which needs renaming
 				String strThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/" + guidTreeNode.toString()
 						+ ".jpg";
 				File objThumbnailFile = new File(strThumbnailFullFilename);
 				if (!objThumbnailFile.exists()) {
+					clsUtils.CustomLog("Final thumbnail not existing");
 					String strTempThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/temp_uuid.jpg";
 					File objTempThumbnailFile = new File(strTempThumbnailFullFilename);
 					if (objTempThumbnailFile.exists()) {
-						objTempThumbnailFile.renameTo(objThumbnailFile);
+						clsUtils.CustomLog("Temp thumbnail exists");
+						boolean boolSuccess = objTempThumbnailFile.renameTo(objThumbnailFile);
+						if (boolSuccess) {
+							clsUtils.CustomLog("Success renaming thumbnail temp file");
+						} else {
+							clsUtils.CustomLog("Problem renaming thumbnail temp file");
+						}
+						objTempThumbnailFile.delete();
+					} else {
+						clsUtils.CustomLog("Could not find file: " + objTempThumbnailFile.getAbsolutePath());
 					}
 					// Create local version of full image for annotation if
 					// necessary
@@ -488,7 +524,12 @@ public class clsTreeview {
 									+ guidTreeNode.toString() + "_full.jpg";
 							File objAnnotateThumbnailFile = new File(strAnnotateFullFilename);
 							
-							objTempAnnotateFile.renameTo(objAnnotateThumbnailFile);
+							boolean boolSuccess = objTempAnnotateFile.renameTo(objAnnotateThumbnailFile);
+							if (boolSuccess) {
+								clsUtils.CustomLog("Success renaming full temp file");
+							} else {
+								clsUtils.CustomLog("Problem renaming full temp file");
+							}
 							objTempAnnotateFile.delete();
 
 							// Workaround for local files. Replace temporary resourcePath by actual 
@@ -994,29 +1035,9 @@ public class clsTreeview {
 	}
 
 	public clsTreeNode getTreeNodeFromUuid(UUID guidTreeNode) {
-		if (guidTreeNode == null)
-			return null;
-		clsTreeNode objFound;
-		for (clsTreeNode objTreeNode : getRepository().objRootNodes) {
-			objFound = findTreeNodeByGuidRecursively(guidTreeNode, objTreeNode);
-			if (objFound != null)
-				return objFound;
-		}
-		return null;
+		return  getRepository().getTreeNodeFromUuid(guidTreeNode);
 	}
 
-	private clsTreeNode findTreeNodeByGuidRecursively(UUID guidTreeNode, clsTreeNode objTreeNode) {
-		clsTreeNode objFound;
-		if (guidTreeNode.equals(objTreeNode.guidTreeNode)) {
-			return objTreeNode;
-		}
-		for (clsTreeNode objChildTreeNode : objTreeNode.objChildren) {
-			objFound = findTreeNodeByGuidRecursively(guidTreeNode, objChildTreeNode);
-			if (objFound != null)
-				return objFound;
-		}
-		return null;
-	}
 
 	public clsTreeNode getParentTreeNode(clsTreeNode objSearchChildTreenode) {
 		clsTreeNode objFound = null;
