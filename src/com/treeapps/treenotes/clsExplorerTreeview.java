@@ -25,11 +25,9 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsSyncRepositoryCtrlData;
 public class clsExplorerTreeview extends clsTreeview {
 	
 
-	Context context;
 	
-	public clsExplorerTreeview(Context context, clsGroupMembers objGroupMembers){
-		super(objGroupMembers);
-		this.context = context;
+	public clsExplorerTreeview(Activity objActivity, clsGroupMembers objGroupMembers){
+		super(objActivity, objGroupMembers);
 	}
 	
 	public void SerializeToFile(File filePath, String strFilename){
@@ -50,7 +48,7 @@ public class clsExplorerTreeview extends clsTreeview {
 	
 	public void BackupToFile(String strBackupName) {
 		// TODO Auto-generated method stub
-		File fileTreeNotesDir = new File(clsUtils.GetTreeNotesDirectoryName(context));
+		File fileTreeNotesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
 		File fileBackupFolderName = BuildBackupFoldername(fileTreeNotesDir, strBackupName);
 		if (!fileBackupFolderName.exists()) {
 			fileBackupFolderName.mkdir();
@@ -73,7 +71,7 @@ public class clsExplorerTreeview extends clsTreeview {
 	
 	public void RestoreFromFile(String strBackupName) {
 		// TODO Auto-generated method stub
-		File fileTreeNotesDir = new File(clsUtils.GetTreeNotesDirectoryName(context));
+		File fileTreeNotesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
 		File fileBackupFolderName = BuildBackupFoldername(fileTreeNotesDir, strBackupName);
 		if (!fileBackupFolderName.exists()) {
 			clsUtils.CustomLog("Backup folder does not exist");
@@ -102,11 +100,11 @@ public class clsExplorerTreeview extends clsTreeview {
 		 }
 		 
 		 // Load the data from the new explore file
-		 DeserializeFromFile(fileTreeNotesDir,context.getResources().getString(R.string.working_file_name));
+		 DeserializeFromFile(fileTreeNotesDir,objActivity.getResources().getString(R.string.working_file_name));
 	}
 
 	private File BuildBackupFoldername(File fileTreeNotesRootPath, String strBackupName) {
-		String strBackupFoldername = strBackupName + context.getResources().getString(R.string.explorer_file_extention);
+		String strBackupFoldername = strBackupName + objActivity.getResources().getString(R.string.explorer_file_extention);
 		File fileBackupPath = new File(fileTreeNotesRootPath,strBackupFoldername);
 		return fileBackupPath;
 	}
@@ -160,8 +158,8 @@ public class clsExplorerTreeview extends clsTreeview {
 			// Make copy of thumbnail file since the UUID is different
 			String strSourceFilename = objTreeNode.guidTreeNode.toString() + ".jpg";
 			String strDestFilename = objNewTreeNode.guidTreeNode.toString() + ".jpg";
-			File objFileSource =new File(((ActivityExplorerStartup)context).fileTreeNodesDir, strSourceFilename);
-			File objFileDest =new File(((ActivityExplorerStartup)context).fileTreeNodesDir, strDestFilename);
+			File objFileSource =new File(((ActivityExplorerStartup)objActivity).fileTreeNodesDir, strSourceFilename);
+			File objFileDest =new File(((ActivityExplorerStartup)objActivity).fileTreeNodesDir, strDestFilename);
 			try {
 				ActivityNoteStartup.copyDirectoryOneLocationToAnotherLocation(objFileSource, objFileDest);
 			}
@@ -171,8 +169,8 @@ public class clsExplorerTreeview extends clsTreeview {
 		}
 		if (boolResetUuid && objNewTreeNode.enumItemType == enumItemType.OTHER) {
 			// Make copy of note since the UUID is different
-			File objFileSource =clsUtils.BuildNoteFilename(((ActivityExplorerStartup)context).fileTreeNodesDir, strSourceGuidTreeNode);
-			File objFileDest =clsUtils.BuildNoteFilename(((ActivityExplorerStartup)context).fileTreeNodesDir, objNewTreeNode.guidTreeNode.toString());
+			File objFileSource =clsUtils.BuildNoteFilename(((ActivityExplorerStartup)objActivity).fileTreeNodesDir, strSourceGuidTreeNode);
+			File objFileDest =clsUtils.BuildNoteFilename(((ActivityExplorerStartup)objActivity).fileTreeNodesDir, objNewTreeNode.guidTreeNode.toString());
 			try {
 				ActivityNoteStartup.copyDirectoryOneLocationToAnotherLocation(objFileSource, objFileDest);
 			}
@@ -220,7 +218,7 @@ public class clsExplorerTreeview extends clsTreeview {
 		return strNoteOwnerUserName;
 	}
 	
-	public clsRepository DeserializeNoteFromFile(File objFile){
+	public static clsRepository DeserializeNoteFromFile(File objFile){
 		clsRepository objRepository;
 		if (objFile.exists()== false) {
 			clsUtils.CustomLog("Note file does not exist");
@@ -277,13 +275,13 @@ public class clsExplorerTreeview extends clsTreeview {
 		if(objTreeNode.enumItemType == enumItemType.OTHER) {
 			if (objTreeNode.IsToBeSynched()) {
 				// Get note file from file repository
-				File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(context));
+				File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
 				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objTreeNode.guidTreeNode.toString() );
 				if (objNoteFile.exists()) {
 					clsRepository objNoteRepository = DeserializeNoteFromFile(objNoteFile);
 					// Add to sync repository
 					clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
-		        	objRepositoryCtrlData.objSyncRepository = objNoteRepository.getCopy();
+		        	objRepositoryCtrlData.objSyncRepository = objNoteRepository.getCopy(objActivity);
 		        	objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = false;
 		        	objRepositoryCtrlData.boolNeedsOnlyChangeNotification = true;
 		        	objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
@@ -297,11 +295,11 @@ public class clsExplorerTreeview extends clsTreeview {
 
 	public void SaveFile() {
 		// TODO Auto-generated method stub
-		File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(context));
+		File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
 		 if (!fileTreeNodesDir.exists()) {
 			fileTreeNodesDir.mkdirs();				 
 		 }
-		 getRepository().SerializeToFile(clsUtils.BuildExplorerFilename(fileTreeNodesDir, context.getResources().getString(R.string.working_file_name)));
+		 getRepository().SerializeToFile(clsUtils.BuildExplorerFilename(fileTreeNodesDir, objActivity.getResources().getString(R.string.working_file_name)));
 	}
 
 	public void SetOwnerOfNotesWithoutOwner(String strRegisteredUserUuid) {
@@ -312,7 +310,7 @@ public class clsExplorerTreeview extends clsTreeview {
 	}
 
 	private void SetOwnerOfNotesWithoutOwnerRecursively(clsTreeNode objTreeNode,	String strRegisteredUserUuid) {
-		File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(context));
+		File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
 		File objNoteFile;
 		if (objTreeNode.enumItemType == enumItemType.OTHER) {
 			// Add owner info to treenode (a note)
@@ -392,7 +390,7 @@ public class clsExplorerTreeview extends clsTreeview {
 		objDeletedTreeNode.boolIsDeleted = boolIsDeleted;
 		// If node is a note, set its repository to be deleted after syncing
 		if (objDeletedTreeNode.enumItemType == enumItemType.OTHER) {
-			File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(context));
+			File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
 			File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objDeletedTreeNode.guidTreeNode.toString() );
 			if (objNoteFile.exists()) {
 				clsRepository objNoteRepository = DeserializeNoteFromFile(objNoteFile);

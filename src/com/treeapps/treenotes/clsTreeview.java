@@ -9,12 +9,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import android.app.Activity;
+import android.content.Context;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.treeapps.treenotes.clsListItem.enumNewItemType;
 import com.treeapps.treenotes.imageannotation.clsAnnotationData;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
+import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedConfigData;
 
 public class clsTreeview {
 
@@ -29,15 +33,21 @@ public class clsTreeview {
 
 	private clsRepository _objRepository = new clsRepository();
 	public ArrayList<clsTreeNode> objClipboardTreeNodes = new ArrayList<clsTreeNode>();
+	
+	public clsGroupMembers objGroupMembers;
 	public enumCutCopyPasteState intCutCopyPasteState;
 	public UUID uuidLastAddedTreeNode;
+	public Activity objActivity;
 
-	public clsTreeview(clsGroupMembers objGroupMembers) {
+	public clsTreeview(Activity objActivity, clsGroupMembers objGroupMembers) {
+		this.objActivity = objActivity;
+		this.objGroupMembers = objGroupMembers;
 		intCutCopyPasteState = enumCutCopyPasteState.INACTIVE;
 	}
 
-	public void UpdateEnvironment(enumCutCopyPasteState intCutCopyPasteState,
+	public void UpdateEnvironment(Activity objActivity, enumCutCopyPasteState intCutCopyPasteState,
 			ArrayList<clsTreeNode> objClipboardTreeNodes) {
+		this.objActivity = objActivity;
 		this.intCutCopyPasteState = intCutCopyPasteState;
 		this.objClipboardTreeNodes = objClipboardTreeNodes;
 	}
@@ -52,8 +62,7 @@ public class clsTreeview {
 
 	public void DeserializeFromFile(File objFile) {
 		if (objFile.exists() == false) {
-			clsUtils.CustomLog("Backup file does not exist");
-			ClearRepository();
+			clsUtils.CustomLog("Backup file: " + objFile.getAbsolutePath() + " does not exist");
 			return;
 		}
 		BufferedReader br = null;
@@ -111,8 +120,8 @@ public class clsTreeview {
 		public boolean boolHiddenSelectionIsActive = false;
 		public boolean boolIsHiddenActive = true;
 		// Data for sharing
-		public ArrayList<clsShareUser> objSharedUsers = new ArrayList<clsShareUser>();
 		private String strOwnerUserUuid = "";
+		public boolean boolIsShared = false;
 		public boolean boolIsSubscribed = false;
 		public ArrayList<clsImageLoadData> objImageLoadDatas = new ArrayList<clsImageLoadData>();
 
@@ -140,14 +149,6 @@ public class clsTreeview {
 			return boolIsCheckList;
 		}
 
-		public ArrayList<clsShareUser> getObjSharedUsers() {
-			return objSharedUsers;
-		}
-
-		public void setObjSharedUsers(ArrayList<clsShareUser> objSharedUsers) {
-			this.objSharedUsers = objSharedUsers;
-		}
-
 		public String getNoteOwnerUserUuid() {
 			if (strOwnerUserUuid.isEmpty()) {
 				return "";
@@ -159,31 +160,31 @@ public class clsTreeview {
 			this.strOwnerUserUuid = strOwnerUserUuid;
 		}
 
-		public ArrayList<clsSyncTreeNode> getRootNodesCopy() {
+		public ArrayList<clsSyncTreeNode> getRootNodesCopy(Activity objActivity) {
 			ArrayList<clsSyncTreeNode> objNewRootNodes = new ArrayList<clsSyncTreeNode>();
 			for (clsTreeNode objTreeNode : this.objRootNodes) {
-				objNewRootNodes.add(getTreeNode2SyncTreeNodeCopy(objTreeNode));
+				objNewRootNodes.add(getTreeNode2SyncTreeNodeCopy(objActivity, objTreeNode));
 			}
 			return objNewRootNodes;
 		}
 
-		public clsSyncRepository getCopy() {
-			clsSyncRepository objclsSyncRepository = new clsSyncRepository();
-			objclsSyncRepository.strRepositoryUuid = this.uuidRepository.toString();
-			objclsSyncRepository.strRepositoryName = this.strName;
-			objclsSyncRepository.objRootNodes = this.getRootNodesCopy();
-			objclsSyncRepository.boolIsCheckList = this.boolIsCheckList;
-			objclsSyncRepository.boolIsCheckedItemsMadeHidden = this.boolIsCheckedItemsMadeHidden;
-			objclsSyncRepository.boolHiddenSelectionIsActive = this.boolHiddenSelectionIsActive;
-			objclsSyncRepository.boolIsHiddenActive = this.boolIsHiddenActive;
-			objclsSyncRepository.objSharedUsers = this.objSharedUsers;
-			objclsSyncRepository.strOwnerUserUuid = this.strOwnerUserUuid;
-			objclsSyncRepository.boolIsDeleted = this.boolIsDeleted;
-			objclsSyncRepository.boolIsSubscribed = this.boolIsSubscribed;
-			return objclsSyncRepository;
+		public clsSyncRepository getCopy(Activity objActivity) {
+			clsSyncRepository objSyncRepository = new clsSyncRepository();
+			objSyncRepository.strRepositoryUuid = this.uuidRepository.toString();
+			objSyncRepository.strRepositoryName = this.strName;
+			objSyncRepository.objRootNodes = this.getRootNodesCopy(objActivity);
+			objSyncRepository.boolIsCheckList = this.boolIsCheckList;
+			objSyncRepository.boolIsCheckedItemsMadeHidden = this.boolIsCheckedItemsMadeHidden;
+			objSyncRepository.boolHiddenSelectionIsActive = this.boolHiddenSelectionIsActive;
+			objSyncRepository.boolIsHiddenActive = this.boolIsHiddenActive;
+			objSyncRepository.strOwnerUserUuid = this.strOwnerUserUuid;
+			objSyncRepository.boolIsDeleted = this.boolIsDeleted;
+			objSyncRepository.boolIsShared = this.boolIsShared;
+			objSyncRepository.boolIsSubscribed = this.boolIsSubscribed;
+			return objSyncRepository;
 		}
 
-		public clsSyncTreeNode getTreeNode2SyncTreeNodeCopy(clsTreeNode objTreeNode) {
+		public clsSyncTreeNode getTreeNode2SyncTreeNodeCopy(Activity objActivity, clsTreeNode objTreeNode) {
 			clsSyncTreeNode objNewTreeNode = new clsSyncTreeNode();
 			objNewTreeNode.guidTreeNode = objTreeNode.guidTreeNode;
 			objNewTreeNode.strName = objTreeNode.strName;
@@ -197,14 +198,50 @@ public class clsTreeview {
 			objNewTreeNode.strOwnerUserUuid = objTreeNode.strOwnerUserUuid;
 			objNewTreeNode.strLastChangedByUserUuid = objTreeNode.strLastChangedByUserUuid;
 			objNewTreeNode.strLastChangedDateTimeStamp = objTreeNode.strLastChangedDateTimeStamp;
-			objNewTreeNode.strLastResourceChangedDateTimeStamp = objTreeNode.strLastResourceChangedDateTimeStamp;
 			objNewTreeNode.boolIsDeleted = objTreeNode.boolIsDeleted;
 			objNewTreeNode.boolIsNew = objTreeNode.boolIsNew;
 			objNewTreeNode.strAnnotationGson = clsUtils.SerializeToString(objTreeNode.annotation);
 			for (clsTreeNode objChildTreeNode : objTreeNode.objChildren) {
-				objNewTreeNode.objChildren.add(this.getTreeNode2SyncTreeNodeCopy(objChildTreeNode));
+				objNewTreeNode.objChildren.add(this.getTreeNode2SyncTreeNodeCopy(objActivity, objChildTreeNode));
 			}
+			objNewTreeNode.objResourceGroupData = GetLatestResourceGroupData(objActivity, objTreeNode.guidTreeNode);
+			
 			return objNewTreeNode;
+		}
+
+		private clsResourceGroupData GetLatestResourceGroupData(Activity objActivity, UUID guidTreeNode) {
+			clsResourceGroupData objResourceGroupData = new clsResourceGroupData();
+			// Thumbnail image
+			String strImageVersionFullFilename = 
+					clsUtils.GetThumbnailImageFileName(objActivity, guidTreeNode.toString());			
+			File fileImageVersion = new File(strImageVersionFullFilename);
+			String fileName = fileImageVersion.getName();
+			
+			if (fileImageVersion.exists()) {
+				objResourceGroupData.strThumbnailChecksum = clsUtils.GetMd5Code(strImageVersionFullFilename);
+				objResourceGroupData.strThumbnailLastChanged = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			}
+			
+			// Annotated image
+			strImageVersionFullFilename = 
+					clsUtils.GetAnnotatedImageFileName(objActivity, guidTreeNode.toString());			
+			fileImageVersion = new File(strImageVersionFullFilename);
+			fileName = fileImageVersion.getName();
+
+			if (fileImageVersion.exists()) {
+				objResourceGroupData.strAnnotatedLastChanged = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			}
+
+			// Full image
+			strImageVersionFullFilename = 
+					clsUtils.GetFullImageFileName(objActivity, guidTreeNode.toString());		
+			fileImageVersion = new File(strImageVersionFullFilename);
+			fileName = fileImageVersion.getName();
+			
+			if (fileImageVersion.exists()) {
+				objResourceGroupData.strFullLastChanged = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			}
+			return objResourceGroupData;
 		}
 
 		public boolean isBoolIsNoteSyncable() {
@@ -261,7 +298,32 @@ public class clsTreeview {
 			}
 		}
 
+		
+		public clsTreeNode getTreeNodeFromUuid(UUID guidTreeNode) {
+			if (guidTreeNode == null)
+				return null;
+			clsTreeNode objFound;
+			for (clsTreeNode objTreeNode : objRootNodes) {
+				objFound = findTreeNodeByGuidRecursively(guidTreeNode, objTreeNode);
+				if (objFound != null)
+					return objFound;
+			}
+			return null;
+		}
 
+		private clsTreeNode findTreeNodeByGuidRecursively(UUID guidTreeNode, clsTreeNode objTreeNode) {
+			clsTreeNode objFound;
+			if (guidTreeNode.equals(objTreeNode.guidTreeNode)) {
+				return objTreeNode;
+			}
+			for (clsTreeNode objChildTreeNode : objTreeNode.objChildren) {
+				objFound = findTreeNodeByGuidRecursively(guidTreeNode, objChildTreeNode);
+				if (objFound != null)
+					return objFound;
+			}
+			return null;
+		}
+		
 	}
 
 	@SuppressWarnings("serial")
@@ -276,6 +338,7 @@ public class clsTreeview {
 		public ArrayList<clsShareUser> objSharedUsers = new ArrayList<clsShareUser>();
 		public String strOwnerUserUuid = "";
 		public boolean boolIsDeleted = false;
+		public boolean boolIsShared = false;
 		public boolean boolIsSubscribed = false;
 
 		public clsRepository getCopy() {
@@ -287,9 +350,9 @@ public class clsTreeview {
 			objRepository.boolIsCheckedItemsMadeHidden = this.boolIsCheckedItemsMadeHidden;
 			objRepository.boolHiddenSelectionIsActive = this.boolHiddenSelectionIsActive;
 			objRepository.boolIsHiddenActive = this.boolIsHiddenActive;
-			objRepository.objSharedUsers = this.objSharedUsers;
 			objRepository.strOwnerUserUuid = this.strOwnerUserUuid;
 			objRepository.boolIsDeleted = this.boolIsDeleted;
+			objRepository.boolIsShared = this.boolIsShared;
 			objRepository.boolIsSubscribed = this.boolIsSubscribed;
 			return objRepository;
 		}
@@ -310,6 +373,7 @@ public class clsTreeview {
 			objNewTreeNode.enumItemType = objItemType[objSyncTreeNode.intItemType];
 			objNewTreeNode.resourcePath = objSyncTreeNode.resourcePath;
 			objNewTreeNode.resourceId = objSyncTreeNode.resourceId;
+			objNewTreeNode.objResourceGroupData =objSyncTreeNode.objResourceGroupData;
 			objNewTreeNode.strWebPageURL = objSyncTreeNode.strWebPageURL;
 			objNewTreeNode.boolIsChecked = objSyncTreeNode.boolIsChecked;
 			objNewTreeNode.boolIsHidden = objSyncTreeNode.boolIsHidden;
@@ -317,7 +381,6 @@ public class clsTreeview {
 			objNewTreeNode.strOwnerUserUuid = objSyncTreeNode.strOwnerUserUuid;
 			objNewTreeNode.strLastChangedByUserUuid = objSyncTreeNode.strLastChangedByUserUuid;
 			objNewTreeNode.strLastChangedDateTimeStamp = objSyncTreeNode.strLastChangedDateTimeStamp;
-			objNewTreeNode.strLastResourceChangedDateTimeStamp = objSyncTreeNode.strLastResourceChangedDateTimeStamp;
 			objNewTreeNode.boolIsDeleted = objSyncTreeNode.boolIsDeleted;
 			objNewTreeNode.boolIsNew = objSyncTreeNode.boolIsNew;
 			objNewTreeNode.annotation = clsUtils.DeSerializeFromString(objSyncTreeNode.strAnnotationGson,
@@ -349,8 +412,8 @@ public class clsTreeview {
 		private String strName = "";
 		public enumItemType enumItemType;
 		public String resourcePath = "";
-		public String strLastResourceChangedDateTimeStamp = "";
 		public int resourceId;
+		public clsResourceGroupData objResourceGroupData; // Only used when returned from sever, filled with server data config data
 		public String strWebPageURL; // Used to save the URL in case resourceId indicates a webpage resource
 		public boolean boolIsSelected;
 		public ArrayList<clsTreeNode> objChildren = new ArrayList<clsTreeNode>();
@@ -366,6 +429,11 @@ public class clsTreeview {
 		public boolean boolUseAnnotatedImage = false;
 		public boolean boolIsNew = false;
 
+		public boolean hasImage()
+		{
+			return (resourceId == IMAGE_RESOURCE || resourceId == WEB_RESOURCE); 
+		}
+		
 		public boolean getBoolUseAnnotatedImage() {
 			return boolUseAnnotatedImage;
 		}
@@ -402,7 +470,6 @@ public class clsTreeview {
 			this.strOwnerUserUuid = "";
 			this.strLastChangedByUserUuid = "";
 			this.strLastChangedDateTimeStamp = "";
-			this.strLastResourceChangedDateTimeStamp = "";
 		}
 
 		public clsTreeNode(String strName, enumItemType enumItemType, boolean boolIsSelected, String resourcePath,
@@ -421,19 +488,29 @@ public class clsTreeview {
 			this.strOwnerUserUuid = strOwnerUserUuid;
 			this.strLastChangedByUserUuid = strLastChangedByUserUuid;
 			this.strLastChangedDateTimeStamp = clsUtils.GetStrCurrentDateTime();
-			this.strLastResourceChangedDateTimeStamp = clsUtils.GetStrCurrentDateTime();;
 
 			if (resourcePath != "") {
+				clsUtils.CustomLog("Renaming temp files");
 				// When created and not empty implies there could be a thumbnail
 				// file for it which needs renaming
 				String strThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/" + guidTreeNode.toString()
 						+ ".jpg";
 				File objThumbnailFile = new File(strThumbnailFullFilename);
 				if (!objThumbnailFile.exists()) {
+					clsUtils.CustomLog("Final thumbnail not existing");
 					String strTempThumbnailFullFilename = ActivityExplorerStartup.fileTreeNodesDir + "/temp_uuid.jpg";
 					File objTempThumbnailFile = new File(strTempThumbnailFullFilename);
 					if (objTempThumbnailFile.exists()) {
-						objTempThumbnailFile.renameTo(objThumbnailFile);
+						clsUtils.CustomLog("Temp thumbnail exists");
+						boolean boolSuccess = objTempThumbnailFile.renameTo(objThumbnailFile);
+						if (boolSuccess) {
+							clsUtils.CustomLog("Success renaming thumbnail temp file");
+						} else {
+							clsUtils.CustomLog("Problem renaming thumbnail temp file");
+						}
+						objTempThumbnailFile.delete();
+					} else {
+						clsUtils.CustomLog("Could not find file: " + objTempThumbnailFile.getAbsolutePath());
 					}
 					// Create local version of full image for annotation if
 					// necessary
@@ -447,7 +524,12 @@ public class clsTreeview {
 									+ guidTreeNode.toString() + "_full.jpg";
 							File objAnnotateThumbnailFile = new File(strAnnotateFullFilename);
 							
-							objTempAnnotateFile.renameTo(objAnnotateThumbnailFile);
+							boolean boolSuccess = objTempAnnotateFile.renameTo(objAnnotateThumbnailFile);
+							if (boolSuccess) {
+								clsUtils.CustomLog("Success renaming full temp file");
+							} else {
+								clsUtils.CustomLog("Problem renaming full temp file");
+							}
 							objTempAnnotateFile.delete();
 
 							// Workaround for local files. Replace temporary resourcePath by actual 
@@ -486,9 +568,9 @@ public class clsTreeview {
 		public void setName(String strName) {
 			int intNewHash = clsUtils.GetHashCode(strName);
 			if (intNewHash == intHash) {
-				_boolIsDirty = false;
+				setIsDirty(false);
 			} else {
-				_boolIsDirty = true;
+				setIsDirty(true);
 			}
 			this.strName = strName;
 		}
@@ -517,13 +599,13 @@ public class clsTreeview {
 			if (IsTreeViewPurposeIsToFindCheckStateOnly() == false) {
 				// Flag dirty conditionally if check changes
 				if (this.boolIsChecked != boolIsChecked) {
-					_boolIsDirty = true;
+					setIsDirty(true);
 				} else {
-					_boolIsDirty = false;
+					setIsDirty(false);
 				}
 			} else {
 				// Do not flag dirty if check changes
-				_boolIsDirty = false;
+				setIsDirty(false);
 			}
 			this.boolIsChecked = boolIsChecked;
 		}
@@ -657,6 +739,15 @@ public class clsTreeview {
 			return boolAllChildrenDeleted;
 		}
 	}
+	
+	public class clsResourceGroupData {
+		public String strThumbnailChecksum;
+		public String strThumbnailLastChanged;
+		public String strAnnotatedLastChanged;
+		public String strFullLastChanged;
+	}
+	
+
 
 	public class clsSyncTreeNode implements Serializable {
 		public static final long serialVersionUID = 3336546898052586637L;
@@ -665,7 +756,7 @@ public class clsTreeview {
 		public ArrayList<clsSyncTreeNode> objChildren = new ArrayList<clsSyncTreeNode>();
 		public int intItemType;
 		public String resourcePath = "";
-		public String strLastResourceChangedDateTimeStamp = "";
+		public clsResourceGroupData objResourceGroupData;
 		public int resourceId;
 		public String strWebPageURL;
 		public boolean boolIsChecked;
@@ -706,7 +797,6 @@ public class clsTreeview {
 		objNewTreeNode.strOwnerUserUuid = objTreeNode.strOwnerUserUuid;
 		objNewTreeNode.strLastChangedByUserUuid = objTreeNode.strLastChangedByUserUuid;
 		objNewTreeNode.strLastChangedDateTimeStamp = objTreeNode.strLastChangedDateTimeStamp;
-		objNewTreeNode.strLastResourceChangedDateTimeStamp = objTreeNode.strLastResourceChangedDateTimeStamp;
 		objNewTreeNode.boolIsDeleted = objTreeNode.boolIsDeleted;
 		objNewTreeNode.boolIsNew = objTreeNode.boolIsNew;
 		objNewTreeNode.boolUseAnnotatedImage = objTreeNode.boolUseAnnotatedImage;
@@ -854,6 +944,39 @@ public class clsTreeview {
 				|| (objListItem.getItemType() == enumItemType.FOLDER_EXPANDED)) {
 			objListItem.setFolderHasHiddenItems(IsAnyHiddenItems(objTreeNode));
 		}
+		// Fill in the NewItem property
+		objListItem.intNewItemType = enumNewItemType.OLD;
+		// If topmost item, determine if any children are new
+		if (getParentTreeNode(objTreeNode) == null) {			
+			if (objTreeNode.boolIsNew) {
+				// Topmost item, new
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.NEW_AND_ROOT_PARENT_OF_NEW;
+				} else {
+					objListItem.intNewItemType = enumNewItemType.NEW;
+				}
+			} else {
+				// Topmost item, old
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.ROOT_PARENT_OF_NEW;
+				}
+			}			
+		} else {
+			// Leave item
+			if (objTreeNode.boolIsNew) {
+				// Leave item, new
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.NEW_AND_PARENT_OF_NEW;
+				} else {
+					objListItem.intNewItemType = enumNewItemType.NEW;
+				}
+			} else {
+				// Leave item, old
+				if (IsChildItemNewItem(objTreeNode)) {
+					objListItem.intNewItemType = enumNewItemType.PARENT_OF_NEW;
+				}
+			}
+		}
 
 		objListItems.add(objListItem);
 
@@ -867,9 +990,21 @@ public class clsTreeview {
 		return objListItems;
 	}
 
+	private boolean IsChildItemNewItem(clsTreeNode objTreeNode) {
+		// TODO Auto-generated method stub
+		for (clsTreeNode objChildTreeNode: objTreeNode.objChildren ) {
+			if (objChildTreeNode.boolIsNew) {
+				return true;
+			}
+			if (IsChildItemNewItem(objChildTreeNode)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public boolean IsNoteShared() {
-		if ((this.getRepository().getObjSharedUsers().size() != 0) ||
-				(this.getRepository().boolIsSubscribed)){
+		if (this.getRepository().boolIsShared || this.getRepository().boolIsSubscribed){
 			return true;
 		}
 		return false;
@@ -900,29 +1035,9 @@ public class clsTreeview {
 	}
 
 	public clsTreeNode getTreeNodeFromUuid(UUID guidTreeNode) {
-		if (guidTreeNode == null)
-			return null;
-		clsTreeNode objFound;
-		for (clsTreeNode objTreeNode : getRepository().objRootNodes) {
-			objFound = findTreeNodeByGuidRecursively(guidTreeNode, objTreeNode);
-			if (objFound != null)
-				return objFound;
-		}
-		return null;
+		return  getRepository().getTreeNodeFromUuid(guidTreeNode);
 	}
 
-	private clsTreeNode findTreeNodeByGuidRecursively(UUID guidTreeNode, clsTreeNode objTreeNode) {
-		clsTreeNode objFound;
-		if (guidTreeNode.equals(objTreeNode.guidTreeNode)) {
-			return objTreeNode;
-		}
-		for (clsTreeNode objChildTreeNode : objTreeNode.objChildren) {
-			objFound = findTreeNodeByGuidRecursively(guidTreeNode, objChildTreeNode);
-			if (objFound != null)
-				return objFound;
-		}
-		return null;
-	}
 
 	public clsTreeNode getParentTreeNode(clsTreeNode objSearchChildTreenode) {
 		clsTreeNode objFound = null;
@@ -1263,7 +1378,9 @@ public class clsTreeview {
 				RemoveTreeNode(getRepository().objRootNodes.get(0), true);
 			}
 			getRepository().objImageLoadDatas.clear();
-			getRepository().objSharedUsers.clear();
+			getRepository().boolIsShared = false;
+			getRepository().boolIsSubscribed = false;
+			
 		} catch (Exception e) {
 			clsUtils.CustomLog("Error clearing repository. " + e.getStackTrace().toString());
 		}
@@ -1377,11 +1494,6 @@ public class clsTreeview {
 				return true;
 		}
 		return boolIsDirty;
-	}
-
-	public void AddShareUser(clsShareUser objShareUser) {
-		getRepository().objSharedUsers.add(objShareUser);
-		SetAllIsDirty(true);
 	}
 
 	public clsTreeNode GetSharingFolder() {

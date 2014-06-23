@@ -1,20 +1,21 @@
 package com.treeapps.treenotes;
 
+import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 
 public abstract class clsTreeviewIterator {
 	
-	private clsTreeview objTreeview;
+	private clsRepository objRepository;
 	
-	public clsTreeviewIterator (clsTreeview objTreeview) {
-		this.objTreeview = objTreeview;
+	public clsTreeviewIterator (clsRepository objRepository) {
+		this.objRepository = objRepository;
 		
 		
 	}
 	
 	public void Execute() {
 		int intLevel;
-		for (clsTreeNode objTreeNode : objTreeview.getRepository().objRootNodes) {
+		for (clsTreeNode objTreeNode : objRepository.objRootNodes) {
 			intLevel = 0;
 			TouchTreeNodesRecursively(objTreeNode, intLevel);
 		}	

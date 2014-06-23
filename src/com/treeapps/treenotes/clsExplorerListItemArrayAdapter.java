@@ -1,7 +1,11 @@
 package com.treeapps.treenotes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+
+
 
 
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
@@ -40,16 +44,16 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 	public void SelectItemTypeFolder(clsListItem objListItem, ImageView myImageView) {
 		switch (objListItem.getItemType()) {
 		case FOLDER_EXPANDED:
-			myImageView.setImageResource(R.drawable.folder_expanded3);
+			DrawIcon(myImageView, R.drawable.folder_expanded3, false,objListItem.intNewItemType);
 			break;
 		case FOLDER_COLLAPSED:
-			myImageView.setImageResource(R.drawable.folder_collapsed6);
+			DrawIcon(myImageView, R.drawable.folder_collapsed6, false,objListItem.intNewItemType);
 			break;
 		case FOLDER_EMPTY:
-			myImageView.setImageResource(R.drawable.folder);
+			DrawIcon(myImageView, R.drawable.folder, false,objListItem.intNewItemType);
 			break;
 		case OTHER:
-			myImageView.setImageResource(R.drawable.notes3);
+			DrawIcon(myImageView, R.drawable.notes3, false,objListItem.intNewItemType);
 			break;
 		}
 	}
@@ -127,5 +131,16 @@ public class clsExplorerListItemArrayAdapter extends clsListItemArrayAdapter {
 			((ActivityExplorerStartup) context).AddEditFolder(objTreeNode.getName(), false, false, objUuid);
 		}
 		
+	}
+	
+	@Override
+	protected void RefreshListView() {
+		ArrayList<clsListItem> objListItems = objTreeview.getListItems();
+		clear();
+		addAll(objListItems);
+		notifyDataSetChanged();
+		clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)((Activity) context).findViewById(R.id.newitems_indicator_view);
+		objClsNewItemsIndicatorView.UpdateListItems(objListItems);
+		((Activity) context).invalidateOptionsMenu();
 	}
 }

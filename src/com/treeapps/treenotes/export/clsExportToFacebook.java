@@ -10,6 +10,10 @@ import org.json.JSONObject;
 import com.facebook.*;
 import com.facebook.model.*;
 import com.treeapps.treenotes.R;
+import com.treeapps.treenotes.clsTreeview;
+import com.treeapps.treenotes.clsTreeviewIterator;
+import com.treeapps.treenotes.clsTreeview.clsTreeNode;
+import com.treeapps.treenotes.clsUtils;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
 
@@ -26,6 +30,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Html;
 import android.text.util.Linkify;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,7 +59,10 @@ public class clsExportToFacebook extends Fragment
 	private String albumId = new String();
 	private String coverId = new String();
 	private String link = new String();
+	private String topLevelImage = new String();
 	
+	private boolean topLevelImageAnnotated;
+
 	private	clsExportNoteAsWebPage objExportNoteAsWebPage;
 	
 	private ProgressDialog objProgressDialog;
@@ -77,7 +85,7 @@ public class clsExportToFacebook extends Fragment
 		case 1:
 			// Export of web page and upload of images to servers is finished.
 			// Now we can start the actual FB export. 
-			requestCreateAlbum();
+			exportNoteAsFacebookLink();
 			break;
 		}
 	}
@@ -157,9 +165,9 @@ public class clsExportToFacebook extends Fragment
 		PackageInfo pInfo;
 		try {
 			
-			// The version of the app gets used as description of the album
+			// The version of the app gets used as title of the link
 			pInfo = _context.getPackageManager().getPackageInfo(_context.getPackageName(), 0);
-			appVersion = " version " + pInfo.versionName;
+			appVersion = " v" + pInfo.versionName;
 			
 		} catch (NameNotFoundException e) {
 
@@ -167,6 +175,20 @@ public class clsExportToFacebook extends Fragment
 			appVersion = " ";
 		}
 
+		// Figure if there is an image on level 1 which can be used as the cover image for the link export to FB
+		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(clsExportData._objTreeview.getRepository()) {		
+			@Override
+			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
+				if(objTreeNode.hasImage() && intLevel == 0 && topLevelImage.isEmpty())
+				{
+					topLevelImage = objTreeNode.guidTreeNode.toString();
+					topLevelImageAnnotated = objTreeNode.boolUseAnnotatedImage;
+				}
+			}
+		};
+		objTreeviewIterator.Execute();
+
+		
 		// Show a dialog to get the confirmation from the user to start the export.
 		requestUserConfirmationAndStart();
 	}
@@ -176,7 +198,7 @@ public class clsExportToFacebook extends Fragment
 	{
 		// Create a dialog showing the number and types of notes in that export to let the user decide
 		// whether he still wants to start the export.
-		String msg = "The link to the Note will be exported to Album (" + clsExportData._topNodeName + ")\n"
+		String msg = "The Note will be exported as Link.\n"
 					+ "Start Export?";
 		
     	AlertDialog.Builder builder = new AlertDialog.Builder(_context);
@@ -214,6 +236,8 @@ public class clsExportToFacebook extends Fragment
 		try {
 			
 			objExportNoteAsWebPage.GenerateWebPageHtml();
+			objExportNoteAsWebPage.GenerateOGHeaderHtml("TreeNotes " + appVersion, clsExportData._topNodeName, 
+														topLevelImage, topLevelImageAnnotated);
 			objExportNoteAsWebPage.PostWebPageHtmlToServer(this);
 			objExportNoteAsWebPage.UploadRequiredImages(this, this);
 			
@@ -223,188 +247,256 @@ public class clsExportToFacebook extends Fragment
 		}
 	}
 
-	private void requestCreateAlbum()
+	
+	// former: private void requestCreateAlbum()
+	private void exportNoteAsFacebookLink()
 	{
+		// post URL as link
 		Bundle params = new Bundle();
-		params.putString("fields", "id,name");
-
-		new Request(Session.getActiveSession(), "/me/albums", params, 
-					HttpMethod.GET, new Request.Callback() {
-					
+		params.putString("link", objExportNoteAsWebPage.GetWebPageUrl());
+		
+		new Request(Session.getActiveSession(), "/me/feed", params, 
+				HttpMethod.POST, new Request.Callback() {
+		
 			@Override
 			public void onCompleted(Response response) {
 				FacebookRequestError fbError = response.getError();
-
 				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
 				{
+					// Retrieve Id and link of newly created object
+//					Bundle params = new Bundle();
+//					params.putString("fields", "id,type,actions");
+//
+//					new Request(Session.getActiveSession(), "/me/feed", params, 
+//					HttpMethod.GET, new Request.Callback() {
+//						@Override
+//						public void onCompleted(Response response) {
+//							
+//							FacebookRequestError fbError = response.getError();
+//							if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+//							{
+//								
+//								
+//							}
+//							else
+//							{
+//								link = "";
+//								
+//							}
+//							stepsToSuccess--;
+//
+//							checkExportSuccess();
+//						}
+//					}).executeAsync();
+
 					GraphObject responseGraphObject = response.getGraphObject();
 					JSONObject json = responseGraphObject.getInnerJSONObject();
-
+					
 					String id;
-					String name;
-
-					JSONArray jArray = null;
-
+					
 					try {
-						jArray = json.getJSONArray("data");
-						for(int i =0;i<jArray.length();i++){
-							id = jArray.getJSONObject(i).getString("id");
-							name = jArray.getJSONObject(i).getString("name");
-
-							if(0 == name.compareTo(clsExportData._topNodeName))
-							{
-								albumId = id;
-							}
-						}
-
-						if(albumId.isEmpty())
-						{
-							createAlbum();
-						}
-						else
-						{
-							exportDefaultCoverImage();
-						}
-
-					} catch (JSONException e1) {
-						displayDialogFail("Unable to request albums from Facebook. Aborting.", true);
-						e1.printStackTrace();
+						id = json.getString("id");
+						//Log.d("id", id);
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
+					
+					stepsToSuccess--;
+
+					checkExportSuccess();
+
+				}
+				else
+				{
+					Log.d("FB Fail", response.toString());
+					
+					displayDialogFail("Unable to export link to Facebook. Aborting.", true);
 				}
 			}
 		}).executeAsync();
+
+		
+//		Bundle params = new Bundle();
+//		params.putString("fields", "id,name");
+//
+//		new Request(Session.getActiveSession(), "/me/albums", params, 
+//					HttpMethod.GET, new Request.Callback() {
+//					
+//			@Override
+//			public void onCompleted(Response response) {
+//				FacebookRequestError fbError = response.getError();
+//
+//				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+//				{
+//					GraphObject responseGraphObject = response.getGraphObject();
+//					JSONObject json = responseGraphObject.getInnerJSONObject();
+//
+//					String id;
+//					String name;
+//
+//					JSONArray jArray = null;
+//
+//					try {
+//						jArray = json.getJSONArray("data");
+//						for(int i =0;i<jArray.length();i++){
+//							id = jArray.getJSONObject(i).getString("id");
+//							name = jArray.getJSONObject(i).getString("name");
+//
+//							if(0 == name.compareTo(clsExportData._topNodeName))
+//							{
+//								albumId = id;
+//							}
+//						}
+//
+//						if(albumId.isEmpty())
+//						{
+//							createAlbum();
+//						}
+//						else
+//						{
+//							exportDefaultCoverImage();
+//						}
+//
+//					} catch (JSONException e1) {
+//						displayDialogFail("Unable to request albums from Facebook. Aborting.", true);
+//						e1.printStackTrace();
+//					}
+//				}
+//			}
+//		}).executeAsync();
 	}
 	
 	// Create a FB album by using the Note's name.
-	private void createAlbum()
-	{
-		Bundle params = new Bundle();
-
-		params.putString("name", clsExportData._topNodeName);
-		params.putString("description", "Created by TreeNotes" + appVersion);
-
-		new Request(Session.getActiveSession(), "/me/albums/", params, HttpMethod.POST, new Request.Callback() {
-			
-			@Override
-			public void onCompleted(Response response) {
-				
-				FacebookRequestError fbError = response.getError();
-
-				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
-				{
-					GraphObject responseGraphObject = response.getGraphObject();
-					JSONObject json = responseGraphObject.getInnerJSONObject();
-
-					String id;
-					
-					try {
-						id = json.getString("id");
-						
-						albumId = id;
-						
-						exportDefaultCoverImage();
-	            		
-					} catch (JSONException e) {
-						e.printStackTrace();
-						return;
-					}
-				}
-				else
-				{
-					displayDialogFail("Unable to create album. Aborting.", true);
-				}
-			}
-		})
-		.executeAsync();
-	}
+//	private void createAlbum()
+//	{
+//		Bundle params = new Bundle();
+//
+//		params.putString("name", clsExportData._topNodeName);
+//		params.putString("description", "Created by TreeNotes" + appVersion);
+//
+//		new Request(Session.getActiveSession(), "/me/albums/", params, HttpMethod.POST, new Request.Callback() {
+//			
+//			@Override
+//			public void onCompleted(Response response) {
+//				
+//				FacebookRequestError fbError = response.getError();
+//
+//				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+//				{
+//					GraphObject responseGraphObject = response.getGraphObject();
+//					JSONObject json = responseGraphObject.getInnerJSONObject();
+//
+//					String id;
+//					
+//					try {
+//						id = json.getString("id");
+//						
+//						albumId = id;
+//						
+//						exportDefaultCoverImage();
+//	            		
+//					} catch (JSONException e) {
+//						e.printStackTrace();
+//						return;
+//					}
+//				}
+//				else
+//				{
+//					displayDialogFail("Unable to create album. Aborting.", true);
+//				}
+//			}
+//		})
+//		.executeAsync();
+//	}
 	
 	// Export the default image with the URL as caption to FB. If successful request FB Link and display
 	// it to the user.
-	private void exportDefaultCoverImage()
-	{
-		byte[] data = null;
-		Bitmap bi = BitmapFactory.decodeResource(_context.getResources(), R.drawable.fb_album_icon);
-
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		bi.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-		data = baos.toByteArray();
-
-		String caption = "Click here for full information: " + objExportNoteAsWebPage.GetWebPageUrl();
-		
-		Bundle params = new Bundle();
-		params.putString("caption", caption);
-		params.putByteArray("picture", data);
-
-		String target = "/" + albumId + "/photos";
-		
-		new Request(Session.getActiveSession(), target, params, HttpMethod.POST, 
-				new Request.Callback() {
-			
-			@Override
-			public void onCompleted(Response response) {
-
-				FacebookRequestError fbError = response.getError();
-
-				// Remove progress dialog
-				objProgressDialog.dismiss();
-
-				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
-				{
-					GraphObject responseGraphObject = response.getGraphObject();
-					JSONObject json = responseGraphObject.getInnerJSONObject();
-
-					String id;
-					try
-					{
-						id = json.getString("id");
-						coverId = id;
-						
-						// Request link of recent export and display to user
-						Bundle params = new Bundle();
-						params.putString("fields", "link");
-						new Request(Session.getActiveSession(), coverId, params, HttpMethod.GET, 
-								new Request.Callback() {
-									
-									@Override
-									public void onCompleted(Response response) {
-										FacebookRequestError fbError = response.getError();
-
-										if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
-										{
-											GraphObject responseGraphObject = response.getGraphObject();
-											JSONObject json = responseGraphObject.getInnerJSONObject();
-
-											try
-											{
-												link = json.getString("link");
-
-												stepsToSuccess--;
-												
-												checkExportSuccess();
-												
-											} catch (JSONException e1) {
-												e1.printStackTrace();
-											}
-										}
-										else
-										{
-											displayDialogFail("Export failed.", true);
-//											_activity.finish();
-										}
-									}
-						}).executeAsync();
-						
-					} catch (JSONException e1) {
-						e1.printStackTrace();
-					}
-				}
-				else
-				{
-					displayDialogFail("Export failed.", true);
-				}
-			}
-		}).executeAsync();
-	}
+//	private void exportDefaultCoverImage()
+//	{
+//		byte[] data = null;
+//		Bitmap bi = BitmapFactory.decodeResource(_context.getResources(), R.drawable.fb_album_icon);
+//
+//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//		bi.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+//		data = baos.toByteArray();
+//
+//		String caption = "Click here for full information: " + objExportNoteAsWebPage.GetWebPageUrl();
+//		
+//		Bundle params = new Bundle();
+//		params.putString("caption", caption);
+//		params.putByteArray("picture", data);
+//
+//		String target = "/" + albumId + "/photos";
+//		
+//		new Request(Session.getActiveSession(), target, params, HttpMethod.POST, 
+//				new Request.Callback() {
+//			
+//			@Override
+//			public void onCompleted(Response response) {
+//
+//				FacebookRequestError fbError = response.getError();
+//
+//				// Remove progress dialog
+//				objProgressDialog.dismiss();
+//
+//				if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+//				{
+//					GraphObject responseGraphObject = response.getGraphObject();
+//					JSONObject json = responseGraphObject.getInnerJSONObject();
+//
+//					String id;
+//					try
+//					{
+//						id = json.getString("id");
+//						coverId = id;
+//						
+//						// Request link of recent export and display to user
+//						Bundle params = new Bundle();
+//						params.putString("fields", "link");
+//						new Request(Session.getActiveSession(), coverId, params, HttpMethod.GET, 
+//								new Request.Callback() {
+//									
+//									@Override
+//									public void onCompleted(Response response) {
+//										FacebookRequestError fbError = response.getError();
+//
+//										if(fbError == null || fbError.getRequestStatusCode() == HttpStatus.SC_OK)
+//										{
+//											GraphObject responseGraphObject = response.getGraphObject();
+//											JSONObject json = responseGraphObject.getInnerJSONObject();
+//
+//											try
+//											{
+//												link = json.getString("link");
+//
+//												stepsToSuccess--;
+//												
+//												checkExportSuccess();
+//												
+//											} catch (JSONException e1) {
+//												e1.printStackTrace();
+//											}
+//										}
+//										else
+//										{
+//											displayDialogFail("Export failed.", true);
+////											_activity.finish();
+//										}
+//									}
+//						}).executeAsync();
+//						
+//					} catch (JSONException e1) {
+//						e1.printStackTrace();
+//					}
+//				}
+//				else
+//				{
+//					displayDialogFail("Export failed.", true);
+//				}
+//			}
+//		}).executeAsync();
+//	}
 
 	// Display a custom dialog providing the link to the FB export
 	private void displayDialogSuccess(String link)
@@ -415,14 +507,15 @@ public class clsExportToFacebook extends Fragment
 		AlertDialog dlg;
 		
 		AlertDialog.Builder b = new AlertDialog.Builder(_context);
-		b.setTitle("Finished");
+		//b.setTitle("Finished");
 
 		LayoutInflater infl = LayoutInflater.from(_context);
 		View view = infl.inflate(R.layout.fb_link_dialog, null);
 
 		b.setView(view);
 	
-		String text = "Export successfully finished to " + link;
+//		String text = "Export successfully finished to " + link;
+		String text = "Export successfully finished.";
 		
 		TextView te = (TextView)view.findViewById(R.id.textFBMessage);
 		te.setText(Html.fromHtml(text));

@@ -13,6 +13,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 
 import org.apache.http.HttpStatus;
@@ -25,17 +26,34 @@ import org.json.JSONTokener;
 
 
 
+
+
+
+
+
+
+
+
+
+
 import com.google.gson.Gson;
 import com.treeapps.treenotes.R;
+import com.treeapps.treenotes.clsExplorerTreeview;
 import com.treeapps.treenotes.clsResourceLoader;
 import com.treeapps.treenotes.clsTreeview;
+import com.treeapps.treenotes.clsTreeview.clsRepository;
+import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsUtils;
 import com.treeapps.treenotes.ActivityNoteAddNew.RadioGroupOnCheckedChangeListener;
 import com.treeapps.treenotes.clsTreeview.clsSyncRepository;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsSyncMembersRepository;
+import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeDownLoadedData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
+import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedConfigData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageUpDownloadResult.clsError;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions.ActivitySubscriptionsAddAsyncTask;
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions.clsSubscriptionsAddCommandMsg;
 
@@ -60,8 +78,7 @@ import android.widget.Toast;
 public class clsMessaging {
 	
 	private static final int NET_CONNECT_TIMEOUT_MILLIS = 15000;  // 15 seconds
-    private static final int NET_READ_TIMEOUT_MILLIS = 10000;  // 10 seconds
-    private static final int FILE_CONVERT_TIMEOUT_MILLIS = 20000;  // 20 seconds
+    private static final int NET_READ_TIMEOUT_MILLIS = 15000;  // 15 seconds
     
     public static String SERVER_URL_AZURE = "http://treenotes.azurewebsites.net";
     public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.14";
@@ -115,15 +132,26 @@ public class clsMessaging {
 	public clsRepository objRepository = new clsRepository();
 	// End of persistence items
 	
-	public class clsImageLoadData {
+	public static class clsImageLoadData {
 		public String strNoteUuid;
 		public ArrayList<clsImageToBeUploadedData> objImageToBeUploadedDatas = new ArrayList<clsImageToBeUploadedData>();
-		public ArrayList<String> strImagesToBeDownloaded = new ArrayList<String>(); 
+		public ArrayList<clsImageToBeDownLoadedData> objImageToBeDownLoadedDatas = new ArrayList<clsImageToBeDownLoadedData>(); 
+		
+		public class clsImageToBeDownLoadedData {
+			public String strImageUuid;
+			public boolean boolIsAnnotatedImageToBeDownloaded;
+		}
 		
 		public class clsImageToBeUploadedData {
 			public String strUuid;
 			public int intResourceId;
 			public String strResourcePath;
+		}
+		
+		public static class clsImageToBeUploadedConfigData {
+			public String strImageUuid;
+			public String strImageFilenameWithExt;
+			public String strDateLastModified;
 		}
 		
 		public clsImageToBeUploadedData GetItem(String strNodeUuid) throws Exception {
@@ -134,8 +162,26 @@ public class clsMessaging {
 			}
 			throw new Exception("Server and Client item image ID does not tie up");
 		}
+		
+		public void AddToBeDownloadedImage (String strImageUuid, boolean boolIsAnnotatedImageToBeDownloaded) {
+			clsImageToBeDownLoadedData objImageToBeDownLoadedData = new clsImageToBeDownLoadedData();
+			objImageToBeDownLoadedData.strImageUuid = strImageUuid;
+			objImageToBeDownLoadedData.boolIsAnnotatedImageToBeDownloaded = boolIsAnnotatedImageToBeDownloaded;
+			objImageToBeDownLoadedDatas.add(objImageToBeDownLoadedData);
+		}
 	}
 	
+
+	public boolean IsImageLoadDatasEmpty(ArrayList<clsImageLoadData> objImageLoadDatas ) {
+		for(clsImageLoadData objImageLoadData: objImageLoadDatas) {
+			if (objImageLoadData.objImageToBeDownLoadedDatas.size() !=0 || 
+				objImageLoadData.objImageToBeUploadedDatas.size() !=0 ) {
+				return false;
+			}
+		}
+		return true;
+	}
+		
 	public boolean getBoolIsServerIisExpress() {
 		return objRepository.boolIsServerIisExpress;
 	}
@@ -306,7 +352,14 @@ public class clsMessaging {
     {
         private String strUsername = "";
         private String strPassword = "";
+        private String strRegistrationId = "";
         
+		public String getStrRegistrationId() {
+			return strRegistrationId;
+		}
+		public void setStrRegistrationId(String strRegistrationId) {
+			this.strRegistrationId = strRegistrationId;
+		}
 		public String getStrUsername() {
 			return strUsername;
 		}
@@ -334,39 +387,6 @@ public class clsMessaging {
 		}
     }
 
-
-    public class clsAddUserCmd  extends clsMsg
-    {
-    	private String strUsername = "";
-    	private String strPassword = "";
-        
-		public String getStrUsername() {
-			return strUsername;
-		}
-		public void setStrUsername(String strUsername) {
-			this.strUsername = strUsername;
-		}
-		public String getStrPassword() {
-			return strPassword;
-		}
-		public void setStrPassword(String strPassword) {
-			this.strPassword = strPassword;
-		}
-    }
-
-    public class clsAddUserResponse extends clsMsg
-    {
-    	private String strUserUuid = "";
-
-		public String getStrUserUuid() {
-			return strUserUuid;
-		}
-
-		public void setStrUserUuid(String strUserUuid) {
-			this.strUserUuid = strUserUuid;
-		}
-       
-    }
     
     public class clsRemoveUserCmd  extends clsMsg
     {
@@ -455,7 +475,7 @@ public class clsMessaging {
 			WebServiceAsyncTask.strJsonCommand = strJsonCommand;
 			WebServiceAsyncTask.urlFeed = urlFeed;
 			objProgressDialog = new ProgressDialog(objActivity);
-			this.boolDisplayProgress = boolDisplayProgress;
+			WebServiceAsyncTask.boolDisplayProgress = boolDisplayProgress;
 		}
 		
 		
@@ -531,281 +551,35 @@ public class clsMessaging {
 		}
 		
 	}
-    // -------------- UploadImageFileAsyncTask
+  
     
+
+    
+    
+   	
+ // -------------- ImageUpDownloadAsyncTask  
     
     public class clsUploadImageFileCommandMsg extends clsMsg {
     	public  String strImageUuid;
-    	//public  String strFileExtentionWithoutDot;
     	public  String strImageLocalFullPathName;
+    	public String strModificationDate;
     }
     
     public class clsUploadImageFileResponseMsg extends clsMsg {}
     
-    public static class clsUploadImageFileAsyncTask extends AsyncTask<String, Void, clsUploadImageFileResponseMsg>
-   	{
-   		static Exception mException = null;
-   		static clsUploadImageFileCommandMsg objCommand;
-   		static clsUploadImageFileResponseMsg objResponse;
-   		static String strUrl;
-   		ProgressDialog objProgressDialog;
-   		static boolean boolDisplayProgress = true;
-   		
-   		public clsUploadImageFileAsyncTask (Activity objActivity, boolean boolDisplayProgress, String strUrl,
-   				clsUploadImageFileCommandMsg objCommand, clsUploadImageFileResponseMsg objResponse) {
-   			clsUploadImageFileAsyncTask.objCommand = objCommand;
-   			clsUploadImageFileAsyncTask.objResponse = objResponse;
-   			clsUploadImageFileAsyncTask.strUrl = strUrl;
-   			objProgressDialog = new ProgressDialog(objActivity);
-   			clsUploadImageFileAsyncTask.boolDisplayProgress = boolDisplayProgress;
-   		}
-   		
-   		
-   		@Override
-   	    protected void onPreExecute()
-   	    {
-   	        super.onPreExecute();
-   	        mException = null;
-   	        objProgressDialog.setMessage("Processing..., please wait.");
-   	        if (boolDisplayProgress) {
-   		        objProgressDialog.show();
-   	        }
-   	    }
-
-   		@Override
-   		protected clsUploadImageFileResponseMsg doInBackground(String... arg0) {
-   			HttpURLConnection connection = null;
-   			DataOutputStream outputStream = null;
-   			DataInputStream inputStream = null;
-   			String pathToOurFile = objCommand.strImageLocalFullPathName;
-   			String urlServer = strUrl;
-   			String lineEnd = "\r\n";
-   			String twoHyphens = "--";
-   			String boundary =  "*****";
-   			 
-   			int bytesRead, bytesAvailable, bufferSize;
-   			byte[] buffer;
-   			int maxBufferSize = 1*1024*1024;
-   			  			
-   			try
-   			{
-   			    FileInputStream fileInputStream = new FileInputStream(new File(pathToOurFile) );
-   			 
-   			    URL url = new URL(urlServer);
-   			    connection = (HttpURLConnection) url.openConnection();
-   			 
-   			    // Allow Inputs &amp; Outputs.
-   			    connection.setDoInput(true);
-   			    connection.setDoOutput(true);
-   			    connection.setUseCaches(false);
-   			 
-   			    // Set HTTP method to POST.
-   			    connection.setRequestMethod("POST");
-   			 
-   			    connection.setRequestProperty("Connection", "Keep-Alive");
-   			    connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
-   			 
-   			    outputStream = new DataOutputStream( connection.getOutputStream() );
-   			    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
-   			    //String strImageFilename = objCommand.strImageUuid + "." + objCommand.strFileExtentionWithoutDot;
-   				String strImageFilename = new File(pathToOurFile).getName();
-
-   			    outputStream.writeBytes("Content-Disposition: form-data; name=\"UploadImageFile\";filename=\"" + strImageFilename +"\"" + lineEnd);
-   			    outputStream.writeBytes(lineEnd);
-   			 
-   			    bytesAvailable = fileInputStream.available();
-   			    bufferSize = Math.min(bytesAvailable, maxBufferSize);
-   			    buffer = new byte[bufferSize];
-   			 
-   			    // Read file
-   			    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-   			 
-   			    while (bytesRead > 0)
-   			    {
-   			        outputStream.write(buffer, 0, bufferSize);
-   			        bytesAvailable = fileInputStream.available();
-   			        bufferSize = Math.min(bytesAvailable, maxBufferSize);
-   			        bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-   			    }
-   			 
-   			    outputStream.writeBytes(lineEnd);
-   			    outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-   			 
-   			    // Responses from the server (code and message)
-   			    int serverResponseCode = connection.getResponseCode();
-   			    String serverResponseMessage = connection.getResponseMessage();
-   			 
-   			    fileInputStream.close();
-   			    outputStream.flush();
-   			    outputStream.close();
-   			}
-   			catch (Exception ex)
-   			{
-   			    //Exception handling
-   				ex.printStackTrace();
-   			}
-   	        return objResponse;
-   		}
-   		
-   		@Override
-   	    protected void onPostExecute(clsUploadImageFileResponseMsg objResponse)
-   	    {
-   	        super.onPostExecute(objResponse);
-   	        
-   	        if (objProgressDialog.isShowing()) {
-   	        	objProgressDialog.dismiss();
-   	        }
-
-   	        if (WebServiceAsyncTask.mException != null) {
-   	        	clsUtils.CustomLog(WebServiceAsyncTask.mException.toString() + ". " + "Error # WebServiceAsyncTask");	
-   	        } 
-   	        
-   	    }
-   		
-   		@Override
-   		protected void onCancelled() {
-   			super.onCancelled();
-   			
-   			if (objProgressDialog.isShowing()) {
-   				objProgressDialog.dismiss();
-   			}
-   		}
-   		
-   	}
-   	
- 
-   	
-// -------------- DownloadImageFileAsyncTask
-    
-    
     public class clsDownloadImageFileCommandMsg extends clsMsg {
     	public  String strImageUuid;
+    	public String strFileType; // Either "", "_full" or "_annotated"
     	public  String strFileExtentionWithoutDot;
     	public  String strImageLocalFullPathName;
     }
     
     public class clsDownloadImageFileResponseMsg extends clsMsg {}
     
-    public static class clsDownloadImageFileAsyncTask extends AsyncTask<String, Void, clsDownloadImageFileResponseMsg>
-   	{
-   		static Exception mException = null;
-   		static clsDownloadImageFileCommandMsg objCommand;
-   		static clsDownloadImageFileResponseMsg objResponse;
-   		static String strUrl;
-   		ProgressDialog objProgressDialog;
-   		static boolean boolDisplayProgress = true;
-   		
-   		public clsDownloadImageFileAsyncTask (Activity objActivity, boolean boolDisplayProgress, String strUrl,
-   				clsDownloadImageFileCommandMsg objCommand, clsDownloadImageFileResponseMsg objResponse) {
-   			clsDownloadImageFileAsyncTask.objCommand = objCommand;
-   			clsDownloadImageFileAsyncTask.objResponse = objResponse;
-   			clsDownloadImageFileAsyncTask.strUrl = strUrl;
-   			objProgressDialog = new ProgressDialog(objActivity);
-   			clsDownloadImageFileAsyncTask.boolDisplayProgress = boolDisplayProgress;
-   		}
-   		
-   		@Override
-   	    protected void onPreExecute()
-   	    {
-   	        super.onPreExecute();
-   	        mException = null;
-   	        objProgressDialog.setMessage("Processing..., please wait.");
-   	        if (boolDisplayProgress) {
-   		        objProgressDialog.show();
-   	        }
-   	    }
-
-		@Override
-		protected clsDownloadImageFileResponseMsg doInBackground(String... arg0) {
-			// TODO Auto-generated method stub
-			objResponse.intErrorCode = ERROR_NONE;
-	        objResponse.strErrorMessage = "";
-			try {
-			    URL url = new URL(strUrl);
-			    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-			    urlConnection.setReadTimeout(NET_READ_TIMEOUT_MILLIS /* milliseconds */);
-			    urlConnection.setConnectTimeout(NET_CONNECT_TIMEOUT_MILLIS /* milliseconds */); 
-			    urlConnection.setRequestMethod("POST");  
-			    urlConnection.setUseCaches(false); 
-			    urlConnection.setRequestProperty("Content-Type","application/json"); 
-		        
-			    urlConnection.setDoOutput(true);
-			    urlConnection.setDoInput(true);
-
-		        // Starts the query
-			    urlConnection.connect();
-			    
-			    // Output 
-		        OutputStreamWriter out = new   OutputStreamWriter(urlConnection.getOutputStream());
-		        Gson gson = new Gson();
-		        String strJsonCommand = gson.toJson(objCommand);
-		        out.write(strJsonCommand);
-		        out.close();
-				
-		        // Input
-			    File file = new File(objCommand.strImageLocalFullPathName);
-			    InputStream inputStream = urlConnection.getInputStream();
-			    
-   			    int serverResponseCode = urlConnection.getResponseCode();
-   			    String serverResponseMessage = urlConnection.getResponseMessage();
-   			    
-			    FileOutputStream fileOutput = new FileOutputStream(file);
-			    int maxBufferSize = 1*1024*1024;
-			    byte[] buffer = new byte[maxBufferSize];
-			    int bufferLength = 0;
-
-			    while ( (bufferLength = inputStream.read(buffer)) > 0 ) {
-			        fileOutput.write(buffer, 0, bufferLength);
-			    }
-			    fileOutput.close();
-
-			} catch (MalformedURLException e) {
-			        e.printStackTrace();
-			        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
-			        objResponse.strErrorMessage = "MalformedURLException. " + e.getMessage();
-			} catch (IOException e) {
-			        e.printStackTrace();
-			        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
-			        objResponse.strErrorMessage = "IOException. " + e.getMessage();
-			} catch (Exception e) {
-		        e.printStackTrace();
-		        objResponse.intErrorCode = ERROR_DOWNLOAD_IMAGE;
-		        objResponse.strErrorMessage = "Exception. " + e.getMessage();
-			}
-
-			return objResponse;
-		}
-		
-		@Override
-   	    protected void onPostExecute(clsDownloadImageFileResponseMsg objResponse)
-   	    {
-   	        super.onPostExecute(objResponse);
-   	        
-   	        if (objProgressDialog.isShowing()) {
-   	        	objProgressDialog.dismiss();
-   	        }
-
-   	        if (clsDownloadImageFileAsyncTask.mException != null) {
-   	        	clsUtils.CustomLog(clsDownloadImageFileAsyncTask.mException.toString() + ". " + "Error # WebServiceAsyncTask");	
-   	        } 
-   	        
-   	    }
-   		
-   		@Override
-   		protected void onCancelled() {
-   			super.onCancelled();
-   			
-   			if (objProgressDialog.isShowing()) {
-   				objProgressDialog.dismiss();
-   			}
-   		}
-   	
-   	}
-   	
- // -------------- ImageUpDownloadAsyncTask  
    	class clsImageUpDownloadResult {
    		ArrayList<clsError> strUploadErrors = new ArrayList<clsError>();
    		ArrayList<clsError> strDownloadErrors = new ArrayList<clsError>();
+   		ArrayList<String> strGeneralErrors = new ArrayList<String>();
    		
    		class clsError {
    			public String strNoteUuid;
@@ -813,7 +587,15 @@ public class clsMessaging {
    		}
    	}
    	
-    public static class clsImageUpDownloadAsyncTask extends AsyncTask<Void, Void, Void> {
+   	static class clsInstructUploadCompleteCommand {
+   		public String strRegistrationId;
+   		public boolean boolIsNeedForServerToSendNotifications;
+   	}
+   	
+   	static class clsInstructUploadCompleteResponse extends clsWebServiceResponse {}
+   	
+   	
+    public static class clsImageUpDownloadAsyncTask extends AsyncTask<Void, String, Void> {
 
     	static Activity objActivity;
     	static clsMessaging objMessaging;
@@ -823,10 +605,12 @@ public class clsMessaging {
    		static boolean boolDisplayProgress = true;
    		static String strUploadUrl;
    		static String strDownloadUrl;
+   		static String strInstructUploadCompleteUrl;
 
    		static String strResourceLoaderSaveFileFullFilename = "";
    		static boolean boolLoadTaskCompleted = false;
    		static String strLoadTaskCompletedStatus = "";
+   		static boolean boolIsNeedForServerToSendNotificationsAtEnd;
    		
    		private clsExportNoteAsWebPage.OnImageUploadFinishedListener callbackFinished;
    		private clsExportNoteAsWebPage.OnImageUploadProgressListener callbackProgress;
@@ -834,7 +618,8 @@ public class clsMessaging {
     	public clsImageUpDownloadAsyncTask (Activity objActivity, clsMessaging objMessaging, boolean boolDisplayProgress, 
     			ArrayList<clsImageLoadData> objImageLoadDatas, 
     			clsExportNoteAsWebPage.OnImageUploadFinishedListener cbFinished,
-    			clsExportNoteAsWebPage.OnImageUploadProgressListener cbProgress) 
+    			clsExportNoteAsWebPage.OnImageUploadProgressListener cbProgress,
+    			boolean boolIsNeedForServerToSendNotificationsAtEnd) 
     	{
     		clsImageUpDownloadAsyncTask.objActivity = objActivity;
     		clsImageUpDownloadAsyncTask.objImageLoadDatas = objImageLoadDatas;
@@ -850,28 +635,43 @@ public class clsMessaging {
 				strServerUrl =  clsMessaging.SERVER_URL_AZURE;
 			}
 			strUploadUrl = strServerUrl + objActivity.getResources().getString(R.string.url_upload_image_file);
-			strDownloadUrl = strServerUrl + objActivity.getResources().getString(R.string.url_download_image_file);
-			
+			strDownloadUrl = strServerUrl + objActivity.getResources().getString(R.string.url_download_image_file);	
+			strInstructUploadCompleteUrl = strServerUrl + objActivity.getResources().getString(R.string.url_instruct_uploads_complete);
 			callbackFinished = cbFinished;
 			callbackProgress = cbProgress;
+			clsImageUpDownloadAsyncTask.boolIsNeedForServerToSendNotificationsAtEnd = boolIsNeedForServerToSendNotificationsAtEnd;
 		}
     	
     	@Override
    	    protected void onPreExecute()
    	    {
    	        super.onPreExecute();
-   	        objProgressDialog.setMessage("Processing..., please wait.");
+   	        objProgressDialog.setMessage("Synching note images ..., please wait.");
    	        if (boolDisplayProgress) {
-   		        objProgressDialog.show();
+   	        	if (!objProgressDialog.isShowing()) {
+   	   		        objProgressDialog.show();
+   	        	}
    	        }
    	    }
     	
     	@Override
+    	protected void onProgressUpdate(String... values) {
+    		if (boolDisplayProgress) {
+   	        	if (objProgressDialog.isShowing()) {
+   	   		        objProgressDialog.setMessage(values[0]);
+   	        	}
+   	        }
+    	}
+    	
+    	@Override
 		protected Void doInBackground(Void... arg0) {
+    		
+    		clsUtils.CustomLog("UpDownLoadDoInBackground running");
     		
 			for (clsImageLoadData objImageLoadData: objImageLoadDatas) {
 				
 				int countUploads = 0;
+				// Uploads
 				for(clsImageToBeUploadedData objImageToBeUploadedData: objImageLoadData.objImageToBeUploadedDatas) {
 					
 					if(callbackProgress != null)
@@ -879,50 +679,111 @@ public class clsMessaging {
 						callbackProgress.imageUploadProgress(++countUploads, objImageLoadData.objImageToBeUploadedDatas.size());
 					}
 					
-					ArrayList<String>strImageVersionsToBeUploaded = new ArrayList<String>();
-					String strEnsureReturn = EnsureImageVersionsExists(objImageToBeUploadedData, strImageVersionsToBeUploaded);
-					if (!strEnsureReturn.isEmpty()) {
+					publishProgress("Uploading (" + 
+							objImageLoadData.objImageToBeUploadedDatas.indexOf(objImageToBeUploadedData) +
+							" of " + objImageLoadData.objImageToBeUploadedDatas.size() + ")");
+
+					
+					// See if the required image to be uploaded actually exists locally
+					ArrayList<clsImageToBeUploadedConfigData> objImagesToBeUploadedFileDatas = new ArrayList<clsImageToBeUploadedConfigData>();
+					String strReturnMsg = EnsureUploadImageVersionsExists(objImageToBeUploadedData, objImagesToBeUploadedFileDatas);
+					if (!strReturnMsg.isEmpty()) {
+						// Nope, so error
 						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
 						objError.strNoteUuid = objImageToBeUploadedData.strUuid;
-						objError.strDescription = strEnsureReturn;
+						objError.strDescription = strReturnMsg;
 						objImageUpDownloadResult.strUploadErrors.add(objError);
 					} else {
-						for (String strImageVersionToBeUploaded: strImageVersionsToBeUploaded ) {
-							
+						// Yes, so continue							
+						// Do the actual image upload
+						for (clsImageToBeUploadedConfigData objImageToBeUploadedLocalData: objImagesToBeUploadedFileDatas ) {
+							// Run through each file type and upload
 							clsUploadImageFileCommandMsg objUploadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsUploadImageFileCommandMsg();
-							objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + strImageVersionToBeUploaded;
-							objUploadCommand.strImageUuid = strImageVersionToBeUploaded;
+							objUploadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeUploadedLocalData.strImageFilenameWithExt;
+							objUploadCommand.strImageUuid = objImageToBeUploadedLocalData.strImageUuid;
+							objUploadCommand.strModificationDate = objImageToBeUploadedLocalData.strDateLastModified;
 							String strUploadReturn = UploadImageToServer(strUploadUrl, objUploadCommand);
 							if (!strUploadReturn.isEmpty()) {
 								clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
-								objError.strNoteUuid = strImageVersionToBeUploaded;
+								objError.strNoteUuid = objImageToBeUploadedLocalData.strImageFilenameWithExt;
 								objError.strDescription = strUploadReturn;
 								objImageUpDownloadResult.strUploadErrors.add(objError);
-							}	
-						}
+							}						
+						} 
 					}				
-				}	
-				
-				for(String strImageToBeDownloaded: objImageLoadData.strImagesToBeDownloaded) {
+				}
+				// Indicate to server uploads are complete, so as to start with notifications to other sharers
+				clsInstructUploadCompleteCommand objInstructUploadCompleteCommand = new clsInstructUploadCompleteCommand();
+				objInstructUploadCompleteCommand.strRegistrationId = clsUtils.getRegistrationId(objActivity);
+				objInstructUploadCompleteCommand.boolIsNeedForServerToSendNotifications = boolIsNeedForServerToSendNotificationsAtEnd;
+				clsInstructUploadCompleteResponse objInstructUploadCompleteResponse = InstructUploadComplete(strInstructUploadCompleteUrl, 
+						objInstructUploadCompleteCommand);
+				if (objInstructUploadCompleteResponse.intErrorCode != clsMessaging.ERROR_NONE) {
+					objImageUpDownloadResult.strGeneralErrors.add(objInstructUploadCompleteResponse.strErrorMessage);
+				}
+
+				// Downloads
+				File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
+				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objImageLoadData.strNoteUuid);
+				clsExplorerTreeview.clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
+				for(clsImageToBeDownLoadedData objImageToBeDownLoadedData: objImageLoadData.objImageToBeDownLoadedDatas) {
+					publishProgress("Downloading (" + 
+							objImageLoadData.objImageToBeDownLoadedDatas.indexOf(objImageToBeDownLoadedData) +
+							" of " + objImageLoadData.objImageToBeDownLoadedDatas.size() + ")");
+
+					// Thumbnail image
 					clsDownloadImageFileCommandMsg objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
-					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + strImageToBeDownloaded;
+					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+					objDownloadCommand.strFileType = "";
 					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
-					objDownloadCommand.strImageUuid = strImageToBeDownloaded;
+					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
+							objDownloadCommand.strFileType + "." + objDownloadCommand.strFileExtentionWithoutDot;				
+					
 					String strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
 					if (!strDownloadReturn.isEmpty()) {
 						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
-						objError.strNoteUuid = strImageToBeDownloaded;
+						objError.strNoteUuid = objImageToBeDownLoadedData.strImageUuid;
 						objError.strDescription = strDownloadReturn;
 						objImageUpDownloadResult.strDownloadErrors.add(objError);
+					} 
+					// Full image
+					objDownloadCommand = clsImageUpDownloadAsyncTask.objMessaging.new clsDownloadImageFileCommandMsg();
+					objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+					objDownloadCommand.strFileType = "_full";
+					objDownloadCommand.strFileExtentionWithoutDot = "jpg";
+					objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
+							objDownloadCommand.strFileType + "." + objDownloadCommand.strFileExtentionWithoutDot;
+					strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
+					if (!strDownloadReturn.isEmpty()) {
+						clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
+						objError.strNoteUuid = objImageToBeDownLoadedData.strImageUuid;
+						objError.strDescription = strDownloadReturn;
+						objImageUpDownloadResult.strDownloadErrors.add(objError);
+					} 
+					// Annotated image
+					if (objImageToBeDownLoadedData.boolIsAnnotatedImageToBeDownloaded) {
+						objDownloadCommand.strImageUuid = objImageToBeDownLoadedData.strImageUuid;
+						objDownloadCommand.strFileType = "_annotated";
+						objDownloadCommand.strFileExtentionWithoutDot = "jpg";
+						objDownloadCommand.strImageLocalFullPathName = clsUtils.GetTreeNotesDirectoryName(objActivity) + "/" + objImageToBeDownLoadedData.strImageUuid +
+								objDownloadCommand.strFileType + "." + objDownloadCommand.strFileExtentionWithoutDot;
+						strDownloadReturn = DownloadImageToServer(strDownloadUrl, objDownloadCommand);
+						if (!strDownloadReturn.isEmpty()) {
+							clsImageUpDownloadResult.clsError objError = objImageUpDownloadResult.new clsError();
+							objError.strNoteUuid = objImageToBeDownLoadedData.strImageUuid;
+							objError.strDescription = strDownloadReturn;
+							objImageUpDownloadResult.strDownloadErrors.add(objError);
+						} 
 					}
 				}	
 			}
 			
 			return null;
 		}
-    	
-		private String EnsureImageVersionsExists(
-				clsImageToBeUploadedData objImageToBeUploadedData, ArrayList<String> strImageVersionsToBeUploaded) {
+    			
+
+		private String EnsureUploadImageVersionsExists(
+				clsImageToBeUploadedData objImageToBeUploadedData, ArrayList<clsImageToBeUploadedConfigData> objImagesToBeUploadedConfigDatas) {
 			
 			String fileName;
 			String strImageVersionFullFilename;
@@ -938,7 +799,11 @@ public class clsMessaging {
 			if (!fileImageVersion.exists()) {
 				return fileName + " does not exist on client";
 			}
-			strImageVersionsToBeUploaded.add(fileName);
+			clsImageToBeUploadedConfigData objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+			objImageToBeUploadedConfigData.strImageUuid = objImageToBeUploadedData.strUuid;
+			objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
+			objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+			objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
 			
 			// Annotated image
 			strImageVersionFullFilename = 
@@ -948,7 +813,11 @@ public class clsMessaging {
 			fileName = fileImageVersion.getName();
 
 			if (fileImageVersion.exists()) {
-				strImageVersionsToBeUploaded.add(fileName);
+				objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+				objImageToBeUploadedConfigData.strImageUuid = objImageToBeUploadedData.strUuid;
+				objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
+				objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+				objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
 			}
 
 			// Full image
@@ -961,7 +830,11 @@ public class clsMessaging {
 			if (!fileImageVersion.exists()) {
 				return fileName + " does not exist on client";
 			} else {
-				strImageVersionsToBeUploaded.add(fileName);
+				objImageToBeUploadedConfigData = new clsImageToBeUploadedConfigData();
+				objImageToBeUploadedConfigData.strImageUuid = objImageToBeUploadedData.strUuid;
+				objImageToBeUploadedConfigData.strImageFilenameWithExt = fileName;
+				objImageToBeUploadedConfigData.strDateLastModified = clsUtils.GetFileLastModifiedDate(strImageVersionFullFilename);
+				objImagesToBeUploadedConfigDatas.add(objImageToBeUploadedConfigData);
 			}
 			return "";
 		}
@@ -1001,11 +874,18 @@ public class clsMessaging {
    	        			strMessage += "File: " +  objError.strNoteUuid + ". " + objError.strDescription + "\n";
    	   	        	}
    	        	}
+   	        	
+   	        	if (objImageUpDownloadResult.strGeneralErrors.size() != 0) {
+   	        		strMessage += "General:\n";
+   	        		for (String strError:objImageUpDownloadResult.strGeneralErrors) {
+   	        			strMessage += strError + "\n";
+   	   	        	}
+   	        	}
 
    	        	// If no callback is provided then just toast the error message.
    	        	if(callbackFinished == null)
    	   	        {
-   	        		clsUtils.MessageBox(objActivity, strMessage, true);
+   	        		clsUtils.MessageBox(objActivity, strMessage, false);
    	   	        }
    	        }
    	        
@@ -1069,6 +949,7 @@ public class clsMessaging {
    		static Exception mException = null;
    		static clsSyncNoteCommandMsg objCommand;
    		static boolean boolDisplayToasts;
+   		static boolean boolDisplayProgress;
    		static URL urlFeed;
    		clsSyncResult objResult;
    		ProgressDialog objProgressDialog;
@@ -1076,10 +957,11 @@ public class clsMessaging {
 
    		
    		public NoteSyncAsyncTask (Activity objActivity, URL urlFeed, clsSyncNoteCommandMsg objSyncCommandMsg, 
-   				clsMessaging objMessaging, boolean boolDisplayToasts) {
+   				clsMessaging objMessaging, boolean boolDisplayToasts, boolean boolDisplayProgress) {
    			NoteSyncAsyncTask.objCommand = objSyncCommandMsg;
    			NoteSyncAsyncTask.urlFeed = urlFeed;
    			NoteSyncAsyncTask.boolDisplayToasts = boolDisplayToasts;
+   			NoteSyncAsyncTask.boolDisplayProgress = boolDisplayProgress;
    			objResult  = objMessaging.new clsSyncResult();
    			objProgressDialog = new ProgressDialog(objActivity);
    		}
@@ -1090,8 +972,11 @@ public class clsMessaging {
    	    {
    	        super.onPreExecute();
    	        mException = null;
-   	        objProgressDialog.setMessage("Processing..., please wait.");
-	        objProgressDialog.show();
+   	        if (boolDisplayProgress) {
+   	   	        objProgressDialog.setMessage("Synching note text ..., please wait.");
+   		        objProgressDialog.show();
+   	        }
+
    	    }
 
    		@Override
@@ -1199,7 +1084,9 @@ public class clsMessaging {
 		DataOutputStream outputStream = null;
 		DataInputStream inputStream = null;
 		String pathToOurFile = objUploadCommand.strImageLocalFullPathName;
+		String strImageUuid = objUploadCommand.strImageUuid;
 		String urlServer = strUploadUrl;
+		String strModificationDate = objUploadCommand.strModificationDate;
 		String lineEnd = "\r\n";
 		String twoHyphens = "--";
 		String boundary = "*****";
@@ -1231,8 +1118,10 @@ public class clsMessaging {
 			String strImageFilename = new File(pathToOurFile).getName();
 			
 			outputStream
-					.writeBytes("Content-Disposition: form-data; name=\"UploadImageFile\";filename=\""
-							+ strImageFilename + "\"" + lineEnd);
+					.writeBytes("Content-Disposition: form-data; name=\"" + strImageUuid + "\";filename=\""
+							+ strImageFilename +
+							"\"; modification-date=\"" + strModificationDate + "\"" +
+							lineEnd);
 			outputStream.writeBytes(lineEnd);
 
 			bytesAvailable = fileInputStream.available();
@@ -1318,14 +1207,54 @@ public class clsMessaging {
 			fileOutput.close();
 
 		} catch (MalformedURLException e) {
-			return "MalformedURLException. " + e.getMessage();
+			return "MalformedURLException. " + e.getMessage() + ". " + e.getCause();
 		} catch (IOException e) {
-			return "IOException. " + e.getMessage();
+			return "IOException. " + e.getMessage() + ". " + e.getCause();
 		} catch (Exception e) {
-			return "Exception. " + e.getMessage();
+			return "Exception. " + e.getMessage() + ". " + e.getCause();
 		}
-
+		
 		return "";
+	}
+	
+	public static  clsInstructUploadCompleteResponse InstructUploadComplete(String strUrl,
+			clsInstructUploadCompleteCommand objInstructUploadCompleteCommand) {
+		// TODO Auto-generated method stub
+		Gson gson = new Gson();
+		JSONObject objJsonResult = null;
+		clsInstructUploadCompleteResponse objInstructUploadCompleteResponse = new clsInstructUploadCompleteResponse();
+
+		try {
+			InputStream stream = null;
+			URL urlFeed = new URL(strUrl);
+			String strJsonCommand = gson.toJson(objInstructUploadCompleteCommand);
+
+			try {
+				stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
+				objJsonResult = clsMessaging.updateLocalFeedData(stream);
+				// Makes sure that the InputStream is closed after the app is
+				// finished using it.
+			} catch (JSONException e) {
+				objInstructUploadCompleteResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
+				objInstructUploadCompleteResponse.strErrorMessage = "JSON exception. " + e;
+				return objInstructUploadCompleteResponse;
+			} finally {
+				if (stream != null) {
+					stream.close();
+				}
+			}
+		} catch (MalformedURLException e) {
+			objInstructUploadCompleteResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
+			objInstructUploadCompleteResponse.strErrorMessage = "Feed URL is malformed. " + e;
+			return objInstructUploadCompleteResponse;
+		} catch (IOException e) {
+			objInstructUploadCompleteResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
+			objInstructUploadCompleteResponse.strErrorMessage = "Error reading from network. " + e;
+			return objInstructUploadCompleteResponse;
+		}
+		// Analize data from server
+		objInstructUploadCompleteResponse = gson.fromJson(objJsonResult.toString(), clsInstructUploadCompleteResponse.class);
+		return objInstructUploadCompleteResponse;
 	}
 
 	public static JSONObject updateLocalFeedData(InputStream inStream)	throws IOException, JSONException {
@@ -1358,7 +1287,7 @@ public class clsMessaging {
         return boolIsNetworkAvailable;
     }
     
-    public String GetServerUrl(clsTreeview objTreeView){
+    public String GetServerUrl(){
     	if(objRepository.boolIsServerIisExpress) {
     		return SERVER_URL_IIS_EXPRESS;
     	}

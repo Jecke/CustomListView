@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +31,8 @@ import com.treeapps.android.in_app_billing.util.IabHelper;
 import com.treeapps.android.in_app_billing.util.IabResult;
 import com.treeapps.android.in_app_billing.util.Inventory;
 import com.treeapps.android.in_app_billing.util.Purchase;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsyncTask.OnGetNoteSharedUsersResponseListener;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsSetNoteSharedUsersAsyncTask.OnSetNoteSharedUsersResponseListener;
 import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsShareUser;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
@@ -37,6 +41,11 @@ import com.treeapps.treenotes.clsTreeview.enumItemType;
 import com.treeapps.treenotes.export.ActivityFacebookExport;
 import com.treeapps.treenotes.export.clsExportData;
 import com.treeapps.treenotes.export.clsMainExport;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.OnImageUploadFinishedListener;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageCommand;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
+import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage;
 import com.treeapps.treenotes.sharing.ActivityGroupMembers;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
@@ -44,7 +53,6 @@ import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsMembersRepository;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsUser;
 import com.treeapps.treenotes.sharing.clsMessaging.NoteSyncAsyncTask;
-import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileAsyncTask;
 import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsDownloadImageFileResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
@@ -55,7 +63,6 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
-import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileAsyncTask;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileResponseMsg;
 import com.treeapps.treenotes.sharing.subscriptions.ActivityPublications;
@@ -77,19 +84,25 @@ import android.app.ListActivity;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnClickListener;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.Signature;
 import android.content.res.Configuration;
 import android.content.res.Resources.NotFoundException;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.text.InputType;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -102,7 +115,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class ActivityExplorerStartup extends ListActivity {
-	
+
 	// This is startup activity. First activity the user sees
 
 	// keys to share between activities via Intents
@@ -133,13 +146,10 @@ public class ActivityExplorerStartup extends ListActivity {
 	public static final int REQUEST_BACKUP_PATH = 9;
 	public static final int REQUEST_RESTORE_PATH = 10;
 	private static final int SHARE_REGISTER = 11;
-	private static final int SHARE_MANAGE_GROUP_MEMBERS = 12;
-	private static final int SHARE_CHOOSE_GROUP_MEMBERS = 13;
+	public static final int SHARE_MANAGE_GROUP_MEMBERS = 12;
+	public static final int SHARE_CHOOSE_GROUP_MEMBERS = 13;
 	private static final int ANNOTATOR = 14;
 	private static final int SHARE_SUBSCRIPTIONS = 15;
-	
-
-	
 
 	public clsExplorerTreeview objExplorerTreeview;
 	public static File fileTreeNodesDir;
@@ -148,56 +158,78 @@ public class ActivityExplorerStartup extends ListActivity {
 	private clsMessaging objMessaging = new clsMessaging();
 	private boolean boolDoNotSaveFile = false;
 	private static Activity objContext;
-	
-	clsUploadImageFileAsyncTask objMyUploadImageFileAsyncTask;
-	clsDownloadImageFileAsyncTask objMyDownloadImageFileAsyncTask;
+
 	static clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask;
+	clsGetNoteSharedUsersAsyncTask objGetNoteSharedUsersAsyncTask;
+	clsSetNoteSharedUsersAsyncTask objSetNoteSharedUsersAsyncTask;
 	
+	public static ArrayList<clsImageLoadData> objLocalImageLoadDatas;
+
 	// Billing data
 	// To be persisted
 	public static class clsIabLocalData {
 		boolean boolIsAdsDisabledA; // True to be without adverts
 		boolean boolIsAdsDisabledB; // False to be without adverts
 	}
+
 	private clsIabLocalData objIabLocalData;
-	
+
 	// Not to be persisted
-	static final String base64EncodedPublicKeyPartScrambled ="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiE1fPh+RVPFVjromhOMZCUAmkaPqrnOogfaWMBuijs4SgdlNrq74VQSm3Ud3UV9r5k41ZUN/CXU5tePvyrSCpUL16w0utVS2uDnch4OGGaHaBcI+Z5arfvlqZ9Oaoi6E9/bbAdrCleS0vRnD3ZFPvgWnCQzV9P6Nkv69jyXAtYzwrMtYwiZJyh/17TfltBPS5tnO1tnOgxphXElbWZ4lWl133YMkGcXBsItn9vLXUkKDjoMp3NcpcmFjf6M9n0isj+tvoENMQwfhOxZwuamvRarjsLGuZRFaKeGurIv3re7ZX3tmlEzQREsfmK1CaEHCY9LFd1krKJdiAhRLEzOTkQIDAQAB";
+	static final String base64EncodedPublicKeyPartScrambled = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiE1fPh+RVPFVjromhOMZCUAmkaPqrnOogfaWMBuijs4SgdlNrq74VQSm3Ud3UV9r5k41ZUN/CXU5tePvyrSCpUL16w0utVS2uDnch4OGGaHaBcI+Z5arfvlqZ9Oaoi6E9/bbAdrCleS0vRnD3ZFPvgWnCQzV9P6Nkv69jyXAtYzwrMtYwiZJyh/17TfltBPS5tnO1tnOgxphXElbWZ4lWl133YMkGcXBsItn9vLXUkKDjoMp3NcpcmFjf6M9n0isj+tvoENMQwfhOxZwuamvRarjsLGuZRFaKeGurIv3re7ZX3tmlEzQREsfmK1CaEHCY9LFd1krKJdiAhRLEzOTkQIDAQAB";
 	static final String TAG_IAB = "TreeNotesIab";
-	static final String SKU_ADVERTS_REMOVED = "treeapps.treenotes.remove_adverts"; 	// treeapps.treenotes.remove_adverts OR 
-																			// android.test.purchased OR 
-																			// android.test.canceled OR
-																			// android.test.refunded
-																			// android.test.item_unavailable
-	static final int RC_REQUEST = 10001; // (arbitrary) request code for the purchase flow	
-    IabHelper mHelper; // The helper object
-    private AdView adView;
-	
+	static final String SKU_ADVERTS_REMOVED = "android.test.purchased"; // treeapps.treenotes.remove_adverts
+																		// OR
+																		// android.test.purchased
+																		// OR
+																		// android.test.canceled
+																		// OR
+																		// android.test.refunded
+																		// android.test.item_unavailable
+	static final int RC_REQUEST = 10001; // (arbitrary) request code for the
+											// purchase flow
+	IabHelper mHelper; // The helper object
+	private AdView adView;
+
 	// End of billing data
-    
-    // GCM Data
-    static final String TAG_GCM = "GCM";
+
+	// GCM Data
+	static final String TAG_GCM = "GCM";
 	private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 	public static final String PROPERTY_REG_ID = "com.treeapps.treenotes.gcm_registration_id";
 	public static final String PROPERTY_APP_VERSION = "com.treeapps.treenotes.gcm_application_version";
 	public static final String EXTRA_MESSAGE = "com.treeapps.treenotes.message";
-    GoogleCloudMessaging gcm;
-    AtomicInteger msgId = new AtomicInteger();
-    String strRegistrationId;
-    /**
-     * Substitute you own sender ID here. This is the project number you got
-     * from the Google Developer API Console, as described in "Getting Started."
-     */
-    String SENDER_ID = "543138772701";
-    // End of GCM data
+	public static final String BROADCAST_ACTION = "com.treeapps.treenotes.broadcast_sync";
+
+	GoogleCloudMessaging gcm;
+	AtomicInteger msgId = new AtomicInteger();
+	String strRegistrationId;
+	/**
+	 * Substitute you own sender ID here. This is the project number you got
+	 * from the Google Developer API Console, as described in "Getting Started."
+	 */
+	String SENDER_ID = "543138772701";
+
+	// End of GCM data
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 
 		super.onCreate(savedInstanceState);
+		
+		// Prevent two instances of same application running
+		if (!isTaskRoot()) {
+		    Intent intent = getIntent();
+		    String action = intent.getAction();
+		    if (intent.hasCategory(Intent.CATEGORY_LAUNCHER) && action != null && action.equals(Intent.ACTION_MAIN)) {
+		        finish();
+		        return;
+		    }
+		}
 
+		// Save context
 		objContext = this;
 
+		// Get work folder location
 		fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
 		if (!fileTreeNodesDir.exists()) {
 			fileTreeNodesDir.mkdirs();
@@ -218,14 +250,18 @@ public class ActivityExplorerStartup extends ListActivity {
 		setContentView(R.layout.activity_explorer_startup);
 
 		// ---List View---
-		int resID = R.layout.note_list_item;	
-		int intTabWidthInDp = clsUtils.GetDefaultTabWidthInDp(this);			
+		int resID = R.layout.note_list_item;
+		int intTabWidthInDp = clsUtils.GetDefaultTabWidthInDp(this);
 		int intTabWidthInPx = clsUtils.dpToPx(this, intTabWidthInDp);
 		objListItemAdapter = new clsExplorerListItemArrayAdapter(this, resID, listItems, objExplorerTreeview,
 				intTabWidthInPx);
 		setListAdapter(objListItemAdapter);
+		
+		// NewItemsIndicator View
+        clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)findViewById(R.id.newitems_indicator_view);
+		objClsNewItemsIndicatorView.UpdateListItems(listItems);
 
-		// Actionbar		
+		// Actionbar
 		ActionBar actionBar = getActionBar();
 		actionBar.show();
 		actionBar.setDisplayHomeAsUpEnabled(true);
@@ -255,7 +291,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				}
 			}
 		}
-		
+
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 		if (sharedPref.getString("treenotes_root_folder_name", "").isEmpty()) {
 			SharedPreferences.Editor editor = sharedPref.edit();
@@ -263,11 +299,10 @@ public class ActivityExplorerStartup extends ListActivity {
 					getResources().getString(R.string.pref_default_root_folder_name));
 			editor.commit();
 		}
-		
+
 		// Skip adverts if app runs on emulator
 		// TODO JE remove skipping of ads if app is on emu
-		if(!clsUtils.RunsOnEmu(objContext))
-		{
+		if (!clsUtils.RunsOnEmu(objContext)) {
 			// In-app billing
 			SetupInAppBilling();
 
@@ -275,13 +310,11 @@ public class ActivityExplorerStartup extends ListActivity {
 			objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
 			if (!(objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB)) {
 				// Look up the AdView as a resource and load a request.
-				AdView adView = (AdView)this.findViewById(R.id.adViewExplorer);
-				AdRequest adRequest = new AdRequest.Builder()
-				.addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-				.addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
-				.addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
-				.addTestDevice("A947D095EE036142160FD3D2D4D5034C")
-				.build();
+				AdView adView = (AdView) this.findViewById(R.id.adViewExplorer);
+				AdRequest adRequest = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+						.addTestDevice("803D489BC46137FD0761EC7EBFBBFB09")
+						.addTestDevice("C1B978D9FE1B0A6A8A58F1F44F653BE3")
+						.addTestDevice("A947D095EE036142160FD3D2D4D5034C").build();
 				adView.loadAd(adRequest);
 			} else {
 				RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.explorer_relative_layout);
@@ -300,9 +333,35 @@ public class ActivityExplorerStartup extends ListActivity {
 
 			} else {
 				// Otherwise, prompt user to get valid Play Services APK.
-				clsUtils.MessageBox(this, "Please download Play Services APK from the Google Play Store or enable it in the device's system settings", false);
+				clsUtils.MessageBox(
+						this,
+						"Please download Play Services APK from the Google Play Store or enable it in the device's system settings",
+						false);
 			}
-		}		
+		}
+		
+		// Add code to print out the key hash
+	    try {
+	        PackageInfo info = getPackageManager().getPackageInfo(
+	                getPackageName(), 
+	                PackageManager.GET_SIGNATURES);
+	        for (Signature signature : info.signatures) {
+	            MessageDigest md = MessageDigest.getInstance("SHA");
+	            md.update(signature.toByteArray());
+	            Log.d("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+	            }
+	    } catch (NameNotFoundException e) {
+
+	    } catch (NoSuchAlgorithmException e) {
+
+	    }
+	    
+		 // Broadcast from notification service
+		IntentFilter mStatusIntentFilter = new IntentFilter(ActivityExplorerStartup.BROADCAST_ACTION);
+	    // Instantiates a new DownloadStateReceiver
+	    ResponseReceiver objResponseReceiver = new ResponseReceiver();
+	    // Registers the DownloadStateReceiver and its intent filters
+	    LocalBroadcastManager.getInstance(this).registerReceiver(objResponseReceiver, mStatusIntentFilter);
 
 		// Session management
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
@@ -313,7 +372,31 @@ public class ActivityExplorerStartup extends ListActivity {
 		}
 	}
 	
-	
+	// Broadcast receiver for receiving status updates from the IntentService
+    private class ResponseReceiver extends BroadcastReceiver
+    {
+
+        // Called when the BroadcastReceiver gets an Intent it's registered to receive
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        	AlertDialog dialog;
+        	AlertDialog.Builder builder = new AlertDialog.Builder(objContext);
+			builder.setMessage("A sync request has been received. Do you want to sync now?");
+			builder.setCancelable(true);
+			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					ExecuteNotesSync();
+				}
+			});
+			builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					return;
+				}
+			});
+			dialog = builder.create();
+			dialog.show();	
+        }
+    }
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
@@ -321,6 +404,46 @@ public class ActivityExplorerStartup extends ListActivity {
 		super.onConfigurationChanged(newConfig);
 		clsIndentableTextView objMyTextView = (clsIndentableTextView) findViewById(R.id.row);
 		// objMyTextView.IndicateOrientationChanged();
+	}
+
+	public void ExecuteNotesSync() {
+		if (objMessaging.IsNetworkAvailable(this) == false) {
+			Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		if (objMessaging.IsServerAlive() == false) {
+			Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		clsUser  objRegisteredUser = objGroupMembers.GetRegisteredUser();
+		if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
+			// Not registered, cannot sync
+			Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		URL urlFeed;
+		try {
+			urlFeed = new URL(objMessaging.GetServerUrl()
+					+ getResources().getString(R.string.url_note_sync));
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (NotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
+		objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
+		objSyncCommandMsg.strRegistrationId = strRegistrationId;
+		objSyncCommandMsg.boolIsMergeNeeded = true;
+		objSyncCommandMsg.boolIsAutoSyncCommand = false;
+		objSyncCommandMsg.objSyncRepositoryCtrlDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
+
+		ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(this,
+				urlFeed, objSyncCommandMsg, objMessaging, true, objGroupMembers);
+		objSyncAsyncTask.execute("");		
 	}
 
 	@Override
@@ -403,34 +526,37 @@ public class ActivityExplorerStartup extends ListActivity {
 		// TODO Auto-generated method stub
 		SaveFile();
 		// very important:
-        Log.d(TAG_IAB, "Destroying helper.");
-        if (mHelper != null) {
-            mHelper.dispose();
-            mHelper = null;
-        }
-        if (adView != null) {
-	        adView.destroy();
-	      }
+		Log.d(TAG_IAB, "Destroying helper.");
+		if (mHelper != null) {
+			mHelper.dispose();
+			mHelper = null;
+		}
+		if (adView != null) {
+			adView.destroy();
+		}
 		super.onDestroy();
+		clsUtils.CustomLog("ActivityExplorerStartup onDestroy SaveFile");
 	}
-	
 
 	@Override
 	protected void onStart() {
 		super.onStart();
 		LoadFile();
+		clsUtils.CustomLog("ActivityExplorerStartup onStart LoadFile");
 	}
 
 	@Override
 	protected void onStop() {
 		SaveFile();
 		super.onStop();
+		clsUtils.CustomLog("ActivityExplorerStartup onStop SaveFile");
 	}
 
 	@Override
 	protected void onRestart() {
 		LoadFile();
 		super.onRestart();
+		clsUtils.CustomLog("ActivityExplorerStartup onRestart LoadFile");
 	}
 
 	@Override
@@ -438,14 +564,14 @@ public class ActivityExplorerStartup extends ListActivity {
 		super.onResume();
 		LoadFile();
 		if (adView != null) {
-		      adView.resume();
+			adView.resume();
 		}
 		// Skip adverts if app runs on emulator
 		// TODO JE remove skipping of ads if app is on emu
-		if(!clsUtils.RunsOnEmu(objContext))
-		{
+		if (!clsUtils.RunsOnEmu(objContext)) {
 			checkPlayServices();
 		}
+		clsUtils.CustomLog("ActivityExplorerStartup onResume LoadFile");
 	}
 
 	@Override
@@ -453,23 +579,18 @@ public class ActivityExplorerStartup extends ListActivity {
 		// TODO Auto-generated method stub
 		SaveFile();
 		if (adView != null) {
-	      adView.pause();
-	    }
+			adView.pause();
+		}
 		super.onPause();
+		clsUtils.CustomLog("ActivityExplorerStartup onPause SaveFile");
 	}
 
 	private void LoadFile() {
 		objExplorerTreeview = new clsExplorerTreeview(this, objGroupMembers);
 		objExplorerTreeview.DeserializeFromFile(clsUtils.BuildExplorerFilename(fileTreeNodesDir, getResources()
 				.getString(R.string.working_file_name)));
-		objExplorerTreeview.UpdateEnvironment(clsExplorerTreeview.enumCutCopyPasteState.INACTIVE,
-				new ArrayList<clsTreeNode>()); // Must
-												// be
-												// persisted
-												// at
-												// a
-												// later
-												// stage
+		objExplorerTreeview.UpdateEnvironment(this, clsExplorerTreeview.enumCutCopyPasteState.INACTIVE,
+				new ArrayList<clsTreeNode>()); 
 		objGroupMembers.LoadFile();
 		objGroupMembers.UpdateEnvironment(this);
 		ArrayList<clsListItem> objListItems = objExplorerTreeview.getListItems();
@@ -483,10 +604,11 @@ public class ActivityExplorerStartup extends ListActivity {
 		objIabLocalData = clsUtils.LoadIabLocalValues(sharedPref, objIabLocalData);
 		clsUtils.SerializeToSharedPreferences("ActivityExplorerStartup", "strRegistrationId", this, strRegistrationId);
 		strRegistrationId = clsUtils.getRegistrationId(objContext);
-		clsUtils.CustomLog("ActivityExplorerStartup LoadFile");
+		String strImageLoadDatas = sharedPref.getString("objImageLoadDatas", "");
+   	    java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
+   	    objLocalImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
+		clsUtils.CustomLog("LoadFile");
 	}
-	
-	
 
 	private void SaveFile() {
 		if (boolDoNotSaveFile)
@@ -496,10 +618,16 @@ public class ActivityExplorerStartup extends ListActivity {
 		objMessaging.SaveFile(this);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
 		clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
-		clsUtils.CustomLog("ActivityExplorerStartup SaveFile");
-		
+
+		SharedPreferences.Editor editor = sharedPref.edit();
+		String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
+    	editor.putString("objImageLoadDatas", strImageLoadDatas);
+    	editor.commit();
+    	
+		clsUtils.CustomLog("SaveFile");
+
 	}
-	
+
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// TODO Auto-generated method stub
 		Intent intent;
@@ -754,7 +882,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			Intent intentRegister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
 			intentRegister.putExtra(ActivityRegister.USERNAME,
 					objGroupMembers.objMembersRepository.getStrRegisteredUserName());
-			intentRegister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl(objExplorerTreeview));
+			intentRegister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
 			startActivityForResult(intentRegister, SHARE_REGISTER);
 			return true;
 		case R.id.actionShareReregister:
@@ -769,7 +897,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			Intent intentReregister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
 			intentReregister.putExtra(ActivityRegister.USERNAME,
 					objGroupMembers.objMembersRepository.getStrRegisteredUserName());
-			intentReregister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl(objExplorerTreeview));
+			intentReregister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
 			startActivityForResult(intentReregister, SHARE_REGISTER);
 			return true;
 		case R.id.actionShareManageGroups:
@@ -789,7 +917,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			}
 			final URL urlFeed;
 			try {
-				urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+				urlFeed = new URL(objMessaging.GetServerUrl()
 						+ getResources().getString(R.string.url_members_sync));
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
@@ -827,59 +955,10 @@ public class ActivityExplorerStartup extends ListActivity {
 				MessageBoxOk("Please select a note first");
 				return false;
 			}
-			clsTreeNode objSelectedTreeNode = objSelectedTreeNodes.get(0);
-			Intent intentShareGroupMembers = new Intent(ActivityExplorerStartup.this, ActivityGroupMembers.class);
-			intentShareGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_CHOOSE_MEMBERS);
-			clsIntentMessaging objIntentMessaging = new clsIntentMessaging();
-			clsIntentMessaging.clsChosenMembers objChosenMembers = objIntentMessaging.new clsChosenMembers();
-			objChosenMembers.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
-
-			File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
-			File objNoteFile = clsUtils
-					.BuildNoteFilename(fileTreeNodesDir, objSelectedTreeNode.guidTreeNode.toString());
-			if (objNoteFile.exists()) {
-				clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
-				if (objNoteRepository != null) {
-					if (objNoteRepository.getObjSharedUsers() != null) {
-						for (clsShareUser objShareUser : objNoteRepository.getObjSharedUsers()) {
-							if (objShareUser.strUserUuid != null) {
-								objChosenMembers.strUserUuids.add(objShareUser.strUserUuid);
-							}
-						}
-					}
-				} else {
-					MessageBoxOk("Selected note could not be read from file");
-					return false;
-				}
-			} else {
-				MessageBoxOk("Selected note does not exist");
-				return false;
-			}
-
-			String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
-			intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
-			intentShareGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
-					objMessaging.GetServerUrl(objExplorerTreeview));
-			startActivityForResult(intentShareGroupMembers, SHARE_CHOOSE_GROUP_MEMBERS);
-			return true;
-		case R.id.actionShareSyncAll:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
-				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			if (objMessaging.IsServerAlive() == false) {
-				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			objRegisteredUser = objGroupMembers.GetRegisteredUser();
-			if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
-				// Not registered, cannot sync
-				Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
-				return true;
-			}
+			// Async task which gets current shared users for this note from server
 			try {
-				urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
-						+ getResources().getString(R.string.url_note_sync));
+				urlFeed = new URL(objMessaging.GetServerUrl()
+						+ getResources().getString(R.string.url_get_note_sharers));
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -888,17 +967,39 @@ public class ActivityExplorerStartup extends ListActivity {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return true;
-			}
-			clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
-			objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
-			objSyncCommandMsg.strRegistrationId = strRegistrationId;
-			objSyncCommandMsg.boolIsMergeNeeded = true;
-			objSyncCommandMsg.boolIsAutoSyncCommand = false;
-			objSyncCommandMsg.objSyncRepositoryCtrlDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
-
-			ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(this,
-					urlFeed, objSyncCommandMsg, objMessaging, true, objGroupMembers);
-			objSyncAsyncTask.execute("");
+			} 
+			clsTreeNode objSelectedTreeNode = objSelectedTreeNodes.get(0);
+			clsGetNoteSharedUsersCommand objCommand = new clsGetNoteSharedUsersCommand();
+			objCommand.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
+			clsGetNoteSharedUsersResponse objResponse = new clsGetNoteSharedUsersResponse(); 
+			objGetNoteSharedUsersAsyncTask = new clsGetNoteSharedUsersAsyncTask(this, urlFeed, objCommand, objResponse);
+			objGetNoteSharedUsersAsyncTask.SetOnResponseListener(new OnGetNoteSharedUsersResponseListener() {
+				
+				@Override
+				public void onResponse(clsGetNoteSharedUsersResponse objResponse) {
+					if (objResponse.intErrorCode == clsGetNoteSharedUsersResponse.ERROR_NONE) {
+						// Data received, can start selection activity now
+						Intent intentShareGroupMembers = new Intent(ActivityExplorerStartup.this, ActivityGroupMembers.class);
+						intentShareGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_CHOOSE_MEMBERS);
+						clsIntentMessaging objIntentMessaging = new clsIntentMessaging();
+						clsIntentMessaging.clsChosenMembers objChosenMembers = objIntentMessaging.new clsChosenMembers();
+						objChosenMembers.strUserUuids = objResponse.strSharedUsers;
+						objChosenMembers.strNoteUuid = objResponse.strNoteUuid;
+						String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
+						intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
+						intentShareGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
+								objMessaging.GetServerUrl());
+						startActivityForResult(intentShareGroupMembers, SHARE_CHOOSE_GROUP_MEMBERS);
+					} else {
+						clsUtils.MessageBox(objContext, objResponse.strErrorMessage, false);
+					}
+					return;
+				}
+			});
+			objGetNoteSharedUsersAsyncTask.execute(null, null, null);
+			return true;
+		case R.id.actionShareSyncAll:
+			ExecuteNotesSync();
 			return true;
 		case R.id.actionPublications:
 			if (objMessaging.IsNetworkAvailable(this) == false) {
@@ -964,7 +1065,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				public void onClick(DialogInterface dialog, int id) {
 					URL urlFeed;
 					try {
-						urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+						urlFeed = new URL(objMessaging.GetServerUrl()
 								+ getResources().getString(R.string.url_note_sync));
 					} catch (MalformedURLException e) {
 						// TODO Auto-generated catch block
@@ -1121,11 +1222,11 @@ public class ActivityExplorerStartup extends ListActivity {
 			finish();
 			return true;
 		case R.id.actionUnregisterGcm:
-			clsUtils.storeRegistrationId(this,"");
+			clsUtils.storeRegistrationId(this, "");
 			return true;
 		case R.id.actionConsumePurchases:
 			mHelper.queryInventoryAsync(mGotInventoryForReversalListener);
-			return true;	
+			return true;
 		case R.id.actionClearWebServiceRepository:
 			builder = new AlertDialog.Builder(this);
 			builder.setMessage("Are you sure you weant to clear the webservice repository?");
@@ -1147,7 +1248,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			Intent intentManageGroupMembers = new Intent(this, ActivityGroupMembers.class);
 			intentManageGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_MANAGE_GROUPS);
 			intentManageGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
-					objMessaging.GetServerUrl(this.objExplorerTreeview));
+					objMessaging.GetServerUrl());
 			startActivityForResult(intentManageGroupMembers, SHARE_MANAGE_GROUP_MEMBERS);
 			return true;
 		default:
@@ -1178,11 +1279,12 @@ public class ActivityExplorerStartup extends ListActivity {
 
 	public void RefreshListView() {
 		SaveFile();
-		List<clsListItem> objListItems = objExplorerTreeview.getListItems();
+		ArrayList<clsListItem> objListItems = objExplorerTreeview.getListItems();
 		objListItemAdapter.clear();
 		objListItemAdapter.addAll(objListItems);
-		ListView objListView = getListView();
-		objListView.invalidateViews();
+		objListItemAdapter.notifyDataSetChanged();
+		clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)findViewById(R.id.newitems_indicator_view);
+		objClsNewItemsIndicatorView.UpdateListItems(objListItems);
 		invalidateOptionsMenu();
 	}
 
@@ -1222,14 +1324,18 @@ public class ActivityExplorerStartup extends ListActivity {
 			switch (requestCode) {
 			case ADD_NOTE:
 				String strImageLoadDatas = objBundle.getString(IMAGE_LOAD_DATAS);
-				java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
-		   	    objExplorerTreeview.getRepository().objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
+				java.lang.reflect.Type collectionType = new TypeToken<ArrayList<clsImageLoadData>>() {
+				}.getType();
+				objExplorerTreeview.getRepository().objImageLoadDatas = clsUtils.DeSerializeFromString(
+						strImageLoadDatas, collectionType);
 				RefreshListView();
 				break;
 			case EDIT_NOTE:
 				strImageLoadDatas = objBundle.getString(IMAGE_LOAD_DATAS);
-				collectionType = new TypeToken<ArrayList<clsImageLoadData>>(){}.getType();
-		   	    objExplorerTreeview.getRepository().objImageLoadDatas = clsUtils.DeSerializeFromString(strImageLoadDatas, collectionType);
+				collectionType = new TypeToken<ArrayList<clsImageLoadData>>() {
+				}.getType();
+				objExplorerTreeview.getRepository().objImageLoadDatas = clsUtils.DeSerializeFromString(
+						strImageLoadDatas, collectionType);
 				boolean boolIsShortcut = objBundle.getBoolean(ActivityExplorerStartup.IS_SHORTCUT);
 				if (boolIsShortcut) {
 					finish();
@@ -1304,7 +1410,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				// data
 				final URL urlFeed;
 				try {
-					urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
+					urlFeed = new URL(objMessaging.GetServerUrl()
 							+ getResources().getString(R.string.url_members_sync));
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
@@ -1326,35 +1432,52 @@ public class ActivityExplorerStartup extends ListActivity {
 				objAsyncTask.execute("");
 				break;
 			case SHARE_CHOOSE_GROUP_MEMBERS:
-    			// Save return values to that specific note's repository share data
-				objBundle = data.getExtras();    		
-				String strChooseResultGson    = objBundle.getString(ActivityGroupMembers.CHOOSE_MEMBERS_RESULT_GSON);
-				clsIntentMessaging.clsChosenMembers objResults = 
-						clsUtils.DeSerializeFromString(strChooseResultGson, clsIntentMessaging.clsChosenMembers.class);
-				
-				clsTreeNode objSelectedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(UUID.fromString(objResults.strNoteUuid));
-				File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(this));
-				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objSelectedTreeNode.guidTreeNode.toString());
-				if (objNoteFile.exists()) {
-					clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
-					if (objNoteRepository != null) {
-						objNoteRepository.setObjSharedUsers(new ArrayList<clsShareUser>()); // Create empty list
-						for (String strUserUuid: objResults.strUserUuids) {
-							clsShareUser objShareUser = objExplorerTreeview.new clsShareUser(strUserUuid,
-									objGroupMembers.GetRegisteredUser().strUserUuid,clsUtils.GetStrCurrentDateTime());
-							objNoteRepository.objSharedUsers.add(objShareUser);
-						}
-						objExplorerTreeview.SerializeNoteToFile(objNoteRepository, objNoteFile);
-						RefreshListView();
-					} else {
-						MessageBoxOk("Selected note could not be read from file");
-						break;
-					}
-				} else {
-					MessageBoxOk("Selected note does not exist");
-					break;
+				// Save return values to that specific note's repository share data
+				objBundle = data.getExtras();
+				String strChooseResultGson = objBundle.getString(ActivityGroupMembers.CHOOSE_MEMBERS_RESULT_GSON);
+				clsIntentMessaging.clsChosenMembers objResults = clsUtils.DeSerializeFromString(strChooseResultGson,
+						clsIntentMessaging.clsChosenMembers.class);
+
+				// Inform server about the selection
+				try {
+					urlFeed = new URL(objMessaging.GetServerUrl()
+							+ getResources().getString(R.string.url_set_note_sharers));
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return;
+				} catch (NotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return;
 				}
-    			break;
+				clsTreeNode objSelectedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(UUID
+						.fromString(objResults.strNoteUuid));
+				clsSetNoteSharedUsersCommand objCommand = new clsSetNoteSharedUsersCommand();
+				objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
+				objCommand.strNoteUuid = objSelectedTreeNode.guidTreeNode.toString();
+				objCommand.objSharedUsers = objResults.strUserUuids;
+				final boolean boolIsNoteShared = (objResults.strUserUuids.size() == 0) ? false: true;
+				clsSetNoteSharedUsersResponse objResponse = new clsSetNoteSharedUsersResponse();
+				objSetNoteSharedUsersAsyncTask = new clsSetNoteSharedUsersAsyncTask(this, urlFeed, objCommand, objResponse);
+				objSetNoteSharedUsersAsyncTask.SetOnResponseListener(new OnSetNoteSharedUsersResponseListener() {
+					
+					@Override
+					public void onResponse(clsSetNoteSharedUsersResponse objResponse) {
+						if (objResponse.intErrorCode == clsSetNoteSharedUsersResponse.ERROR_NETWORK ) {
+							clsUtils.MessageBox(objContext, objResponse.strErrorMessage, false);
+						} else {
+							if (boolIsNoteShared) {
+								objExplorerTreeview.getRepository().boolIsShared = true;
+							} else {
+								objExplorerTreeview.getRepository().boolIsShared = false;
+							}
+						}
+						RefreshListView();
+					}
+				});
+				objSetNoteSharedUsersAsyncTask.execute(null,null,null);			
+				break;
 			default:
 			}
 		} else {
@@ -1362,14 +1485,15 @@ public class ActivityExplorerStartup extends ListActivity {
 			case EDIT_SETTINGS:
 				SharedPreferences mySharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 				boolean my_checkbox_preference = mySharedPreferences.getBoolean("checkbox_preference", false);
-				
+
 				// Admob
 				objIabLocalData = clsUtils.LoadIabLocalValues(mySharedPreferences, objIabLocalData);
-				if (objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA && !objIabLocalData.boolIsAdsDisabledB) {
+				if (objIabLocalData != null && objIabLocalData.boolIsAdsDisabledA
+						&& !objIabLocalData.boolIsAdsDisabledB) {
 					RelativeLayout adscontainer = (RelativeLayout) findViewById(R.id.explorer_relative_layout);
 					View admobAds = (View) adscontainer.findViewById(R.id.adViewExplorer);
 					if (admobAds != null) {
-						adscontainer.removeView(admobAds);				
+						adscontainer.removeView(admobAds);
 					}
 				}
 				break;
@@ -1548,7 +1672,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						intent.putExtra(TREENODE_NAME, objNewTreeNode.getName());
 						intent.putExtra(IS_SHORTCUT, false);
 						String strImageLoadDatas = clsUtils.SerializeToString(objExplorerTreeview.getRepository().objImageLoadDatas);
-						intent.putExtra(IMAGE_LOAD_DATAS,strImageLoadDatas);
+						intent.putExtra(IMAGE_LOAD_DATAS, strImageLoadDatas);
 						startActivityForResult(intent, ADD_NOTE);
 					} else {
 						// Create item in explorer
@@ -1570,7 +1694,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						intent.putExtra(TREENODE_NAME, objNewTreeNode.getName());
 						intent.putExtra(IS_SHORTCUT, false);
 						String strImageLoadDatas = clsUtils.SerializeToString(objExplorerTreeview.getRepository().objImageLoadDatas);
-						intent.putExtra(IMAGE_LOAD_DATAS,strImageLoadDatas);
+						intent.putExtra(IMAGE_LOAD_DATAS, strImageLoadDatas);
 						startActivityForResult(intent, ADD_NOTE);
 					}
 
@@ -1618,9 +1742,11 @@ public class ActivityExplorerStartup extends ListActivity {
 				clsTreeNode objEditedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(_guidSelectedTreeNode);
 				objEditedTreeNode.setName(strEditMessagebox);
 				if (objEditedTreeNode.enumItemType == enumItemType.OTHER) {
-					// This is a note so name needs to be changed inside file also
+					// This is a note so name needs to be changed inside file
+					// also
 					File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
-					File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objEditedTreeNode.guidTreeNode.toString());
+					File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
+							objEditedTreeNode.guidTreeNode.toString());
 					if (objNoteFile.exists()) {
 						clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
 						if (objNoteRepository != null) {
@@ -1741,35 +1867,45 @@ public class ActivityExplorerStartup extends ListActivity {
 
 		static boolean boolDisplayResults;
 		static clsGroupMembers objGroupMembers;
+		static clsMessaging objMessaging;
+		String strMessage = "";
 
 		public ActivityExplorerStartupSyncAsyncTask(Activity objActivity, URL urlFeed,
 				clsSyncNoteCommandMsg objSyncCommandMsg, clsMessaging objMessaging, boolean boolDisplayToasts,
 				clsGroupMembers objGroupMembers) {
-			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts);
+			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts, true );
 			// TODO Auto-generated constructor stub
 			ActivityExplorerStartupSyncAsyncTask.boolDisplayResults = boolDisplayToasts;
 			ActivityExplorerStartupSyncAsyncTask.objGroupMembers = objGroupMembers;
-			((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas.clear();
+			ActivityExplorerStartupSyncAsyncTask.objMessaging = objMessaging;
+			((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas.clear();
 		}
 
 		@Override
 		protected void onPostExecute(clsSyncResult objResult) {
-			String strMessage = "";
 			super.onPostExecute(objResult);
 			// Do what needs to be done with the result
 			if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
-				clsUtils.UpdateImageLoadDatasForUploads(((ActivityExplorerStartup)objContext).objMessaging,
-						objResult.objImageLoadDatas,
-						((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+   	        	clsNoteTreeview objNoteTreeview;
+   	        	clsRepository objRepositoryForImagesUpDownloadPurposes = null;
+   	        	boolean boolIsNeedToUpDownloadImages = false;
+   	        	objLocalImageLoadDatas = new ArrayList<clsImageLoadData>(); // Clear list
 				for (int i = 0; i < objResult.intServerInstructions.size(); i++) {
+					objNoteTreeview = null; // Will be an object if a local change took place
 					// Depending on server instructions
 					switch (objResult.intServerInstructions.get(i)) {
 					case clsMessaging.SERVER_INSTRUCT_KEEP_ORIGINAL:
-						if (boolDisplayResults) {
-							clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+						clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+						if (boolDisplayResults) {	
 							strMessage += "New note '" + objSyncRepository.strRepositoryName
 									+ "' has been created on server.\n";
 						}
+						// Setup for images updownload, needs to create a objRepository to pass on later
+						boolIsNeedToUpDownloadImages = true;
+						File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
+						File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
+								objSyncRepository.strRepositoryUuid);
+						objRepositoryForImagesUpDownloadPurposes = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
 						break;
 					case clsMessaging.SERVER_INSTRUCTION_REMOVE:
 						String strToDeleteRepositoryUuid = objResult.objSyncRepositories.get(i).strRepositoryUuid;
@@ -1778,24 +1914,24 @@ public class ActivityExplorerStartup extends ListActivity {
 						((ActivityExplorerStartup) objContext).objExplorerTreeview.RemoveTreeNode(objDeleteTreeNode,
 								true);
 						if (boolDisplayResults) {
-							clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+							objSyncRepository = objResult.objSyncRepositories.get(i);
 							strMessage += "New note '" + objSyncRepository.strRepositoryName + "' has been deleted.\n";
 						}
+						boolIsNeedToUpDownloadImages = false;
 						break;
 					case clsMessaging.SERVER_INSTRUCT_REPLACE_ORIGINAL:
-						clsNoteTreeview objNoteTreeview = new clsNoteTreeview(objGroupMembers);
+						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
-						File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
-						File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
+						fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
+						objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
 								objNoteTreeview.getRepository().uuidRepository.toString());
 						objNoteTreeview.getRepository().SerializeToFile(objNoteFile);
 						if (boolDisplayResults) {
 							strMessage += "Note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been replaced with an updated version.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup)objContext).objMessaging, 
-								objNoteTreeview, fileTreeNodesDir, 
-								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+						boolIsNeedToUpDownloadImages = true;
+						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
 						clsExplorerTreeview objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1812,7 +1948,7 @@ public class ActivityExplorerStartup extends ListActivity {
 						clsTreeNode objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Shared note",
 								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid,
 								strOwnerUserUuid);
-						objNoteTreeview = new clsNoteTreeview(objGroupMembers);
+						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
 						objExplorerNoteTreeNode.setName(objNoteTreeview.getRepository().getName());
 						objExplorerNoteTreeNode.guidTreeNode = objNoteTreeview.getRepository().uuidRepository;
@@ -1825,9 +1961,8 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New shared note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup)objContext).objMessaging,
-								objNoteTreeview, fileTreeNodesDir, 
-								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+						boolIsNeedToUpDownloadImages = true;
+						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
 						break;
 					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
 						objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
@@ -1836,13 +1971,14 @@ public class ActivityExplorerStartup extends ListActivity {
 						if (objPublishingFolderTreeNode == null) {
 							// Create a sharing folder as it does not exist yet
 							objPublishingFolderTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed notes",
-									enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.PUBLISHED_FOLDER_RESOURCE,
-									"", strOwnerUserUuid, strOwnerUserUuid);
+									enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.PUBLISHED_FOLDER_RESOURCE, "",
+									strOwnerUserUuid, strOwnerUserUuid);
 							objExplorerTreeview.getRepository().objRootNodes.add(objPublishingFolderTreeNode);
 						}
-						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed note", 
-								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid, strOwnerUserUuid);
-						objNoteTreeview = new clsNoteTreeview(objGroupMembers);
+						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed note",
+								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid,
+								strOwnerUserUuid);
+						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
 						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
 						objExplorerNoteTreeNode.setName(objNoteTreeview.getRepository().getName());
 						objExplorerNoteTreeNode.guidTreeNode = objNoteTreeview.getRepository().uuidRepository;
@@ -1855,37 +1991,82 @@ public class ActivityExplorerStartup extends ListActivity {
 							strMessage += "New subscribed note '" + objNoteTreeview.getRepository().getName()
 									+ "' has been created locally.\n";
 						}
-						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup)objContext).objMessaging, objNoteTreeview, fileTreeNodesDir, 
-								((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas);
+						boolIsNeedToUpDownloadImages = true;
+						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
 						break;
 					case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
 						if (boolDisplayResults) {
 							strMessage += "Sync completed.\n";
 						}
+						boolIsNeedToUpDownloadImages = false;
 						break;
 					case clsMessaging.SERVER_INSTRUCT_PROBLEM:
 						if (boolDisplayResults) {
-							clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
+							objSyncRepository = objResult.objSyncRepositories.get(i);
 							strMessage += "Note '" + objSyncRepository.strRepositoryName + "' had a sync problem. "
 									+ objResult.strServerMessages.get(i) + ".\n";
 						}
+						boolIsNeedToUpDownloadImages = false;
 						break;
 					}
-
-					((ActivityExplorerStartup) objContext).RefreshListView();
+					
+					// Build list of images that needs upload and download
+	   	        	if (boolIsNeedToUpDownloadImages) {
+						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup) objContext).objMessaging,
+								((ActivityExplorerStartup) objContext).objGroupMembers, objRepositoryForImagesUpDownloadPurposes,
+								ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas,
+								objLocalImageLoadDatas);
+						clsUtils.UpdateImageLoadDatasForUploads(((ActivityExplorerStartup) objContext).objMessaging,
+								objResult.objImageLoadDatas, objLocalImageLoadDatas);
+					}
+					
 				}
 			} else {
 				if (boolDisplayResults) {
 					strMessage += objResult.strErrorMessage + ".\n";
 				}
-
+				return;
 			}
-			clsUtils.MessageBox(objContext, strMessage, true);
+			
+//			if (objMessaging.IsImageLoadDatasEmpty(objLocalImageLoadDatas)) {
+//				// No images need to be synced, all is done
+//				clsUtils.MessageBox(objContext, strMessage, true);
+//				return;
+//			}
 			
 			// Start background image syncing
-			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask(objContext, ((ActivityExplorerStartup)objContext).objMessaging, 
-					true, ((ActivityExplorerStartup)objContext).objExplorerTreeview.getRepository().objImageLoadDatas, null, null);
+			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((ActivityExplorerStartup) objContext, ((ActivityExplorerStartup) objContext).objMessaging, 
+					true, objLocalImageLoadDatas, new OnImageUploadFinishedListener() {
+						
+						@Override
+						public void imageUploadFinished(boolean success, String errorMessage) {
+							
+							clsUtils.IndicateToServiceIntentSyncIsCompleted(objContext);
+															
+							if (!success) {
+								clsUtils.MessageBox(objContext, errorMessage, false);
+								return;
+							} else {
+								// Once successfully downloaded, update the ResourceUrl in the relevant treenode
+								for (clsImageLoadData clsLocalImageLoadData: objLocalImageLoadDatas ) {
+									String strNoteUuid = clsLocalImageLoadData.strNoteUuid;
+									File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, strNoteUuid);
+									clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
+									clsUtils.UpdateTreeviewResourcePaths((Activity) objContext, objNoteRepository, clsLocalImageLoadData);
+									objNoteRepository.SerializeToFile(objNoteFile);
+								}
+
+								clsUtils.MessageBox(objContext, strMessage, true);
+								((ActivityExplorerStartup) objContext).RefreshListView();
+							}
+	
+							
+							
+						}
+					}, null, false);
 			objImageUpDownloadAsyncTask.execute();
+			
+
 		}
 	}
 
@@ -1903,12 +2084,12 @@ public class ActivityExplorerStartup extends ListActivity {
 		static Exception mException = null;
 		static clsSyncMembersCommandMsg objCommand;
 		clsGroupMembers objGroupMembers;
-		ActivityExplorerStartup context;
+		Activity context;
 		clsMessaging objMessaging;
 		static URL urlFeed;
 		ProgressDialog objProgressDialog;
 
-		public ActivityExplorerSyncMembersAsyncTask(URL urlFeed, ActivityExplorerStartup context,
+		public ActivityExplorerSyncMembersAsyncTask(URL urlFeed, Activity context,
 				clsSyncMembersCommandMsg objSyncMembersCommandMsg, clsGroupMembers objGroupMembers,
 				clsMessaging objMessaging) {
 			ActivityExplorerSyncMembersAsyncTask.objCommand = objSyncMembersCommandMsg;
@@ -1988,7 +2169,7 @@ public class ActivityExplorerStartup extends ListActivity {
 				intentManageGroupMembers.putExtra(ActivityGroupMembers.ACTION,
 						ActivityGroupMembers.ACTION_MANAGE_GROUPS);
 				intentManageGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
-						objMessaging.GetServerUrl(context.objExplorerTreeview));
+						objMessaging.GetServerUrl());
 				context.startActivityForResult(intentManageGroupMembers, SHARE_MANAGE_GROUP_MEMBERS);
 			} else if ((objResult.getIntErrorNum() == ERROR_NONE_NEW_DATA_CREATED)
 					|| (objResult.getIntErrorNum() == ERROR_NONE_EXISTING_DATA_UPDATED)) {
@@ -2012,354 +2193,581 @@ public class ActivityExplorerStartup extends ListActivity {
 		}
 	}
 
-	//------------------------------ In App Billing ------------------------------
-	 public void SetupInAppBilling() {
+	// ------------------------------ In App Billing
+	// ------------------------------
+	public void SetupInAppBilling() {
 
+		/*
+		 * base64EncodedPublicKey should be YOUR APPLICATION'S PUBLIC KEY (that
+		 * you got from the Google Play developer console). This is not your
+		 * developer public key, it's the *app-specific* public key.
+		 * 
+		 * Instead of just storing the entire literal string here embedded in
+		 * the program, construct the key at runtime from pieces or use bit
+		 * manipulation (for example, XOR with some other string) to hide the
+		 * actual key. The key itself is not secret information, but we don't
+		 * want to make it easy for an attacker to replace the public key with
+		 * one of their own and then fake messages from the server.
+		 */
 
-	        /* base64EncodedPublicKey should be YOUR APPLICATION'S PUBLIC KEY
-	         * (that you got from the Google Play developer console). This is not your
-	         * developer public key, it's the *app-specific* public key.
-	         *
-	         * Instead of just storing the entire literal string here embedded in the
-	         * program,  construct the key at runtime from pieces or
-	         * use bit manipulation (for example, XOR with some other string) to hide
-	         * the actual key.  The key itself is not secret information, but we don't
-	         * want to make it easy for an attacker to replace the public key with one
-	         * of their own and then fake messages from the server.
-	         */
+		// Create the helper, passing it our context and the public key to
+		// verify signatures with
+		Log.d(TAG_IAB, "Creating IAB helper.");
+		mHelper = new IabHelper(this, clsUtils.Unscramble(base64EncodedPublicKeyPartScrambled));
 
-	        // Create the helper, passing it our context and the public key to verify signatures with
-	        Log.d(TAG_IAB, "Creating IAB helper.");
-	        mHelper = new IabHelper(this, clsUtils.Unscramble(base64EncodedPublicKeyPartScrambled));
+		// enable debug logging (for a production application, you should set
+		// this to false).
+		mHelper.enableDebugLogging(true);
 
-	        // enable debug logging (for a production application, you should set this to false).
-	        mHelper.enableDebugLogging(true);
+		// Start setup. This is asynchronous and the specified listener
+		// will be called once setup completes.
+		Log.d(TAG_IAB, "Starting setup.");
+		mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+			public void onIabSetupFinished(IabResult result) {
+				Log.d(TAG_IAB, "Setup finished.");
 
-	        // Start setup. This is asynchronous and the specified listener
-	        // will be called once setup completes.
-	        Log.d(TAG_IAB, "Starting setup.");
-	        mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
-	            public void onIabSetupFinished(IabResult result) {
-	                Log.d(TAG_IAB, "Setup finished.");
-
-	                if (!result.isSuccess()) {
-	                    // There was a problem.
-	                    clsUtils.MessageBox(objContext, "Problem setting up in-app billing: " + result, true);
-	                    return;
-	                }
-
-	                // Have we been disposed of in the meantime? If so, quit.
-	                if (mHelper == null) return;
-
-	                // IAB is fully set up. Now, let's get an inventory of stuff we own.
-	                Log.d(TAG_IAB, "Setup successful. Querying inventory.");
-	                mHelper.queryInventoryAsync(mGotInventoryListener);
-	            }
-	        });
-	    }
-	 
-	    // Listener that's called when we finish querying the items and subscriptions we own
-	    IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
-	        public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
-	            Log.d(TAG_IAB, "Query inventory finished.");
-
-	            // Have we been disposed of in the meantime? If so, quit.
-	            if (mHelper == null) return;
-	            
-	            // Is it a failure?
-	            if (result.isFailure()) {
-	            	 clsUtils.MessageBox(objContext, "Failed to query inventory: " + result,true );
-	                return;
-	            }
-
-	            Log.d(TAG_IAB, "Query inventory was successful.");
-
-	            /*
-	             * Check for items we own. Notice that for each purchase, we check
-	             * the developer payload to see if it's correct! See
-	             * verifyDeveloperPayload().
-	             */
-
-	            // Do we have the premium upgrade?
-	            Purchase objAdvertsDisabledPurchase = inventory.getPurchase(SKU_ADVERTS_REMOVED);
-	            boolean boolIsAdsDisabled = (objAdvertsDisabledPurchase != null && verifyDeveloperPayload(objAdvertsDisabledPurchase));
-	            clsIabLocalData objIabLocalData = new clsIabLocalData();
-	            objIabLocalData.boolIsAdsDisabledA = boolIsAdsDisabled;
-	            objIabLocalData.boolIsAdsDisabledB = !boolIsAdsDisabled;
-	            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
-	            clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
-	            
-	            Log.d(TAG_IAB, "User is " + (boolIsAdsDisabled ? "WITHOUT ADVERTS" : "WITH_ADVERTS"));
-
-	            setWaitScreen(false);
-	            Log.d(TAG_IAB, "Initial inventory query finished; enabling main UI.");
-	        }
-	    };
-	    
-	 // Listener that's called when we finish querying the items and subscriptions we own
-	    IabHelper.QueryInventoryFinishedListener mGotInventoryForReversalListener = new IabHelper.QueryInventoryFinishedListener() {
-	        public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
-	            Log.d(TAG_IAB, "Query inventory finished.");
-
-	            // Have we been disposed of in the meantime? If so, quit.
-	            if (mHelper == null) return;
-	            
-	            // Is it a failure?
-	            if (result.isFailure()) {
-	            	 clsUtils.MessageBox(objContext, "Failed to query inventory: " + result,true );
-	                return;
-	            }
-
-	            Log.d(TAG_IAB, "Query inventory was successful.");
-
-	            if (inventory.hasPurchase(SKU_ADVERTS_REMOVED)) {
-	                mHelper.consumeAsync(inventory.getPurchase(SKU_ADVERTS_REMOVED), mConsumeForReversalFinishedListener);
-	            }
-
-	            setWaitScreen(false);
-	            Log.d(TAG_IAB, "Inventory reversal completed");
-	        }
-	    };
-	    
-	 // Called when consumption is complete
-	    IabHelper.OnConsumeFinishedListener mConsumeForReversalFinishedListener = new IabHelper.OnConsumeFinishedListener() {
-	        public void onConsumeFinished(Purchase purchase, IabResult result) {
-	            Log.d(ActivityExplorerStartup.TAG_IAB, "Consumption finished. Purchase: " + purchase + ", result: " + result);
-
-	            // if we were disposed of in the meantime, quit.
-	            if (mHelper == null) return;
-
-	            // We know this is the "remove_adverts" sku because it's the only one we consume,
-	            // so we don't check which sku was consumed. If you have more than one
-	            // sku, you probably should check...
-	            if (result.isSuccess()) {
-	                // successfully consumed, so we apply the effects of the item in our
-	                // world's logic, which in our case means updating the local values
-	            	SharedPreferences objSharedPreferences = PreferenceManager.getDefaultSharedPreferences(objContext);
-	            	objIabLocalData.boolIsAdsDisabledA = false;
-	            	objIabLocalData.boolIsAdsDisabledB = true;
-	                clsUtils.SaveIabLocalValues(objSharedPreferences, objIabLocalData);
-	                clsUtils.MessageBox(objContext, "You have successfully added adverts again", true);
-	            }
-	            else {
-	            	clsUtils.MessageBox(objContext, "Error while consuming: " + result, true);
-	            }
-	            setWaitScreen(false);
-	            Log.d(ActivityExplorerStartup.TAG_IAB, "End of consumption flow.");
-	        }
-	    };
-
-	    /** Verifies the developer payload of a purchase. */
-	    boolean verifyDeveloperPayload(Purchase p) {
-	        String payload = p.getDeveloperPayload();
-
-	        /*
-	         * TODO: verify that the developer payload of the purchase is correct. It will be
-	         * the same one that you sent when initiating the purchase.
-	         *
-	         * WARNING: Locally generating a random string when starting a purchase and
-	         * verifying it here might seem like a good approach, but this will fail in the
-	         * case where the user purchases an item on one device and then uses your app on
-	         * a different device, because on the other device you will not have access to the
-	         * random string you originally generated.
-	         *
-	         * So a good developer payload has these characteristics:
-	         *
-	         * 1. If two different users purchase an item, the payload is different between them,
-	         *    so that one user's purchase can't be replayed to another user.
-	         *
-	         * 2. The payload must be such that you can verify it even when the app wasn't the
-	         *    one who initiated the purchase flow (so that items purchased by the user on
-	         *    one device work on other devices owned by the user).
-	         *
-	         * Using your own server to store and verify developer payloads across app
-	         * installations is recommended.
-	         */
-
-	        return true;
-	    }
-	    
-	    // Enables or disables the "please wait" screen.
- 		ProgressDialog objProgressDialog;
-
- 		void setWaitScreen(boolean set) {
- 			if (objProgressDialog == null) {
- 				objProgressDialog = new ProgressDialog(this);
- 				objProgressDialog.setMessage("Processing..., please wait.");
- 			}
- 			if (set) {
- 				if (!objProgressDialog.isShowing()) {
- 					objProgressDialog.show();
- 				}
- 			} else {
- 				if (objProgressDialog.isShowing()) {
- 					objProgressDialog.dismiss();
- 				}
- 			}
- 		}
- 		
- 		// ------------------- GCM ------------------------------------
- 		/**
- 		 * Check the device to make sure it has the Google Play Services APK. If
- 		 * it doesn't, display a dialog that allows users to download the APK from
- 		 * the Google Play Store or enable it in the device's system settings.
- 		 */
- 		
- 		// As per http://developer.android.com/google/gcm/client.html#app
- 		
- 		private boolean checkPlayServices() {
- 		    int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
- 		    if (resultCode != ConnectionResult.SUCCESS) {
- 		        if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
- 		            GooglePlayServicesUtil.getErrorDialog(resultCode, this,
- 		                    PLAY_SERVICES_RESOLUTION_REQUEST).show();
- 		        } else {
- 		            Log.i(TAG_IAB, "This device is not supported.");
- 		            finish();
- 		        }
- 		        return false;
- 		    }
- 		    return true;
- 		}
- 		
- 		
- 		
-		/**
- 		 * Registers the application with GCM servers asynchronously.
- 		 * <p>
- 		 * Stores the registration ID and app versionCode in the application's
- 		 * shared preferences.
- 		 */
- 		private void registerInBackground() {
- 		    new AsyncTask <Void, Void, String>() {
-
-				@Override
-				protected String doInBackground(Void... params) {
-					String msg = "";
- 		            try {
- 		                if (gcm == null) {
- 		                    gcm = GoogleCloudMessaging.getInstance(objContext);
- 		                }
- 		                strRegistrationId = gcm.register(SENDER_ID);
- 		                msg = "Device registered, registration ID=" + strRegistrationId;
-
- 		                // You should send the registration ID to your server over HTTP,
- 		                // so it can use GCM/HTTP or CCS to send messages to your app.
- 		                // The request to your server should be authenticated if your app
- 		                // is using accounts.
- 		                sendRegistrationIdToBackend();
-
- 		                // For this demo: we don't need to send it because the device
- 		                // will send upstream messages to a server that echo back the
- 		                // message using the 'from' address in the message.
-
- 		                // Persist the regID - no need to register again.
- 		               clsUtils.storeRegistrationId(objContext, strRegistrationId);
- 		            } catch (IOException ex) {
- 		                msg = "Error :" + ex.getMessage();
- 		                // If there is an error, don't just keep trying to register.
- 		                // Require the user to click a button again, or perform
- 		                // exponential back-off.
- 		            }
- 		            return msg;
+				if (!result.isSuccess()) {
+					// There was a problem.
+					clsUtils.MessageBox(objContext, "Problem setting up in-app billing: " + result, true);
+					return;
 				}
-				
-				@Override
-				protected void onPostExecute(String msg) {
-					// TODO Auto-generated method stub
-					super.onPostExecute(msg);
-					clsUtils.MessageBox(objContext, msg, true);
-				} 
- 		    }.execute(null, null, null);
- 		}
- 		
- 		
- 		/**
- 		 * Sends the registration ID to your server over HTTP, so it can use GCM/HTTP
- 		 * or CCS to send messages to your app.
- 		 */
- 		
- 		class clsSendGcmRegIdCommandMessage {
- 			String strRegId;
- 			String strClientUserUuid;
- 		}
- 		
- 		class clsSendGcmRegIdResponse {
- 			public int intSeqNum;
- 			public int intErrorCode;
- 			public String strErrorMessage = "";
- 		}
- 		 		
- 		private void sendRegistrationIdToBackend() {
- 			
- 			
- 			
- 			new AsyncTask <Void, Void, clsSendGcmRegIdResponse>() {
- 												
- 				@Override
-				protected clsSendGcmRegIdResponse doInBackground(Void... params) {
- 					Gson gson = new Gson();
- 					JSONObject objJsonResult = null;
- 					InputStream stream = null;
-					clsSendGcmRegIdCommandMessage objCommand = new clsSendGcmRegIdCommandMessage();
-					clsSendGcmRegIdResponse objResponse = new clsSendGcmRegIdResponse();
-					objCommand.strRegId = strRegistrationId;
-					objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
+
+				// Have we been disposed of in the meantime? If so, quit.
+				if (mHelper == null)
+					return;
+
+				// IAB is fully set up. Now, let's get an inventory of stuff we
+				// own.
+				Log.d(TAG_IAB, "Setup successful. Querying inventory.");
+				mHelper.queryInventoryAsync(mGotInventoryListener);
+			}
+		});
+	}
+
+	// Listener that's called when we finish querying the items and
+	// subscriptions we own
+	IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
+		public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
+			Log.d(TAG_IAB, "Query inventory finished.");
+
+			// Have we been disposed of in the meantime? If so, quit.
+			if (mHelper == null)
+				return;
+
+			// Is it a failure?
+			if (result.isFailure()) {
+				clsUtils.MessageBox(objContext, "Failed to query inventory: " + result, true);
+				return;
+			}
+
+			Log.d(TAG_IAB, "Query inventory was successful.");
+
+			/*
+			 * Check for items we own. Notice that for each purchase, we check
+			 * the developer payload to see if it's correct! See
+			 * verifyDeveloperPayload().
+			 */
+
+			// Do we have the premium upgrade?
+			Purchase objAdvertsDisabledPurchase = inventory.getPurchase(SKU_ADVERTS_REMOVED);
+			boolean boolIsAdsDisabled = (objAdvertsDisabledPurchase != null && verifyDeveloperPayload(objAdvertsDisabledPurchase));
+			clsIabLocalData objIabLocalData = new clsIabLocalData();
+			objIabLocalData.boolIsAdsDisabledA = boolIsAdsDisabled;
+			objIabLocalData.boolIsAdsDisabledB = !boolIsAdsDisabled;
+			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
+			clsUtils.SaveIabLocalValues(sharedPref, objIabLocalData);
+
+			Log.d(TAG_IAB, "User is " + (boolIsAdsDisabled ? "WITHOUT ADVERTS" : "WITH_ADVERTS"));
+
+			setWaitScreen(false);
+			Log.d(TAG_IAB, "Initial inventory query finished; enabling main UI.");
+		}
+	};
+
+	// Listener that's called when we finish querying the items and
+	// subscriptions we own
+	IabHelper.QueryInventoryFinishedListener mGotInventoryForReversalListener = new IabHelper.QueryInventoryFinishedListener() {
+		public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
+			Log.d(TAG_IAB, "Query inventory finished.");
+
+			// Have we been disposed of in the meantime? If so, quit.
+			if (mHelper == null)
+				return;
+
+			// Is it a failure?
+			if (result.isFailure()) {
+				clsUtils.MessageBox(objContext, "Failed to query inventory: " + result, true);
+				return;
+			}
+
+			Log.d(TAG_IAB, "Query inventory was successful.");
+
+			if (inventory.hasPurchase(SKU_ADVERTS_REMOVED)) {
+				mHelper.consumeAsync(inventory.getPurchase(SKU_ADVERTS_REMOVED), mConsumeForReversalFinishedListener);
+			}
+
+			setWaitScreen(false);
+			Log.d(TAG_IAB, "Inventory reversal completed");
+		}
+	};
+
+	// Called when consumption is complete
+	IabHelper.OnConsumeFinishedListener mConsumeForReversalFinishedListener = new IabHelper.OnConsumeFinishedListener() {
+		public void onConsumeFinished(Purchase purchase, IabResult result) {
+			Log.d(ActivityExplorerStartup.TAG_IAB, "Consumption finished. Purchase: " + purchase + ", result: "
+					+ result);
+
+			// if we were disposed of in the meantime, quit.
+			if (mHelper == null)
+				return;
+
+			// We know this is the "remove_adverts" sku because it's the only
+			// one we consume,
+			// so we don't check which sku was consumed. If you have more than
+			// one
+			// sku, you probably should check...
+			if (result.isSuccess()) {
+				// successfully consumed, so we apply the effects of the item in
+				// our
+				// world's logic, which in our case means updating the local
+				// values
+				SharedPreferences objSharedPreferences = PreferenceManager.getDefaultSharedPreferences(objContext);
+				objIabLocalData.boolIsAdsDisabledA = false;
+				objIabLocalData.boolIsAdsDisabledB = true;
+				clsUtils.SaveIabLocalValues(objSharedPreferences, objIabLocalData);
+				clsUtils.MessageBox(objContext, "You have successfully added adverts again", true);
+			} else {
+				clsUtils.MessageBox(objContext, "Error while consuming: " + result, true);
+			}
+			setWaitScreen(false);
+			Log.d(ActivityExplorerStartup.TAG_IAB, "End of consumption flow.");
+		}
+	};
+
+	/** Verifies the developer payload of a purchase. */
+	boolean verifyDeveloperPayload(Purchase p) {
+		String payload = p.getDeveloperPayload();
+
+		/*
+		 * TODO: verify that the developer payload of the purchase is correct.
+		 * It will be the same one that you sent when initiating the purchase.
+		 * 
+		 * WARNING: Locally generating a random string when starting a purchase
+		 * and verifying it here might seem like a good approach, but this will
+		 * fail in the case where the user purchases an item on one device and
+		 * then uses your app on a different device, because on the other device
+		 * you will not have access to the random string you originally
+		 * generated.
+		 * 
+		 * So a good developer payload has these characteristics:
+		 * 
+		 * 1. If two different users purchase an item, the payload is different
+		 * between them, so that one user's purchase can't be replayed to
+		 * another user.
+		 * 
+		 * 2. The payload must be such that you can verify it even when the app
+		 * wasn't the one who initiated the purchase flow (so that items
+		 * purchased by the user on one device work on other devices owned by
+		 * the user).
+		 * 
+		 * Using your own server to store and verify developer payloads across
+		 * app installations is recommended.
+		 */
+
+		return true;
+	}
+
+	// Enables or disables the "please wait" screen.
+	ProgressDialog objProgressDialog;
+
+	void setWaitScreen(boolean set) {
+		if (objProgressDialog == null) {
+			objProgressDialog = new ProgressDialog(this);
+			objProgressDialog.setMessage("Processing..., please wait.");
+		}
+		if (set) {
+			if (!objProgressDialog.isShowing()) {
+				objProgressDialog.show();
+			}
+		} else {
+			if (objProgressDialog.isShowing()) {
+				objProgressDialog.dismiss();
+			}
+		}
+	}
+
+	// ------------------- GCM ------------------------------------
+	/**
+	 * Check the device to make sure it has the Google Play Services APK. If it
+	 * doesn't, display a dialog that allows users to download the APK from the
+	 * Google Play Store or enable it in the device's system settings.
+	 */
+
+	// As per http://developer.android.com/google/gcm/client.html#app
+
+	private boolean checkPlayServices() {
+		int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+		if (resultCode != ConnectionResult.SUCCESS) {
+			if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+				GooglePlayServicesUtil.getErrorDialog(resultCode, this, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+			} else {
+				Log.i(TAG_IAB, "This device is not supported.");
+				finish();
+			}
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Registers the application with GCM servers asynchronously.
+	 * <p>
+	 * Stores the registration ID and app versionCode in the application's
+	 * shared preferences.
+	 */
+	private void registerInBackground() {
+		new AsyncTask<Void, Void, String>() {
+
+			@Override
+			protected String doInBackground(Void... params) {
+				String msg = "";
+				try {
+					if (gcm == null) {
+						gcm = GoogleCloudMessaging.getInstance(objContext);
+					}
+					strRegistrationId = gcm.register(SENDER_ID);
+					msg = "Device registered, registration ID=" + strRegistrationId;
+
+					// You should send the registration ID to your server over
+					// HTTP,
+					// so it can use GCM/HTTP or CCS to send messages to your
+					// app.
+					// The request to your server should be authenticated if
+					// your app
+					// is using accounts.
+					sendRegistrationIdToBackend();
+
+					// For this demo: we don't need to send it because the
+					// device
+					// will send upstream messages to a server that echo back
+					// the
+					// message using the 'from' address in the message.
+
+					// Persist the regID - no need to register again.
+					clsUtils.storeRegistrationId(objContext, strRegistrationId);
+				} catch (IOException ex) {
+					msg = "Error :" + ex.getMessage();
+					// If there is an error, don't just keep trying to register.
+					// Require the user to click a button again, or perform
+					// exponential back-off.
+				}
+				return msg;
+			}
+
+			@Override
+			protected void onPostExecute(String msg) {
+				// TODO Auto-generated method stub
+				super.onPostExecute(msg);
+				clsUtils.MessageBox(objContext, msg, true);
+			}
+		}.execute(null, null, null);
+	}
+
+	/**
+	 * Sends the registration ID to your server over HTTP, so it can use
+	 * GCM/HTTP or CCS to send messages to your app.
+	 */
+
+	class clsSendGcmRegIdCommandMessage {
+		String strRegId;
+		String strClientUserUuid;
+	}
+
+	class clsSendGcmRegIdResponse {
+		public int intSeqNum;
+		public int intErrorCode;
+		public String strErrorMessage = "";
+	}
+
+	private void sendRegistrationIdToBackend() {
+
+		new AsyncTask<Void, Void, clsSendGcmRegIdResponse>() {
+
+			@Override
+			protected clsSendGcmRegIdResponse doInBackground(Void... params) {
+				Gson gson = new Gson();
+				JSONObject objJsonResult = null;
+				InputStream stream = null;
+				clsSendGcmRegIdCommandMessage objCommand = new clsSendGcmRegIdCommandMessage();
+				clsSendGcmRegIdResponse objResponse = new clsSendGcmRegIdResponse();
+				objCommand.strRegId = strRegistrationId;
+				objCommand.strClientUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
+				try {
+
+					URL urlFeed = new URL(objMessaging.GetServerUrl()
+							+ getResources().getString(R.string.url_send_gcm_reg_id));
+					String strJsonCommand = gson.toJson(objCommand);
 					try {
-			            
-			            URL urlFeed = new URL(objMessaging.GetServerUrl(objExplorerTreeview)
-								+ getResources().getString(R.string.url_send_gcm_reg_id));
-			            String strJsonCommand = gson.toJson(objCommand);
-			            try {
-			                Log.i("myCustom", "Sending GCM Reg ID to server: " + urlFeed);
-			                stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-			                objJsonResult = clsMessaging.updateLocalFeedData(stream);
-			                // Makes sure that the InputStream is closed after the app is
-			                // finished using it.
-			            } catch (IOException e) {
-				            Log.e("myCustom", "Error reading from network: " + e.toString());
-				            objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
-				            objResponse.strErrorMessage = "Error reading from network: " + e.toString();
-				            return objResponse;
-						} catch (JSONException e) {
-							// TODO Auto-generated catch block
-							Log.wtf("myCustom", "JSON exception", e);
-							objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
-				            objResponse.strErrorMessage = "JSON exception: " + e.toString();
-				            return objResponse;
-						} finally {
-			                if (stream != null) {
-			                    stream.close();
-			                }
-			            }
-			        } catch (MalformedURLException e) {
-			            Log.wtf("myCustom", "Feed URL is malformed", e);
-			            objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
-			            objResponse.strErrorMessage = "Feed URL is malformed: " + e.toString();
-			            return objResponse;
-			        } catch (IOException e) {
-			            Log.e("myCustom", "Error reading from network: " + e.toString());
-			            objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
-			            objResponse.strErrorMessage = "Error reading from network: " + e.toString();
-			            return objResponse;
-			        }
-			        Log.i("myCustom", "Network synchronization complete");
-			        objResponse = gson.fromJson(objJsonResult.toString(),clsSendGcmRegIdResponse.class);
-			        return objResponse;
- 				
- 				}
-				
-				@Override
-				protected void onPostExecute(clsSendGcmRegIdResponse objResponse) {
-					// TODO Auto-generated method stub
-					super.onPostExecute(objResponse);
-					if (objResponse.intErrorCode != 0) {
-						clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+						Log.i("myCustom", "Sending GCM Reg ID to server: " + urlFeed);
+						stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
+						objJsonResult = clsMessaging.updateLocalFeedData(stream);
+						// Makes sure that the InputStream is closed after the
+						// app is
+						// finished using it.
+					} catch (IOException e) {
+						Log.e("myCustom", "Error reading from network: " + e.toString());
+						objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+						objResponse.strErrorMessage = "Error reading from network: " + e.toString();
+						return objResponse;
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						Log.wtf("myCustom", "JSON exception", e);
+						objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+						objResponse.strErrorMessage = "JSON exception: " + e.toString();
+						return objResponse;
+					} finally {
+						if (stream != null) {
+							stream.close();
+						}
+					}
+				} catch (MalformedURLException e) {
+					Log.wtf("myCustom", "Feed URL is malformed", e);
+					objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+					objResponse.strErrorMessage = "Feed URL is malformed: " + e.toString();
+					return objResponse;
+				} catch (IOException e) {
+					Log.e("myCustom", "Error reading from network: " + e.toString());
+					objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+					objResponse.strErrorMessage = "Error reading from network: " + e.toString();
+					return objResponse;
+				}
+				Log.i("myCustom", "Network synchronization complete");
+				objResponse = gson.fromJson(objJsonResult.toString(), clsSendGcmRegIdResponse.class);
+				return objResponse;
+
+			}
+
+			@Override
+			protected void onPostExecute(clsSendGcmRegIdResponse objResponse) {
+				// TODO Auto-generated method stub
+				super.onPostExecute(objResponse);
+				if (objResponse.intErrorCode != 0) {
+					clsUtils.MessageBox(objContext, objResponse.strErrorMessage, true);
+				}
+			}
+
+		}.execute(null, null, null);
+	}
+	
+	
+	// ------------------------ Shared Users Management -------------------------------------
+	// ------------------------ Get Shared Users for specific note from server and let user add/edit/remove
+	
+	// Input to async task
+	public static class clsGetNoteSharedUsersCommand {
+		public String strNoteUuid;
+	}
+
+	// Output from async task
+	public static class clsGetNoteSharedUsersResponse {
+		public static final int ERROR_NONE = 0;
+		public static final int ERROR_NETWORK = 1;
+		public int intErrorCode;
+		public String strErrorMessage = "";
+	
+		public String strNoteUuid;
+		public ArrayList<String> strSharedUsers;
+	}
+
+	public static class clsGetNoteSharedUsersAsyncTask extends AsyncTask<Void, Void, clsGetNoteSharedUsersResponse> {
+		static clsGetNoteSharedUsersCommand objCommand;
+		static clsGetNoteSharedUsersResponse objResponse;
+		static URL urlFeed;
+		ProgressDialog objProgressDialog;
+		public OnGetNoteSharedUsersResponseListener objOnResponseListener;
+
+		public clsGetNoteSharedUsersAsyncTask(Activity objActivity, URL urlFeed,
+				clsGetNoteSharedUsersCommand objCommand, clsGetNoteSharedUsersResponse objResponse) {
+			clsGetNoteSharedUsersAsyncTask.urlFeed = urlFeed;
+			clsGetNoteSharedUsersAsyncTask.objCommand = objCommand;
+			clsGetNoteSharedUsersAsyncTask.objResponse = objResponse;
+			objProgressDialog = new ProgressDialog(objActivity);
+		}
+
+		public void SetOnResponseListener(OnGetNoteSharedUsersResponseListener objOnResponseListener) {
+			this.objOnResponseListener = objOnResponseListener;
+		}
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			objProgressDialog.setMessage("Processing..., please wait.");
+			objProgressDialog.show();
+		}
+
+		@Override
+		protected clsGetNoteSharedUsersResponse doInBackground(Void... arg0) {
+			Gson gson = new Gson();
+			JSONObject objJsonResult = null;
+
+			try {
+				InputStream stream = null;
+				String strJsonCommand = gson.toJson(objCommand);
+
+				try {
+					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					// Makes sure that the InputStream is closed after finished
+					// using it.
+				} catch (JSONException e) {
+					objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+					objResponse.strErrorMessage = "JSON exception. " + e;
+					return objResponse;
+				} finally {
+					if (stream != null) {
+						stream.close();
 					}
 				}
-				
- 			}.execute(null, null, null);
- 		}
- 		
+			} catch (MalformedURLException e) {
+				objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+				objResponse.strErrorMessage = "Feed URL is malformed. " + e;
+				return objResponse;
+			} catch (IOException e) {
+				objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+				objResponse.strErrorMessage = "IO Exception from network. " + e;
+				return objResponse;
+			}
+			// Analyze data from server
+			objResponse = gson.fromJson(objJsonResult.toString(), clsGetNoteSharedUsersResponse.class);
+			return objResponse;
+		}
+
+		@Override
+		protected void onPostExecute(clsGetNoteSharedUsersResponse objResponse) {
+			super.onPostExecute(objResponse);
+			if (objProgressDialog.isShowing()) {
+				objProgressDialog.dismiss();
+			}
+			objOnResponseListener.onResponse(objResponse);
+		}
+
+		public interface OnGetNoteSharedUsersResponseListener {
+			public void onResponse(clsGetNoteSharedUsersResponse objResponse);
+		}
+
+		@Override
+		protected void onCancelled() {
+			super.onCancelled();
+
+			if (objProgressDialog.isShowing()) {
+				objProgressDialog.dismiss();
+			}
+		}
+
+	}
 	
+	// ------------------------ Set selected Shared Users for specific note on server
+	
+		// Input to async task
+		public static class clsSetNoteSharedUsersCommand {
+			public String strClientUserUuid;
+			public String strNoteUuid;
+			public ArrayList<String> objSharedUsers;
+		}
+
+		// Output from async task
+		public static class clsSetNoteSharedUsersResponse {
+			public static final int ERROR_NONE = 0;
+			public static final int ERROR_NETWORK = 1;
+			public int intErrorCode;
+			public String strErrorMessage = "";
+		}
+
+		public static class clsSetNoteSharedUsersAsyncTask extends AsyncTask<Void, Void, clsSetNoteSharedUsersResponse> {
+			static clsSetNoteSharedUsersCommand objCommand;
+			static clsSetNoteSharedUsersResponse objResponse;
+			static URL urlFeed;
+			ProgressDialog objProgressDialog;
+			public OnSetNoteSharedUsersResponseListener objOnResponseListener;
+
+			public clsSetNoteSharedUsersAsyncTask(Activity objActivity, URL urlFeed,
+					clsSetNoteSharedUsersCommand objCommand, clsSetNoteSharedUsersResponse objResponse) {
+				clsSetNoteSharedUsersAsyncTask.urlFeed = urlFeed;
+				clsSetNoteSharedUsersAsyncTask.objCommand = objCommand;
+				clsSetNoteSharedUsersAsyncTask.objResponse = objResponse;
+				objProgressDialog = new ProgressDialog(objActivity);
+			}
+
+			public void SetOnResponseListener(OnSetNoteSharedUsersResponseListener objOnResponseListener) {
+				this.objOnResponseListener = objOnResponseListener;
+			}
+
+			@Override
+			protected void onPreExecute() {
+				super.onPreExecute();
+				objProgressDialog.setMessage("Processing..., please wait.");
+				objProgressDialog.show();
+			}
+
+			@Override
+			protected clsSetNoteSharedUsersResponse doInBackground(Void... arg0) {
+				Gson gson = new Gson();
+				JSONObject objJsonResult = null;
+
+				try {
+					InputStream stream = null;
+					String strJsonCommand = gson.toJson(objCommand);
+
+					try {
+						stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
+						objJsonResult = clsMessaging.updateLocalFeedData(stream);
+						// Makes sure that the InputStream is closed after finished
+						// using it.
+					} catch (JSONException e) {
+						objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+						objResponse.strErrorMessage = "JSON exception. " + e;
+						return objResponse;
+					} finally {
+						if (stream != null) {
+							stream.close();
+						}
+					}
+				} catch (MalformedURLException e) {
+					objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+					objResponse.strErrorMessage = "Feed URL is malformed. " + e;
+					return objResponse;
+				} catch (IOException e) {
+					objResponse.intErrorCode = clsExportNoteAsWebPageResponse.ERROR_NETWORK;
+					objResponse.strErrorMessage = "IO Exception from network. " + e;
+					return objResponse;
+				}
+				// Analyze data from server
+				objResponse = gson.fromJson(objJsonResult.toString(), clsSetNoteSharedUsersResponse.class);
+				return objResponse;
+			}
+
+			@Override
+			protected void onPostExecute(clsSetNoteSharedUsersResponse objResponse) {
+				super.onPostExecute(objResponse);
+				if (objProgressDialog.isShowing()) {
+					objProgressDialog.dismiss();
+				}
+				objOnResponseListener.onResponse(objResponse);
+			}
+
+			public interface OnSetNoteSharedUsersResponseListener {
+				public void onResponse(clsSetNoteSharedUsersResponse objResponse);
+			}
+
+			@Override
+			protected void onCancelled() {
+				super.onCancelled();
+
+				if (objProgressDialog.isShowing()) {
+					objProgressDialog.dismiss();
+				}
+			}
+
+		}
+
 }

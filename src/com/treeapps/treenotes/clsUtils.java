@@ -13,7 +13,11 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.FileChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,22 +28,33 @@ import java.util.zip.CRC32;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsyncTask;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersCommand;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersResponse;
 import com.treeapps.treenotes.ActivityExplorerStartup.clsIabLocalData;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsyncTask.OnGetNoteSharedUsersResponseListener;
+import com.treeapps.treenotes.clsIntentMessaging.clsChosenMembers;
+import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
+import com.treeapps.treenotes.sharing.ActivityGroupMembers;
+import com.treeapps.treenotes.sharing.clsGroupMembers;
 import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData;
+import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeDownLoadedData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptionSearch.clsListViewStateSearch;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources.NotFoundException;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -50,6 +65,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Files;
 import android.text.Html;
@@ -68,7 +84,7 @@ public class clsUtils {
 		LS_RUBBERBAND
 	}
 
-	static String strDateTimeFormat = "dd/MM/yyyy hh:mm:ss Z";
+	static String strDateTimeFormat = "dd MM yyyy hh:mm:ss Z";
 
 	public static void MessageBox(Context context, String strMessage, boolean boolDisplayAsToast) {
 
@@ -160,8 +176,8 @@ public class clsUtils {
 		return objChildFile;
 	}
 
-	public static File BuildNoteFilename(File filePath, String strFilename) {
-		File objChildFile = new File(filePath, strFilename + ".treenote");
+	public static File BuildNoteFilename(File filePath, String strNoteUuid) {
+		File objChildFile = new File(filePath, strNoteUuid + ".treenote");
 		return objChildFile;
 	}
 
@@ -171,7 +187,7 @@ public class clsUtils {
 	}
 
 	public static File BuildTempNoteFilename(File filePath) {
-		File objChildFile = new File(filePath, "temp.treenote");
+		File objChildFile = new File(filePath, "current.treenote");
 		return objChildFile;
 	}
 
@@ -403,6 +419,64 @@ public class clsUtils {
 		crc.update(strValue.getBytes());
 		return (int) (crc.getValue());
 	}
+	
+	public static long GetCrc32Code(String filepath) throws IOException {
+
+		InputStream inputStream = new BufferedInputStream(new FileInputStream(filepath));
+		CRC32 crc = new CRC32();
+		int cnt;
+		while ((cnt = inputStream.read()) != -1) {
+			crc.update(cnt);
+		}
+		inputStream.close();
+		return crc.getValue();
+	}
+
+	
+	public static String GetMd5Code(String strFullFilename) {
+		
+		MessageDigest md;
+		BufferedInputStream in = null;
+		try {
+			try {
+
+				md = MessageDigest.getInstance("MD5");
+
+				in = new BufferedInputStream(new FileInputStream(strFullFilename));
+
+				int theByte = 0;
+				while ((theByte = in.read()) != -1) {
+					md.update((byte) theByte);
+				}
+				byte[] theDigest = md.digest();
+				return ByteArray2String(theDigest);
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				if (in != null) {
+					in.close();
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
+	public static String ByteArray2String(byte [] arrByte) {
+		//converting byte array to Hexadecimal String 
+		StringBuilder sb = new StringBuilder(2*arrByte.length);
+		for(byte b : arrByte) { 
+			sb.append(String.format("%02x", b&0xff)); 
+		} 
+		return sb.toString();
+	}
+	
 
 	public static long getCurrentTimeInMilliSeconds() {
 		long timestamp = System.currentTimeMillis();
@@ -495,6 +569,14 @@ public class clsUtils {
 	public static String GetStrCurrentDateTime() {
 		return DateToJson(new Date());
 	}
+	
+	public static String GetStrCurrentDateTimeWinFilenameSafe() {
+		 String strValue = GetStrCurrentDateTime();
+		 strValue = strValue.replaceAll("[^a-zA-Z0-9.-]", "_");
+		 while (strValue.indexOf("__") != -1)
+			 strValue = strValue.replace("__", "_");
+		 return strValue;
+	}
 
 	public static String DateToJson(Date dtDate) {
 		SimpleDateFormat df = new SimpleDateFormat(strDateTimeFormat);
@@ -511,6 +593,24 @@ public class clsUtils {
 		}
 		return null;
 	}
+	
+	public static String DateToRfc822(Date dtDate) {
+		String pubDate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z",Locale.US).format(dtDate);
+		return pubDate;
+	}
+	
+	public static Date Rfc822ToDate(String strDate) {
+		SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z",Locale.US);
+		try {
+			return df.parse(strDate);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	
 
 	public static boolean IsUserNameValid(String mUsername) {
 		return true;
@@ -586,33 +686,74 @@ public class clsUtils {
 
 		return path;
 	}
+	
 
-	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsNoteTreeview objNoteTreeview,
-			File fileTreeNodesDir, ArrayList<clsImageLoadData> objImageLoadDatas) {
+	
+
+	public static void UpdateImageLoadDatasForDownloads(clsMessaging objMessaging, clsGroupMembers objGroupMembers, clsRepository objRepository,
+			File fileTreeNodesDir, ArrayList<clsImageLoadData> objServerReturnedImageLoadDatas, ArrayList<clsImageLoadData> objImageLoadDatas) {
 		// Look for all images needed by note, if they already exist on client,
 		// collect all the missing ones
-		// Class that iterates
+		
+		// Class that iterates. Work starts below.
 		class clsMyTreeviewIterator extends clsTreeviewIterator {
 
 			clsImageLoadData objImageLoadData;
 			File fileTreeNodesDir;
+			clsGroupMembers objGroupMembers;
 
-			public clsMyTreeviewIterator(clsTreeview objTreeview, File fileTreeNodesDir,
+			public clsMyTreeviewIterator(clsGroupMembers objGroupMembers, clsRepository objRepository, File fileTreeNodesDir,
 					clsImageLoadData objImageLoadData) {
-				super(objTreeview);
+				super(objRepository);
 				this.objImageLoadData = objImageLoadData;
 				this.fileTreeNodesDir = fileTreeNodesDir;
+				this.objGroupMembers = objGroupMembers;
 			}
 
 			@Override
 			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
-				// TODO Auto-generated method stub
+				// Only process nodes with images
 				if (!objTreeNode.resourcePath.isEmpty()) {
-					File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
-					if (!fileImage.exists()) {
-						// Add only unique items
-						if (!objImageLoadData.strImagesToBeDownloaded.contains(objTreeNode.guidTreeNode.toString())) {
-							objImageLoadData.strImagesToBeDownloaded.add(objTreeNode.guidTreeNode.toString());
+					// Only process nodes from foreign users (item owner not the registered phone user) for downloads
+					if (!objTreeNode.getStrOwnerUserUuid().equals(objGroupMembers.GetRegisteredUser().strUserUuid)) {
+						// Foreign user nodes
+						// If annotated image is missing locally, a download is definitely needed
+						File fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + "_annotated.jpg");
+						boolean boolIsAnnotatedImage = (objTreeNode.annotation == null) ? false: true;
+						if (!fileImage.exists() && boolIsAnnotatedImage) {
+							// Annotated, but local file is missing
+							// Add only unique items
+							objImageLoadData.AddToBeDownloadedImage(objTreeNode.guidTreeNode.toString(), true);
+							return;
+						}
+						
+						// Check only thumbnail for image config changes, other full file follow the thumbnail
+						fileImage = new File(fileTreeNodesDir + "/" + objTreeNode.guidTreeNode.toString() + ".jpg");
+						if (fileImage.exists()) {
+							// File already exists client side, check if different image by comparing checksums
+							if (objTreeNode.objResourceGroupData.strThumbnailChecksum == null) {
+								// No data on server, so nothing to download to client either
+							} else {
+								String strLocalThumbnailChecksum = clsUtils.GetMd5Code(fileImage.getAbsolutePath());
+								if (objTreeNode.objResourceGroupData.strThumbnailChecksum.equals(strLocalThumbnailChecksum) ) {
+									// The same, so no need to update
+								} else {
+									// Different, if server version older than client, no need to upload, 
+									 Date dtLocalFileModDate = new Date(fileImage.lastModified());
+									 Date dtServerFileModDate = clsUtils.Rfc822ToDate(objTreeNode.objResourceGroupData.strThumbnailLastChanged);
+									 if (dtLocalFileModDate.after(dtServerFileModDate)) {
+										// Local file is newer (requires upload), which for a foreign owned note item is not possible
+									 } else if (dtLocalFileModDate.before (dtServerFileModDate)) {
+										// Local file older, so download required
+										 objImageLoadData.AddToBeDownloadedImage(objTreeNode.guidTreeNode.toString(), boolIsAnnotatedImage);
+									 } else {
+											// Same age, so no upload or download required
+									 }							
+								}
+							}						
+						} else {
+							// File does not exist client side, files definitely needs to be downloaded
+							objImageLoadData.AddToBeDownloadedImage(objTreeNode.guidTreeNode.toString(), boolIsAnnotatedImage);
 						}
 					}
 				}
@@ -620,23 +761,36 @@ public class clsUtils {
 		}
 
 		// Do work here
-		// Collect the items that needs to be downloaded (local file checks)
+		// Collect the items that needs to be downloaded (by checking local files against server provided config data)
 		boolean boolAlreadyExists = false;
+		clsImageLoadData objThisNoteImageLoadData = null;
 		for (clsImageLoadData objImageLoadData : objImageLoadDatas) {
-			if (objImageLoadData.strNoteUuid.equals(objNoteTreeview.getRepository().uuidRepository)) {
-				boolAlreadyExists = true;
-				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview,
-						fileTreeNodesDir, objImageLoadData);
+			// Append if structure already exists
+			if (objImageLoadData.strNoteUuid.equals(objRepository.uuidRepository)) {
+				objThisNoteImageLoadData = objImageLoadData;
+				clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objRepository,
+						fileTreeNodesDir, objThisNoteImageLoadData);
 				objMyTreeviewIterator.Execute();
+				break;
 			}
 		}
-		if (!boolAlreadyExists) {
-			clsImageLoadData objImageLoadData = objMessaging.new clsImageLoadData();
-			objImageLoadData.strNoteUuid = objNoteTreeview.getRepository().uuidRepository.toString();
-			objImageLoadDatas.add(objImageLoadData);
-			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objNoteTreeview, fileTreeNodesDir,
-					objImageLoadData);
+		if (objThisNoteImageLoadData == null) {
+			// Create new one if not existing yet
+			objThisNoteImageLoadData = new clsImageLoadData();
+			objThisNoteImageLoadData.strNoteUuid = objRepository.uuidRepository.toString();
+			objImageLoadDatas.add(objThisNoteImageLoadData);
+			clsMyTreeviewIterator objMyTreeviewIterator = new clsMyTreeviewIterator(objGroupMembers, objRepository, fileTreeNodesDir,
+					objThisNoteImageLoadData);
 			objMyTreeviewIterator.Execute();
+		}
+		
+		// If server detected and passed on a download is needed, add this here
+		for (clsImageLoadData objServerReturnedImageLoadData: objServerReturnedImageLoadDatas) {
+			for (clsImageToBeDownLoadedData objImageToBeDownLoadedData: objServerReturnedImageLoadData.objImageToBeDownLoadedDatas) {
+				// Add item for download
+				objThisNoteImageLoadData.AddToBeDownloadedImage(objImageToBeDownLoadedData.strImageUuid,
+						objImageToBeDownLoadedData.boolIsAnnotatedImageToBeDownloaded);
+			}
 		}
 
 	}
@@ -648,7 +802,7 @@ public class clsUtils {
 
 		for (clsImageLoadData objServerImageLoadData : objServerImageLoadDatas) {
 			String strServerNoteUuid = objServerImageLoadData.strNoteUuid;
-			// If note image data already exists on client side ...
+			// If note image data already exists on client side (ensure only unique and latest entry in table) ...
 			boolean boolEntryExists = false;
 			for (clsImageLoadData objClientImageLoadData : objClientImageLoadDatas) {
 				if (objClientImageLoadData.strNoteUuid.equals(strServerNoteUuid)) {
@@ -661,7 +815,7 @@ public class clsUtils {
 			}
 			if (!boolEntryExists) {
 				// Does not exist, so create a new entry
-				clsImageLoadData objClientImageLoadData = objMessaging.new clsImageLoadData();
+				clsImageLoadData objClientImageLoadData = new clsImageLoadData();
 				objClientImageLoadData.strNoteUuid = strServerNoteUuid;
 				objClientImageLoadData.objImageToBeUploadedDatas = objServerImageLoadData.objImageToBeUploadedDatas;
 				objClientImageLoadDatas.add(objClientImageLoadData);
@@ -684,6 +838,38 @@ public class clsUtils {
 			// handle error
 		}
 	}
+	
+	public static void SendLogGmail(Activity activity, String subject, String text, File fileAttachment) {
+
+		final Intent intent = new Intent(Intent.ACTION_SEND);
+		intent.setType("text/html");
+		String[] toArr = new String[] { activity.getResources().getString(R.string.log_file_developer_email)};
+		intent.putExtra(Intent.EXTRA_EMAIL, toArr);
+		intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+		intent.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(text));
+		intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(fileAttachment));
+
+		try {
+			activity.startActivity(intent);
+		} catch (ActivityNotFoundException ex) {
+			// handle error
+		}
+	}
+	
+	public static void ShareUrl(Activity activity, String subject, String text) {
+		
+		Intent share = new Intent(android.content.Intent.ACTION_SEND);
+	    share.setType("text/plain");
+	    share.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+	 
+	    // Add data to the intent, the receiving app will decide
+	    // what to do with it.
+	    share.putExtra(Intent.EXTRA_SUBJECT, subject);
+	    share.putExtra(Intent.EXTRA_TEXT, text);
+	 
+	    activity.startActivity(Intent.createChooser(share, "Share link!"));
+			
+	}
 
 	public static int GetDefaultTabWidthInDp(Context objContext) {
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(objContext);
@@ -701,7 +887,7 @@ public class clsUtils {
 	}
 
 	public static boolean IsLastCharacterFullstop(String strVal) {
-
+		if (strVal.isEmpty()) return true;
 		if (strVal.charAt(strVal.length() - 1) == '.') {
 			return true;
 		}
@@ -720,6 +906,7 @@ public class clsUtils {
 		// }
 		// return base64EncodedPublicKeyScrambled.replaceFirst(strBefore,
 		// strAfter);
+		
 		// Do nothing for now
 		return base64EncodedPublicKeyScrambled;
 	}
@@ -908,4 +1095,212 @@ public class clsUtils {
 		editor.putInt(ActivityExplorerStartup.PROPERTY_APP_VERSION, appVersion);
 		editor.commit();
 	}
+
+	public static String GetFileLastModifiedDate(String strFile) {
+		File file = new File(strFile);
+		Date lastModDate = new Date(file.lastModified());
+		return DateToRfc822(lastModDate);
+	}
+	
+	public static void UpdateTreeviewResourcePaths(Activity objActivity, clsRepository objNoteRepository, clsImageLoadData objImageLoadData) {
+
+		for (clsImageToBeDownLoadedData objImageToBeDownLoadedData : objImageLoadData.objImageToBeDownLoadedDatas) {
+			String strImageFullFilename = clsUtils.GetFullImageFileName(objActivity,
+					objImageToBeDownLoadedData.strImageUuid);
+			File fileImage = new File(strImageFullFilename);
+			if (fileImage.exists()) {
+				clsTreeNode objTreeNode = objNoteRepository.getTreeNodeFromUuid(UUID
+						.fromString(objImageToBeDownLoadedData.strImageUuid));
+				if (objTreeNode != null) {
+					Uri contentUri = Uri.fromFile(fileImage);
+					objTreeNode.resourcePath = clsUtils.getPath(objActivity, contentUri);
+				}
+			}
+		}
+	}
+	
+	public static void StartActivityForShareSelect(final Activity objActivity, final clsMessaging objMessaging, String strNoteUuid,
+			clsGetNoteSharedUsersResponse objResponse ) {
+		// Async task which gets current shared users for this note from server
+		URL urlFeed;
+		try {
+			urlFeed = new URL(objMessaging.GetServerUrl()
+					+ objActivity.getResources().getString(R.string.url_get_note_sharers));
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (NotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} 
+
+		clsGetNoteSharedUsersCommand objCommand = new clsGetNoteSharedUsersCommand();
+		objCommand.strNoteUuid = strNoteUuid; 
+		clsGetNoteSharedUsersAsyncTask objGetNoteSharedUsersAsyncTask = new clsGetNoteSharedUsersAsyncTask(objActivity, urlFeed, objCommand, objResponse);
+		objGetNoteSharedUsersAsyncTask.SetOnResponseListener(new OnGetNoteSharedUsersResponseListener() {
+			
+			@Override
+			public void onResponse(clsGetNoteSharedUsersResponse objResponse) {
+				if (objResponse.intErrorCode == clsGetNoteSharedUsersResponse.ERROR_NONE) {
+					// Data received, can start selection activity now
+					Intent intentShareGroupMembers = new Intent(objActivity, ActivityGroupMembers.class);
+					intentShareGroupMembers.putExtra(ActivityGroupMembers.ACTION, ActivityGroupMembers.ACTION_CHOOSE_MEMBERS);
+					clsIntentMessaging objIntentMessaging = new clsIntentMessaging();
+					clsIntentMessaging.clsChosenMembers objChosenMembers = objIntentMessaging.new clsChosenMembers();
+					objChosenMembers.strUserUuids = objResponse.strSharedUsers;
+					objChosenMembers.strNoteUuid = objResponse.strNoteUuid;
+					String strChosenMembersGson = clsUtils.SerializeToString(objChosenMembers);
+					intentShareGroupMembers.putExtra(ActivityGroupMembers.SHARE_SHARED_USERS, strChosenMembersGson);
+					intentShareGroupMembers.putExtra(ActivityGroupMembers.WEBSERVER_URL,
+							objMessaging.GetServerUrl());
+					objActivity.startActivityForResult(intentShareGroupMembers, ActivityExplorerStartup.SHARE_CHOOSE_GROUP_MEMBERS);
+				} else {
+					clsUtils.MessageBox(objActivity, objResponse.strErrorMessage, false);
+				}
+				return;
+			}
+		});
+		objGetNoteSharedUsersAsyncTask.execute(null, null, null);
+	}
+	
+	public static void IndicateToServiceIntentSyncIsCompleted(Activity objActivity) {
+		Intent objIntent = new Intent (objActivity, GcmIntentService.class);
+		objIntent.putExtra(GcmIntentService.SYNC_COMPLETION, "Synched without_errors");
+		objActivity.startService(objIntent);
+	}
+	
+	
+	// ------------------- URI tools ------------------------------------------
+	
+	/**
+	 * Get a file path from a Uri. This will get the the path for Storage Access
+	 * Framework Documents, as well as the _data field for the MediaStore and
+	 * other file-based ContentProviders.
+	 *
+	 * @param context The context.
+	 * @param uri The Uri to query.
+	 * @author paulburke
+	 */
+	public static String getPath(final Context context, final Uri uri) {
+
+	    final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+
+	    // DocumentProvider
+	    if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
+	        // ExternalStorageProvider
+	        if (isExternalStorageDocument(uri)) {
+	            final String docId = DocumentsContract.getDocumentId(uri);
+	            final String[] split = docId.split(":");
+	            final String type = split[0];
+
+	            if ("primary".equalsIgnoreCase(type)) {
+	                return Environment.getExternalStorageDirectory() + "/" + split[1];
+	            }
+
+	            // TODO handle non-primary volumes
+	        }
+	        // DownloadsProvider
+	        else if (isDownloadsDocument(uri)) {
+
+	            final String id = DocumentsContract.getDocumentId(uri);
+	            final Uri contentUri = ContentUris.withAppendedId(
+	                    Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+
+	            return getDataColumn(context, contentUri, null, null);
+	        }
+	        // MediaProvider
+	        else if (isMediaDocument(uri)) {
+	            final String docId = DocumentsContract.getDocumentId(uri);
+	            final String[] split = docId.split(":");
+	            final String type = split[0];
+
+	            Uri contentUri = null;
+	            if ("image".equals(type)) {
+	                contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+	            } else if ("video".equals(type)) {
+	                contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+	            } else if ("audio".equals(type)) {
+	                contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+	            }
+
+	            final String selection = "_id=?";
+	            final String[] selectionArgs = new String[] {
+	                    split[1]
+	            };
+
+	            return getDataColumn(context, contentUri, selection, selectionArgs);
+	        }
+	    }
+	    // MediaStore (and general)
+	    else if ("content".equalsIgnoreCase(uri.getScheme())) {
+	        return getDataColumn(context, uri, null, null);
+	    }
+	    // File
+	    else if ("file".equalsIgnoreCase(uri.getScheme())) {
+	        return uri.getPath();
+	    }
+
+	    return null;
+	}
+
+	/**
+	 * Get the value of the data column for this Uri. This is useful for
+	 * MediaStore Uris, and other file-based ContentProviders.
+	 *
+	 * @param context The context.
+	 * @param uri The Uri to query.
+	 * @param selection (Optional) Filter used in the query.
+	 * @param selectionArgs (Optional) Selection arguments used in the query.
+	 * @return The value of the _data column, which is typically a file path.
+	 */
+	public static String getDataColumn(Context context, Uri uri, String selection,
+	        String[] selectionArgs) {
+
+	    Cursor cursor = null;
+	    final String column = "_data";
+	    final String[] projection = {
+	            column
+	    };
+
+	    try {
+	        cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs,
+	                null);
+	        if (cursor != null && cursor.moveToFirst()) {
+	            final int column_index = cursor.getColumnIndexOrThrow(column);
+	            return cursor.getString(column_index);
+	        }
+	    } finally {
+	        if (cursor != null)
+	            cursor.close();
+	    }
+	    return null;
+	}
+
+
+	/**
+	 * @param uri The Uri to check.
+	 * @return Whether the Uri authority is ExternalStorageProvider.
+	 */
+	public static boolean isExternalStorageDocument(Uri uri) {
+	    return "com.android.externalstorage.documents".equals(uri.getAuthority());
+	}
+
+	/**
+	 * @param uri The Uri to check.
+	 * @return Whether the Uri authority is DownloadsProvider.
+	 */
+	public static boolean isDownloadsDocument(Uri uri) {
+	    return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+	}
+
+	/**
+	 * @param uri The Uri to check.
+	 * @return Whether the Uri authority is MediaProvider.
+	 */
+	public static boolean isMediaDocument(Uri uri) {
+	    return "com.android.providers.media.documents".equals(uri.getAuthority());
+	}
+	
 }

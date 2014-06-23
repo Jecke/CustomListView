@@ -1,7 +1,11 @@
 package com.treeapps.treenotes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+
+
 
 
 import com.treeapps.treenotes.ActivityNoteStartup.clsNoteItemStatus;
@@ -16,6 +20,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ImageView;
@@ -53,16 +58,16 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 			if (!((objListItem.getFolderHasHiddenItems() == true) && objTreeview.getRepository().boolIsHiddenActive)) {
 				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode,
 						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-						false,objTreenode.boolIsNew);
+						false,objListItem.intNewItemType);
 			} else {
 				DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
 						((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-						true,objTreenode.boolIsNew);
+						true,objListItem.intNewItemType);
 			}
 		} else {
 			DrawIcon(myImageView, ActivityNoteStartup.objNoteTreeview.GetIconResourceId(objTreenode, 
 					((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview),
-					false,objTreenode.boolIsNew);
+					false,objListItem.intNewItemType);
 		}
 	}
 	
@@ -111,11 +116,7 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 				myMediaPreviewLayerDrawable.setDrawableByLayerId(R.id.media_preview_layer_foreground, r.getDrawable(R.drawable.www));
 			}
 		}
-
-
 	}
-	
-	
 
 	@Override
 	public void OnClickExec(View v) {
@@ -124,26 +125,21 @@ public class clsNoteListItemArrayAdapter extends clsListItemArrayAdapter {
 		UUID objUuid = objListItem.getTreeNodeGuid();
 		clsTreeNode objTreeNode = objTreeview.getTreeNodeFromUuid(objUuid);
 
-		// Shell out to edit activity
-		Intent intent = new Intent(getContext(), ActivityNoteAddNew.class);
-		intent.putExtra(ActivityNoteStartup.DESCRIPTION, objTreeNode.getName());
-		intent.putExtra(ActivityNoteStartup.RESOURCE_ID, objTreeNode.resourceId);
-		intent.putExtra(ActivityNoteStartup.RESOURCE_PATH, objTreeNode.resourcePath);
-		intent.putExtra(ActivityNoteStartup.TREENODE_UID, objTreeNode.guidTreeNode.toString());
-		intent.putExtra(ActivityNoteStartup.TREENODE_OWNERNAME, ((ActivityNoteStartup) context).objGroupMembers
-				.GetUserNameFomUuid(objTreeNode.getStrOwnerUserUuid()));
-		clsNoteItemStatus objNoteItemStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
-		((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreeNode, objNoteItemStatus,
-				((ActivityNoteStartup) context).objGroupMembers, ActivityNoteStartup.objNoteTreeview);
-		intent.putExtra(ActivityNoteStartup.READONLY, !objNoteItemStatus.boolSelectedNoteItemBelongsToUser);
-
-		String strAnnotationDataGson = clsUtils.SerializeToString(objTreeNode.annotation);
-		intent.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, strAnnotationDataGson);
-		intent.putExtra(ActivityNoteStartup.USE_ANNOTATED_IMAGE, objTreeNode.getBoolUseAnnotatedImage());
-		intent.putExtra(ActivityNoteStartup.ISDIRTY, false);
-
-		((Activity) context).startActivityForResult(intent, ActivityNoteStartup.EDIT_DESCRIPTION);
+		((ActivityNoteStartup) context).StartNoteItemEditIntent(objTreeNode);
 		
+	}
+
+	
+	
+	@Override
+	protected void RefreshListView() {
+		ArrayList<clsListItem> objListItems = objTreeview.getListItems();
+		clear();
+		addAll(objListItems);
+		notifyDataSetChanged();
+		clsNewItemsIndicatorView objClsNewItemsIndicatorView = (clsNewItemsIndicatorView)((Activity) context).findViewById(R.id.newitems_indicator_view);
+		objClsNewItemsIndicatorView.UpdateListItems(objListItems);
+		((Activity) context).invalidateOptionsMenu();
 	}
 
 }

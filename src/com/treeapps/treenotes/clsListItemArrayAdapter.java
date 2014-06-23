@@ -1,13 +1,17 @@
 package com.treeapps.treenotes;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 
+
+
 import com.treeapps.treenotes.ActivityNoteStartup.clsNoteItemStatus;
 import com.treeapps.treenotes.ActivityViewImage.clsListViewState;
+import com.treeapps.treenotes.clsListItem.enumNewItemType;
 import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumItemType;
@@ -231,29 +235,34 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 						} else {
 							if (objDialogListItem.getItemType() != enumItemType.FOLDER_EMPTY) {
 
-								// If checkbox is on a parent, ask user if he
-								// wants all children unchecked
-								AlertDialog.Builder builder = new AlertDialog.Builder(context);
-								builder.setTitle("All items below will be unchecked also. Do you want to proceed?");
-								builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+								if (objDialogTreeNode.objChildren.size() != 0) {
+									// If checkbox is on a parent, ask user if he
+									// wants all children unchecked
+									AlertDialog.Builder builder = new AlertDialog.Builder(context);
+									builder.setTitle("All items below will be unchecked also. Do you want to proceed?");
+									builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 
-									@Override
-									public void onClick(DialogInterface dialog, int which) {
-										// TODO Auto-generated method stub
-										objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, false);
-										RefreshListView();
-									}
-								});
-								builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											// TODO Auto-generated method stub
+											objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, false);
+											RefreshListView();
+										}
+									});
+									builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 
-									@Override
-									public void onClick(DialogInterface dialog, int which) {
-										objDialogTreeNode.setChecked(true);
-										dialog.cancel();
-										RefreshListView();
-									}
-								});
-								builder.show();
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											objDialogTreeNode.setChecked(true);
+											dialog.cancel();
+											RefreshListView();
+										}
+									});
+									builder.show();
+								} else {
+									objTreeview.RecursiveSetChildrenChecked(objDialogTreeNode, false);
+									RefreshListView();
+								}
 							}
 
 							// If checkbox is on a child, just carry on
@@ -339,8 +348,9 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 
 	public abstract void SelectItemTypeFolder(clsListItem objListItem, ImageView myImageView);
 	
-	public void DrawIcon (ImageView myImageView, int intBackgroundIconRid, boolean boolIsHidden, boolean boolIsNew  ) {
+	public void DrawIcon (ImageView myImageView, int intBackgroundIconRid, boolean boolIsHidden, enumNewItemType intNewItemType  ) {
 		int intLayerCount = 1;
+		boolean boolIsNew = (intNewItemType != enumNewItemType.OLD) ? true: false;
 		if (boolIsHidden) intLayerCount +=1;
 		if (boolIsNew) intLayerCount +=1;
 			
@@ -354,7 +364,23 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 		layers[0] = r.getDrawable(intBackgroundIconRid);
 		if (intLayerCount ==  2) {
 			if (boolIsHidden) layers[1] = r.getDrawable(R.drawable.icon_overlay_hidden);
-			if (boolIsNew) layers[1] = r.getDrawable(R.drawable.icon_overlay_new);
+			if (boolIsNew)  {
+				switch (intNewItemType) {
+				case ROOT_PARENT_OF_NEW:
+				case PARENT_OF_NEW:
+					layers[1] = r.getDrawable(R.drawable.icon_overlay_new_yellow);
+					break;
+				case NEW_AND_ROOT_PARENT_OF_NEW:
+				case NEW_AND_PARENT_OF_NEW:
+					layers[1] = r.getDrawable(R.drawable.icon_overlay_new_redyellow);
+					break;				
+				case NEW:
+					layers[1] = r.getDrawable(R.drawable.icon_overlay_new);
+					break;
+				default:
+					break;
+				}				
+			}
 		} else {
 			layers[1] = r.getDrawable(R.drawable.icon_overlay_hidden);
 			layers[2] = r.getDrawable(R.drawable.icon_overlay_new);
@@ -401,52 +427,60 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 			ImageView folder = (ImageView) v.findViewById(R.id.media_preview);
 			clsListItem objListItem = (clsListItem) folder.getTag();
 			
+			// Determine the access rights of the node
+			clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
+			clsNoteItemStatus objStatus = ((ActivityNoteStartup) context).new clsNoteItemStatus();
+			((ActivityNoteStartup) context).DetermineNoteItemStatus(objTreenode, objStatus, ((ActivityNoteStartup) context).objGroupMembers, objTreeview);
+			
+			// Determine if image needs to display annotated or full image
+			boolean boolDisplayAnnotated = DetermineIfAnnotatedImageToBeDisplayed(objTreenode, objStatus);
+			
+			// Start the display
 			String contentString = objListItem.getResourcePath();
 
 			switch (objListItem.getResourceId()) {
 			case clsTreeview.IMAGE_RESOURCE:
-			case clsTreeview.WEB_RESOURCE:
-				clsTreeNode objTreenode = objTreeview.getTreeNodeFromUuid(objListItem.getTreeNodeGuid());
-				if (objTreenode.annotation == null ||
-						((objTreenode.annotation != null) && (objTreenode.getBoolUseAnnotatedImage() == false))) { 
-					// Display using original source using stock viewer
-					Intent img_intent = new Intent();
-					img_intent.setAction(Intent.ACTION_VIEW);
+			case clsTreeview.WEB_RESOURCE:				
+				if (!boolDisplayAnnotated) { 
+					// Display using original source using stock viewer if only image available
+					boolean boolIsRemoteImage;
+					File fileLocalImageUri;
+					fileLocalImageUri = new File (clsUtils.GetFullImageFileName(context, objListItem.getTreeNodeGuid().toString()));
+					if (!fileLocalImageUri.exists()) {
+						if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
+							// Uri appears to be for a remote image
+							boolIsRemoteImage = true;						
+						} else {
+							clsUtils.MessageBox(context, "Image does not exists locally and remotely", true);
+							return;
+						}
+					} else {
+						boolIsRemoteImage = false;
+					}
+
 					// for remote images
 					// (local files start either with file:// or /)
-					if (!contentString.startsWith("/", 0) && !contentString.startsWith("file://", 0)) {
+					if (boolIsRemoteImage) {
 						// for remote image
+						Intent img_intent = new Intent();
+						img_intent.setAction(Intent.ACTION_VIEW);
 						img_intent.setData(Uri.parse(contentString));
-
-						context.startActivity(img_intent);
-					} else // for local images
-					{
-						String resPath = clsUtils.getLocalPathFromUri(context, objListItem.getResourceId(), Uri.parse(contentString));
-						if (!resPath.isEmpty()) {
-							
-							String prefix;
-							
-							if(!resPath.startsWith("file:"))
-							{
-								if(resPath.startsWith("/"))
-								{
-									prefix = "file:/";
-								}
-								else
-								{
-									prefix = "file://";
-								}
-								img_intent.setDataAndType(Uri.parse(prefix + resPath), "image/*");
-							}
-							else
-							{
-								img_intent.setDataAndType(Uri.parse(resPath), "image/*");
-							}
-
+						try {
 							context.startActivity(img_intent);
-						} else {
-							Toast.makeText(context, "Resourcepath is empty", Toast.LENGTH_SHORT).show();// Problem
+						} catch (Exception e) {
+							clsUtils.MessageBox(context, "Unable to display remote image", true);
+							return;
 						}
+					} else // for local unannotated images
+					{
+						// Local file, use custom viewer
+						Intent intentViewImage = new Intent(context, ActivityViewImage.class);
+						intentViewImage.putExtra(ActivityViewImage.URL, "");
+						intentViewImage.putExtra(ActivityNoteStartup.TREENODE_UID, objListItem.getTreeNodeGuid().toString());
+						intentViewImage.putExtra(ActivityViewImage.DESCRIPTION, objTreenode.getName());
+						intentViewImage.putExtra(ActivityViewImage.LISTVIEWSTATES_GSON, "");
+						intentViewImage.putExtra(ActivityNoteStartup.ANNOTATION_DATA_GSON, "");								
+						context.startActivity(intentViewImage);
 					}
 				} else {
 					// Annotated, display using custom viewer
@@ -508,6 +542,37 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 			}
 		}
 
+		private boolean DetermineIfAnnotatedImageToBeDisplayed(clsTreeNode objTreenode, clsNoteItemStatus objStatus) {
+			// Annotated == true, full = false
+			if (objTreenode.annotation == null) {
+				// No annotation
+				return false;
+			} else {
+				// Annotated, determine if item has rights for optional display
+				if (objStatus.boolIsUserRegistered) {
+					// User is registered, so check rights
+					if (!objStatus.boolSelectedNoteItemBelongsToUser) {
+						// No option, just display annotation
+						return  true;
+					} else {
+						// Option exists, use option
+						if (objTreenode.getBoolUseAnnotatedImage()) {
+							return  true;
+						} else {
+							return  false;
+						}
+					}
+				} else {
+					// User not registered, so if item has rights by default for optional display
+					if (objTreenode.getBoolUseAnnotatedImage()) {
+						return  true;
+					} else {
+						return  false;
+					}
+				}
+			}
+		}
+
 		// helper: retrieve the path of a resource from the internal database
 		// by using the URI
 		private String getLocalPathFromUri(int resourceId, Uri uri) {
@@ -564,15 +629,7 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 		}
 	}
 
-	protected void RefreshListView() {
-		List<clsListItem> objListItems = objTreeview.getListItems();
-		clear();
-		addAll(objListItems);
-
-		ListView objListView = ((ListActivity) context).getListView();
-		objListView.invalidateViews();
-		((Activity) context).invalidateOptionsMenu();
-	}
+	protected abstract void RefreshListView();
 
 	private class MyTextOnLongClickListener implements View.OnLongClickListener {
 		public boolean onLongClick(View v) {
@@ -641,6 +698,9 @@ public abstract class clsListItemArrayAdapter extends ArrayAdapter<clsListItem> 
 				}
 				break;
 			case MotionEvent.ACTION_MOVE:
+				
+				if (pressedX < (2 * view.getWidth())/3) break;
+				
 				float fltDistance = distance(pressedX, pressedY, motionEvent.getX(), motionEvent.getY());
 				clsUtils.CustomLog("fltDistance =: " + fltDistance);
 				if (fltDistance > fltMaxClickDistance) {

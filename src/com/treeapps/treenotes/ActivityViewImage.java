@@ -76,11 +76,16 @@ public class ActivityViewImage extends Activity {
 			public void run() {
 
 				clsZoomableImageView objImageView = (clsZoomableImageView)findViewById(R.id.activity_view_image_image);
-
-				bitmap = BitmapFactory.decodeFile(clsUtils.GetAnnotatedImageFileName(context, objSession.strTreeNodeUuid));
+				if ((objSession.objAnnotationData == null) && (objSession.strWebPageURL.isEmpty())) {
+					// Display a simple single local file
+					bitmap = BitmapFactory.decodeFile(clsUtils.GetFullImageFileName(context, objSession.strTreeNodeUuid));
+				} else {
+					// Display annotated image or webpage
+					bitmap = BitmapFactory.decodeFile(clsUtils.GetAnnotatedImageFileName(context, objSession.strTreeNodeUuid));
+					objImageView.setWebPageURL(objSession.strWebPageURL);
+				}
 
 				objImageView.setImageBitmap(bitmap);
-				objImageView.setWebPageURL(objSession.strWebPageURL);
 
 				TextView objTextView = (TextView)findViewById(R.id.activity_view_description);
 				objTextView.setText(objSession.strDescription);
@@ -130,14 +135,17 @@ public class ActivityViewImage extends Activity {
 		// Hide text area displaying information about numbered arrows if there are no such shapes 
 		// in the annotation to gain space for the actual image.
 		boolean numberedArrowAvailable = false;
-		for(clsAnnotationData.clsAnnotationItem item : objSession.objAnnotationData.items)
-		{
-			if(item.getType() == Shape.NUMBERED_ARROW)
+		if (objSession.objAnnotationData!= null) {
+			for(clsAnnotationData.clsAnnotationItem item : objSession.objAnnotationData.items)
 			{
-				numberedArrowAvailable = true;
-				break;
+				if(item.getType() == Shape.NUMBERED_ARROW)
+				{
+					numberedArrowAvailable = true;
+					break;
+				}
 			}
 		}
+		
 		if(!numberedArrowAvailable)
 		{
 			// hide layout which contains the texts for the numbered arrows

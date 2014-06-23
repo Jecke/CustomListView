@@ -13,13 +13,17 @@ public class clsListItem {
 	private enumItemLevelRelation _AboveItemLevelRelation, _BelowItemLevelRelation;
 	public boolean	_boolIsSelected;
 	public boolean _boolFolderHasHiddenItems;
+	public enumNewItemType intNewItemType;
 	
 	// JE
 	private String _resourcePath;
 	private int    _resourceId = -1;
 	private String _strWebPageURL;
 	
-
+	public static enum enumNewItemType {
+		OLD, NEW, NEW_AND_PARENT_OF_NEW, NEW_AND_ROOT_PARENT_OF_NEW, PARENT_OF_NEW, ROOT_PARENT_OF_NEW
+	}
+	
 
 	// Annotation
 	public boolean boolIsAnnotated = false;

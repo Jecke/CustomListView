@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
+
 import com.google.gson.Gson;
 import com.treeapps.treenotes.sharing.clsMessaging;
 import com.treeapps.treenotes.sharing.clsMessaging.clsLoginUserCmd;
@@ -18,6 +19,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -59,10 +61,14 @@ public class ActivityRegister extends Activity {
     // Messaging
     clsMessaging objMessaging = new clsMessaging();
     static String strWebserverUrl;
+    
+    Context objContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        this.objContext = this;
 
         setContentView(R.layout.activity_register);
         
@@ -206,7 +212,7 @@ public class ActivityRegister extends Activity {
         	clsLoginUserCmd objLoginUserCmd = objMessaging.new clsLoginUserCmd();
         	objLoginUserCmd.setStrUsername(mUsernameView.getText().toString());
         	objLoginUserCmd.setStrPassword(mPasswordView.getText().toString());
-        	objLoginUserCmd.setIntSeqNum(0);
+        	objLoginUserCmd.setStrRegistrationId(clsUtils.getRegistrationId(objContext));
     		Gson gson = new Gson();
     		String strJsonCommand = gson.toJson(objLoginUserCmd);
         	InputStream stream = null;

@@ -22,6 +22,9 @@ public class clsIndentableTextView extends TextView  {
 	private int _intTextSize;
 	private int _intIndentLevelAmountMax;
 	private int intTabWidthInPx;
+	private final int RADIUS_DEFAULT_DP = 10;
+	private int intRadiusDefaultInPx;
+	private float fltRadius;
 
 	private clsListItem _objListItem;
 
@@ -115,6 +118,8 @@ public class clsIndentableTextView extends TextView  {
 		paintIndentBackground = new Paint();
 
 		setWillNotDraw(false);
+		
+		intRadiusDefaultInPx = clsUtils.dpToPx(getContext(), RADIUS_DEFAULT_DP);
 	}
 
 	public void setListItem(clsListItem objListItem) {
@@ -186,7 +191,7 @@ public class clsIndentableTextView extends TextView  {
 	}
 
 	private void DrawCustomRect(Canvas objCanvas, RectF objRect, Paint objPaint) {
-		final float fltRadius = 15f;
+		
 		final float fltDiam = fltRadius * 2;
 		Path path = new Path();
 		if (_objListItem.GetAboveItemLevelRelation() == enumItemLevelRelation.SAME) {
@@ -348,6 +353,13 @@ public class clsIndentableTextView extends TextView  {
 
 	public void SetTabWidthInPx(int intTabWidthInPx) {
 		this.intTabWidthInPx = intTabWidthInPx;
+		
+		if (intTabWidthInPx/2 < intRadiusDefaultInPx) {
+			fltRadius = intTabWidthInPx/2; 
+		} else {
+			fltRadius = intRadiusDefaultInPx;
+		}
+		 
 	}
 
 	

@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import android.app.Activity;
 import android.content.Context;
 
 import com.treeapps.treenotes.clsIntentMessaging;
@@ -14,11 +15,8 @@ import com.treeapps.treenotes.sharing.clsGroupMembers.clsGroup;
 public class clsGroupMembersTreeview extends clsTreeview {
 	
 
-	Context context;
-	
-	public clsGroupMembersTreeview(Context context, clsGroupMembers objGroupMembers){
-		super(objGroupMembers);
-		this.context = context;
+	public clsGroupMembersTreeview(Activity objActivity, clsGroupMembers objGroupMembers){
+		super(objActivity, objGroupMembers);
 	}
 	
 	

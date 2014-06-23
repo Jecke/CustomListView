@@ -141,7 +141,7 @@
                   android:title="Manage groups"/>
             <item android:id="@+id/actionShareSelect"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Manage sharers"/>
+                  android:title="Select sharers"/>
             <item android:id="@+id/actionPublications"
                   android:icon="@drawable/ic_action_share"
                   android:title="Publications">

@@ -59,7 +59,7 @@ public class ActivityEditAnnotationImage extends Activity {
 	// View containing the image to be annotated
 	//private clsInteractiveImageView image;
 	// View containing the shapes used to annotate the image
-	private clsInteractiveImageViewOverlay overlayImage; 
+	private clsInteractiveImageViewOverlay objOverlayImage; 
 	
 	private AlertDialog dlg;
 	private ProgressDialog pd;
@@ -112,11 +112,11 @@ public class ActivityEditAnnotationImage extends Activity {
 			if(updateAttributes)
 			{
 				// Update the attribute dialog from the selected object
-				overlayImage.getAttributesOfSelectedShape(lineAttributes);
+				objOverlayImage.getAttributesOfSelectedShape(lineAttributes);
 			}
 		}
 	}
-	private ShapeObserver shapeObserver;
+	private ShapeObserver objShapeObserver;
 
 	private clsAnnotationData.AttributeContainer lineAttributes;
 	
@@ -140,11 +140,6 @@ public class ActivityEditAnnotationImage extends Activity {
 		// The shapes which are associated with data get drawn in onWindowFocusChanged because
 		// only then is the size of the bitmap known and valid
 		
-		// create Attribute container with default values
-		/*lineAttributes = data.new AttributeContainer(DEFAULT_LINE_WIDTH, 
-												clsUtils.Linestyle.LS_SOLID,
-												Color.RED, Color.WHITE);*/		
-		
 		TextView textViewCompressRate = (TextView)findViewById(R.id.textViewCompression);
 		// set initial compression rate in label and SeekBar
 		textViewCompressRate.setText(String.valueOf(data.compressionRate) + "%");
@@ -153,11 +148,11 @@ public class ActivityEditAnnotationImage extends Activity {
 		sb.setOnSeekBarChangeListener(new CompressBarChangeListener());
 		sb.setProgress(data.compressionRate / 10);
 		
-		shapeObserver = new ShapeObserver();
+		objShapeObserver = new ShapeObserver();
 		
-		overlayImage = 
+		objOverlayImage = 
 				(clsInteractiveImageViewOverlay)findViewById(R.id.imageViewAnnotateOverlay);
-		overlayImage.post(new Runnable() {
+		objOverlayImage.post(new Runnable() {
 			
 			@Override
 			public void run() {
@@ -262,7 +257,7 @@ public class ActivityEditAnnotationImage extends Activity {
 			// overlay shape 
 			if(changeAttributeOfSelected)
 			{
-		    	overlayImage.changeAttributesOfSelectedShape(lineAttributes);
+		    	objOverlayImage.changeAttributesOfSelectedShape(lineAttributes);
 				
 				changeAttributeOfSelected = false;
 			}
@@ -300,7 +295,7 @@ public class ActivityEditAnnotationImage extends Activity {
 	        	data.clear(); 
 		    	
 	        	// fill elements
-	        	overlayImage.extractAnnotations(data);
+	        	objOverlayImage.extractAnnotations(data);
 
 	        	// update Intent
 	        	Intent objIntent = getIntent();
@@ -318,7 +313,7 @@ public class ActivityEditAnnotationImage extends Activity {
         		break;
         		
 		    case R.id.actionDeleteSelected:
-		    	overlayImage.deleteSelectedShape();
+		    	objOverlayImage.deleteSelectedShape();
 		    	
 		        success = true;
         		break;
@@ -337,7 +332,7 @@ public class ActivityEditAnnotationImage extends Activity {
 		    case R.id.actionAnnotateSelected:
 		    	// Retrieve current annotation of selected object, create Intent and start
 		    	// Activity which let user change the annotation
-		    	String description = overlayImage.getDescriptionOfSelectedObject();
+		    	String description = objOverlayImage.getDescriptionOfSelectedObject();
 		    	if(!description.isEmpty())
 		    	{
 					Intent editTextIntent = new Intent(this, ActivityEditAnnotationText.class);
@@ -356,21 +351,21 @@ public class ActivityEditAnnotationImage extends Activity {
 
 		    // shape Arrow
 		    case R.id.actionAddArrow:
-		    	overlayImage.addArrowOverlay(data.new AttributeContainer(lineAttributes));
+		    	objOverlayImage.addArrowOverlay(data.new AttributeContainer(lineAttributes));
 
 		    	success = true;
         		break;
 		         
 			    // shape Numbered Arrow
 		    case R.id.actionAddNumberedArrow:
-		    	overlayImage.addNumberedArrowOverlay(data.new AttributeContainer(lineAttributes));
+		    	objOverlayImage.addNumberedArrowOverlay(data.new AttributeContainer(lineAttributes));
 
 		        success = true;
         		break;
 		         
 			    // shape Rectangle
 		    case R.id.actionAddRectangle:
-		    	overlayImage.addRectangleOverlay(data.new AttributeContainer(lineAttributes));
+		    	objOverlayImage.addRectangleOverlay(data.new AttributeContainer(lineAttributes));
 
 		    	success = true;
         		break;
@@ -393,7 +388,7 @@ public class ActivityEditAnnotationImage extends Activity {
 				clsUtils.DeSerializeFromString(objBundle.getString(clsAnnotationData.DATA), 
 							   					clsAnnotationItem.class);
 			
-			overlayImage.changeDescriptionOfSelectedShape(temp.getAnnotationText());
+			objOverlayImage.changeDescriptionOfSelectedShape(temp.getAnnotationText());
 		}
 	}
 	
@@ -706,7 +701,7 @@ public class ActivityEditAnnotationImage extends Activity {
 				outFile = inFile[0];
 				
 				// Create image which fits the screen from file 
-				imageBitmap = clsUtils.downsampleImageToView(outFile, overlayImage.getWidth(), overlayImage.getHeight(), false);
+				imageBitmap = clsUtils.downsampleImageToView(outFile, objOverlayImage.getWidth(), objOverlayImage.getHeight(), false);
 			}
 			else
 			{
@@ -730,7 +725,7 @@ public class ActivityEditAnnotationImage extends Activity {
 					fOutputStream.close();
 					
 					imageBitmap.recycle();
-					imageBitmap = clsUtils.downsampleImageToView(outFile, overlayImage.getWidth(), overlayImage.getHeight(), false);
+					imageBitmap = clsUtils.downsampleImageToView(outFile, objOverlayImage.getWidth(), objOverlayImage.getHeight(), false);
 
 	            } catch (FileNotFoundException e) {
 					e.printStackTrace();
@@ -751,14 +746,14 @@ public class ActivityEditAnnotationImage extends Activity {
 		@Override 
 		protected void onPostExecute(Bitmap p)
 		{
-			overlayImage.setImageBitmap(p);
+			objOverlayImage.setImageBitmap(p);
 			
 			// The overlay image only gets initialised once
 			if(!imageLoaded)
 			{
-				overlayImage.setShapeObserver(shapeObserver);
-				overlayImage.startMatrixOperation();
-				overlayImage.createShapes(data);
+				objOverlayImage.setShapeObserver(objShapeObserver);
+				objOverlayImage.startMatrixOperation();
+				objOverlayImage.createShapes(data);
 				
 				imageLoaded = true;
 			}
@@ -775,7 +770,7 @@ public class ActivityEditAnnotationImage extends Activity {
 			textViewFileSize.setText(String.format("%.2f %s", Float.valueOf(cvrt), unit));
 
 			// Create default line width of shapes
-			float w = overlayImage.getBitmapWidth();
+			float w = objOverlayImage.getBitmapWidth();
 			float defaultWidthDivisor;
 			try {
 				defaultWidthDivisor = (float)getResources().getInteger(R.integer.line_width_divisor);

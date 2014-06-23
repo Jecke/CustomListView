@@ -71,15 +71,17 @@ public class ActivityFacebookExport extends FragmentActivity {
 				  // Start export if the necessary permissions are granted, otherwise request permissions first.
 				  // publish_actions is needed to upload content to FB
 				  // user_photos is used to request information about the photo albums
+				  // read_stream is used to get information about links (me/feed)
 				  if(session.isPermissionGranted("publish_actions") &&
-						  session.isPermissionGranted("user_photos"))
+					  session.isPermissionGranted("user_photos"))// &&
+					  //session.isPermissionGranted("read_stream"))
 				  {
 					  mainFragment.export(objActivity);//, exportData);
 				  }
 				  else
 				  {
 					  Session.NewPermissionsRequest newPermissionsRequest = new Session
-							  .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions", "user_photos"));
+							  .NewPermissionsRequest((Activity) objContext, Arrays.asList("publish_actions", "user_photos"));//, "read_stream"));
 					  session.requestNewPublishPermissions(newPermissionsRequest);
 				  }
 			  }

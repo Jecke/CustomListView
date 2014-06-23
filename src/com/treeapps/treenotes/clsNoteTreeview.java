@@ -14,9 +14,8 @@ import com.treeapps.treenotes.sharing.clsGroupMembers;
 public class clsNoteTreeview extends clsTreeview {
 	
 	
-	public clsNoteTreeview(clsGroupMembers objGroupMembers) {
-		super(objGroupMembers);
-		// TODO Auto-generated constructor stub
+	public clsNoteTreeview(Activity objActivity, clsGroupMembers objGroupMembers) {
+		super(objActivity, objGroupMembers);
 	}
 
 	public void DeSerializeFromSharedPreferences(Activity _context, String strKey){

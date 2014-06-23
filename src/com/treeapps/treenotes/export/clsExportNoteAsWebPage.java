@@ -33,11 +33,13 @@ public class clsExportNoteAsWebPage {
 	private clsTreeview objTreeview;
 	private clsMessaging objMessaging;
 	private String strWebPageHtml;
+	private String strWebHeadOGHtml;
 	private String strServerUrl;
 	private int intLevelAmount;
 	private clsGroupMembers objGroupMembers;
 	private ArrayList<clsImageLoadData> objImageLoadDatas;
 	private clsImageLoadData objImageLoadData;
+	private static String strExportTimeStampWinFilenameSafe;
 	
 	clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener callback;
 	
@@ -58,6 +60,8 @@ public class clsExportNoteAsWebPage {
 		this.objActivity = objActivity;
 		this.objMessaging = objMessaging;
 		this.objGroupMembers=objGroupMembers;
+		this.strExportTimeStampWinFilenameSafe = "";
+		this.strWebHeadOGHtml = " ";
 	}
 	
 	// Input to async task
@@ -65,6 +69,8 @@ public class clsExportNoteAsWebPage {
 		public String strNoteUuid;
 		public String strWebPageHtml;
 		public String strSenderName;
+		public String strOgTags; // Open Graph HTML meta tags
+		public String strExportTimeStampWinFilenameSafe;	// To make each URL unique
 	}
 
 	// Output from async task
@@ -163,13 +169,45 @@ public class clsExportNoteAsWebPage {
 
 	}
 	
-	public void GenerateWebPageHtml() {
+	public void GenerateOGHeaderHtml(String title, String description, String coverImage, boolean useAnnotated)
+	{
+		String header;
 		
+		// og:type
+		header = "<meta property=\"og:type\" content=\"website\"/>\n";
+		// fb:app_id
+		header += "\t" + "<meta property=\"fb:app_id\" content=\"" + 
+				objActivity.getResources().getString(R.string.app_id) +
+					"\"/>" + "\n";
+		// og:url
+		header += "\t" + "<meta property= \"og:url\" content=\"" + GetWebPageUrl() + "\"/>" + "\n";
+		// og:title
+		header += "\t" + "<meta property=\"og:title\" content=\"" + title + "\" />" + "\n";
+		// og:description
+		header += "\t" + "<meta property=\"og:description\" content=\"" + description + "\"/>" + "\n";
+		// og:image
+		if(coverImage.isEmpty())
+		{
+			header += "\t" + "<meta property=\"og:image\" content=\"http://treenotes.azurewebsites.net/Views/images/treenotes_logo.png\"/>";
+		}
+		else
+		{
+			header += "\t" + "<meta property=\"og:image\" content=\"http://treenotes.azurewebsites.net/" + 
+					getServerPathToImage(coverImage, useAnnotated) + "\"/>";
+		}
+		strWebHeadOGHtml = header;
+	}
+
+
+	public void GenerateWebPageHtml() {
+		// Generate the timestamp value
+		strExportTimeStampWinFilenameSafe = clsUtils.GetStrCurrentDateTimeWinFilenameSafe();
+				
 		// This method assumes all the images are already on the webserver
 		intLevelAmount = GetLevelAmount(objTreeview);
 		strWebPageHtml  = "<div class='datagrid'>";
 		strWebPageHtml += "<table><tbody>";
-		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview) {		
+		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview.getRepository()) {		
 			@Override
 			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
 				strWebPageHtml += GenTableRow(intLevelAmount, intLevel, objTreeNode);			
@@ -204,13 +242,15 @@ public class clsExportNoteAsWebPage {
 			url = new URL(strUrl);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
-			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, true);
+			clsUtils.MessageBox(objActivity, "MalformedURLException: " + e, false);
 			return;
 		}
 		clsExportNoteAsWebPageCommand objCommand = new clsExportNoteAsWebPageCommand();
 		objCommand.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
 		objCommand.strWebPageHtml = strWebPageHtml;
 		objCommand.strSenderName = objGroupMembers.GetRegisteredUser().strUserName;
+		objCommand.strOgTags = strWebHeadOGHtml;
+		objCommand.strExportTimeStampWinFilenameSafe = strExportTimeStampWinFilenameSafe;
 		clsExportNoteAsWebPageResponse objResponse = new clsExportNoteAsWebPageResponse();
 		clsMyExportNoteAsWebPageAsyncTask objAsyncTask = new clsMyExportNoteAsWebPageAsyncTask(objActivity, url,objCommand, objResponse);
 		objAsyncTask.SetOnWebPagePostedListener(callback);			
@@ -220,10 +260,10 @@ public class clsExportNoteAsWebPage {
 	public void UploadRequiredImages(OnImageUploadFinishedListener cbFinished, OnImageUploadProgressListener cbProgress)
 	{
 		objImageLoadDatas = new ArrayList<clsImageLoadData>();
-		objImageLoadData = objMessaging.new clsImageLoadData();
+		objImageLoadData = new clsImageLoadData();
 		objImageLoadData.strNoteUuid = objTreeview.getRepository().uuidRepository.toString();
 		objImageLoadDatas.add(objImageLoadData);
-		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview) {		
+		clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objTreeview.getRepository()) {		
 			@Override
 			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
 				if ((objTreeNode.resourceId == clsTreeview.IMAGE_RESOURCE) || 
@@ -241,7 +281,7 @@ public class clsExportNoteAsWebPage {
 		objTreeviewIterator.Execute();
 		clsImageUpDownloadAsyncTask objImageUpDownloadAsyncTask = 
 			new clsImageUpDownloadAsyncTask(objActivity, objMessaging, false, objImageLoadDatas, 
-											cbFinished, cbProgress);
+											cbFinished, cbProgress, false);
 		objImageUpDownloadAsyncTask.execute();
 	}
 	
@@ -266,6 +306,19 @@ public class clsExportNoteAsWebPage {
 		return intLevelAmount;
 	}
 
+	// Returns the path and name of an uploaded image on the server
+	private String getServerPathToImage(String guidTreeNode, boolean annotated)
+	{
+		if(annotated)
+		{
+			return "TreeNotesSave/Images/" + guidTreeNode + "_annotated.jpg";
+		}
+		else
+		{
+			return "TreeNotesSave/Images/" + guidTreeNode + "_full.jpg";
+		}
+	}
+
 	static boolean boolIsAltRow = false;
 	protected String GenTableRow(int intLevelAmount, int intLevel, clsTreeNode objTreeNode) {
 		
@@ -275,11 +328,9 @@ public class clsExportNoteAsWebPage {
 		if ((objTreeNode.resourceId == clsTreeview.IMAGE_RESOURCE) || 
 				(objTreeNode.resourceId == clsTreeview.ANNOTATION_RESOURCE) ||
 				(objTreeNode.resourceId == clsTreeview.WEB_RESOURCE)){
-			if (objTreeNode.getBoolUseAnnotatedImage()) {
-				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_annotated.jpg";				
-			} else {
-				strImageUrl = "../../../TreeNotesSave/Images/" + objTreeNode.guidTreeNode + "_full.jpg";
-			}	
+
+			strImageUrl = getServerPathToImage(objTreeNode.guidTreeNode.toString(), objTreeNode.getBoolUseAnnotatedImage());
+			strImageUrl = "../../../" + strImageUrl; 
 		}
 				
 		// Determine how many columns required
@@ -339,7 +390,8 @@ public class clsExportNoteAsWebPage {
 		else {
 			strServerUrl =  clsMessaging.SERVER_URL_AZURE;
 		}
-		return strServerUrl + "/Views/Pages/Messages/" + objTreeview.getRepository().uuidRepository.toString()+ ".html";
+		return strServerUrl + "/Views/Pages/Messages/" + objTreeview.getRepository().uuidRepository.toString() +
+				"_" + strExportTimeStampWinFilenameSafe + ".html";
 	}
 
 }
