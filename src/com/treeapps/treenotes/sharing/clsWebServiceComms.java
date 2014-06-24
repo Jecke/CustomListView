@@ -39,7 +39,7 @@ public class clsWebServiceComms {
 			static clsWebServiceCommand objCommand;
 			static URL urlFeed;
 			ProgressDialog objProgressDialog;
-			public OnWebPagePostedListener objOnWebPagePostedListener;
+			public OnCompleteListener objOnCompleteListener;
 
 			public clsWebServiceCommsAsyncTask(Activity objActivity, URL urlFeed, clsWebServiceCommand objCommand) {
 				clsWebServiceCommsAsyncTask.urlFeed = urlFeed;
@@ -47,8 +47,8 @@ public class clsWebServiceComms {
 				objProgressDialog = new ProgressDialog(objActivity);
 			}
 
-			public void SetOnWebPagePostedListener(OnWebPagePostedListener objOnWebPagePostedListener) {
-				this.objOnWebPagePostedListener = objOnWebPagePostedListener;
+			public void SetOnCompleteListener(OnCompleteListener objOnCompleteListener) {
+				this.objOnCompleteListener = objOnCompleteListener;
 			}
 
 			@Override
@@ -103,11 +103,11 @@ public class clsWebServiceComms {
 				if (objProgressDialog.isShowing()) {
 					objProgressDialog.dismiss();
 				}
-				objOnWebPagePostedListener.onPosted(objJsonResponse);
+				objOnCompleteListener.onComplete(objJsonResponse);
 			}
 
-			public interface OnWebPagePostedListener {
-				public void onPosted(JSONObject objJsonResponse);
+			public interface OnCompleteListener {
+				public void onComplete(JSONObject objJsonResponse);
 			}
 
 			@Override

@@ -35,7 +35,7 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
 import com.treeapps.treenotes.sharing.clsWebServiceComms;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
-import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnWebPagePostedListener;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCompleteListener;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask;
 
@@ -180,10 +180,10 @@ public class ActivitySubscriptions extends ListActivity {
 					}
 					clsWebServiceCommsAsyncTask objMyAsyncTask = new clsWebServiceCommsAsyncTask(objContext, 
 							urlFeed, objSubscriptionsRemoveCommand);
-					objMyAsyncTask.SetOnWebPagePostedListener(new OnWebPagePostedListener() {
+					objMyAsyncTask.SetOnCompleteListener(new OnCompleteListener() {
 						
 						@Override
-						public void onPosted(JSONObject objJsonResponse) {
+						public void onComplete(JSONObject objJsonResponse) {
 							// TODO Auto-generated method stub
 							clsWebServiceResponse objResponse = clsUtils.DeSerializeFromString(objJsonResponse.toString(),
 									clsWebServiceResponse.class);

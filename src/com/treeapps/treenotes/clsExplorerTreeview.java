@@ -15,7 +15,11 @@ import android.util.Log;
 
 
 
+
+
+
 import com.google.gson.Gson;
+import com.treeapps.treenotes.ActivityExplorerStartup.clsSyncExplorerCommandNoteData;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumItemType;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
@@ -259,38 +263,71 @@ public class clsExplorerTreeview extends clsTreeview {
 		// TODO Auto-generated method stub
 		objNoteRepository.SerializeToFile(objNoteFile);
 	}
+	
+	public void DeleteNoteAndAllImages(String strNoteUuid) {
+		clsTreeNode objTreeNode = getTreeNodeFromUuid(UUID.fromString(strNoteUuid)) ;
 
-	public ArrayList<clsSyncRepositoryCtrlData> GetAllSyncNotes(clsMessaging objMessaging) {
-		// TODO Auto-generated method stub
-		ArrayList<clsSyncRepositoryCtrlData> objSyncRepositoryCtrlDatas = new ArrayList<clsSyncRepositoryCtrlData>();
-		for (clsTreeNode objTreeNode: this.getRepository().objRootNodes) {
-			AddToSyncRepositoriesRecursively(objSyncRepositoryCtrlDatas,objTreeNode, objMessaging);
+		if (objTreeNode != null) {
+			File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
+			File fileNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objTreeNode.guidTreeNode.toString() );
+			if (fileNoteFile.exists()) {
+				clsRepository objRepository = DeserializeNoteFromFile(fileNoteFile);
+				clsTreeviewIterator objTreeviewIterator = new clsTreeviewIterator(objRepository) {
+					
+					@Override
+					public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
+						if (!objTreeNode.resourcePath.isEmpty()) {
+							// There is an image, delete all subtypes
+							String strNodeUuid = objTreeNode.guidTreeNode.toString();
+							File fileThumbnail = new File(clsUtils.GetThumbnailImageFileName(objActivity, strNodeUuid));
+							File fileFull = new File(clsUtils.GetFullImageFileName(objActivity, strNodeUuid));
+							File fileAnnotated = new File(clsUtils.GetAnnotatedImageFileName(objActivity, strNodeUuid));
+							if (fileThumbnail.exists()) {
+								fileThumbnail.delete();
+							}
+							if (fileFull.exists()) {
+								fileFull.delete();
+							}
+							if (fileAnnotated.exists()) {
+								fileAnnotated.delete();
+							}
+						}					
+					}
+				};	
+				objTreeviewIterator.Execute();
+				fileNoteFile.delete();
+			}
+			
 		}
-		return objSyncRepositoryCtrlDatas;
+		
 	}
 
-	private void AddToSyncRepositoriesRecursively(ArrayList<clsSyncRepositoryCtrlData> objSyncRepositoryCtrlDatas,
-			clsTreeNode objTreeNode, clsMessaging objMessaging) {
-		// TODO Auto-generated method stub
-		if(objTreeNode.enumItemType == enumItemType.OTHER) {
-			if (objTreeNode.IsToBeSynched()) {
-				// Get note file from file repository
-				File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objActivity));
-				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objTreeNode.guidTreeNode.toString() );
-				if (objNoteFile.exists()) {
-					clsRepository objNoteRepository = DeserializeNoteFromFile(objNoteFile);
-					// Add to sync repository
-					clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
-		        	objRepositoryCtrlData.objSyncRepository = objNoteRepository.getCopy(objActivity);
-		        	objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = false;
-		        	objRepositoryCtrlData.boolNeedsOnlyChangeNotification = true;
-		        	objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
-				}
+	public ArrayList<clsSyncExplorerCommandNoteData> GetAllSyncNotes(clsMessaging objMessaging) {
+	
+		class clsMyTreeviewIterator extends clsTreeviewIterator {
+			
+			ArrayList<clsSyncExplorerCommandNoteData> objSyncExplorerCommandNoteDatas;
+			
+			public clsMyTreeviewIterator(clsRepository objRepository, ArrayList<clsSyncExplorerCommandNoteData> objSyncExplorerCommandNoteDatas) {
+				super(objRepository);
+				this.objSyncExplorerCommandNoteDatas = objSyncExplorerCommandNoteDatas;
 			}
+
+			@Override
+			public void ProcessTreeNode(clsTreeNode objTreeNode, int intLevel) {
+				if(objTreeNode.enumItemType == enumItemType.OTHER) {
+					clsSyncExplorerCommandNoteData objSyncExplorerCommandNoteData = new clsSyncExplorerCommandNoteData();
+					objSyncExplorerCommandNoteData.strNoteUuid = objTreeNode.guidTreeNode.toString();
+					objSyncExplorerCommandNoteData.boolIsDeleted = objTreeNode.boolIsDeleted;
+					objSyncExplorerCommandNoteDatas.add(objSyncExplorerCommandNoteData);
+				}				
+			}	
 		}
-		for (clsTreeNode objChildTreeNode:objTreeNode.objChildren ){
-			AddToSyncRepositoriesRecursively(objSyncRepositoryCtrlDatas,objChildTreeNode, objMessaging);
-		}
+		
+		ArrayList<clsSyncExplorerCommandNoteData> objSyncExplorerCommandNoteDatas = new ArrayList<clsSyncExplorerCommandNoteData>();
+		clsMyTreeviewIterator objTreeviewIterator = new clsMyTreeviewIterator(this.getRepository(), objSyncExplorerCommandNoteDatas);
+		objTreeviewIterator.Execute();
+		return objTreeviewIterator.objSyncExplorerCommandNoteDatas;
 	}
 
 	public void SaveFile() {
@@ -359,7 +396,7 @@ public class clsExplorerTreeview extends clsTreeview {
 	}
 	
 	public void RemoveTreeNode(clsTreeNode objDeletedTreeNode) {
-		// Not used by notes, notes are synced and removal needs to be delayed
+		// Not to be used immediately on notes that are synced. If synced note, removal needs to be delayed
 		// Delete children first recursively
 		while (objDeletedTreeNode.objChildren.size()!= 0) {
 			RemoveTreeNode (objDeletedTreeNode.objChildren.get(0));
@@ -367,10 +404,9 @@ public class clsExplorerTreeview extends clsTreeview {
 		
 
 		// Delete this element	
-		// --------- Delete file first, if a note
+		// --------- If a note, delete file and images first
 		if (objDeletedTreeNode.enumItemType == enumItemType.OTHER) {
-			File objFileDelete =new File(ActivityExplorerStartup.fileTreeNodesDir, objDeletedTreeNode.guidTreeNode.toString());
-			objFileDelete.delete();
+			this.DeleteNoteAndAllImages(objDeletedTreeNode.guidTreeNode.toString());
 		}
 
 		// --------- Delete node

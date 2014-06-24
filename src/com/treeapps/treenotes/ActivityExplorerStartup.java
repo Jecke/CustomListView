@@ -35,6 +35,7 @@ import com.treeapps.treenotes.ActivityExplorerStartup.clsGetNoteSharedUsersAsync
 import com.treeapps.treenotes.ActivityExplorerStartup.clsSetNoteSharedUsersAsyncTask.OnSetNoteSharedUsersResponseListener;
 import com.treeapps.treenotes.clsTreeview.clsRepository;
 import com.treeapps.treenotes.clsTreeview.clsShareUser;
+import com.treeapps.treenotes.clsTreeview.clsSyncRepository;
 import com.treeapps.treenotes.clsTreeview.clsTreeNode;
 import com.treeapps.treenotes.clsTreeview.enumCutCopyPasteState;
 import com.treeapps.treenotes.clsTreeview.enumItemType;
@@ -45,7 +46,6 @@ import com.treeapps.treenotes.export.clsExportNoteAsWebPage.OnImageUploadFinishe
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageCommand;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageResponse;
-import com.treeapps.treenotes.export.clsExportNoteAsWebPage.clsExportNoteAsWebPageAsyncTask.OnWebPagePostedListener;
 import com.treeapps.treenotes.imageannotation.ActivityEditAnnotationImage;
 import com.treeapps.treenotes.sharing.ActivityGroupMembers;
 import com.treeapps.treenotes.sharing.clsGroupMembers;
@@ -62,9 +62,14 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsSyncMembersCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncMembersResponseMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteResponseMsg;
+import com.treeapps.treenotes.sharing.clsMessaging.clsSyncRepositoryCtrlData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileResponseMsg;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCompleteListener;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
 import com.treeapps.treenotes.sharing.subscriptions.ActivityPublications;
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions;
 import com.treeapps.treenotes.sharing.subscriptions.ActivityPublications.clsPublicationsIntentData;
@@ -385,7 +390,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			builder.setCancelable(true);
 			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
-					ExecuteNotesSync();
+					ExecuteExplorerSync();
 				}
 			});
 			builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -406,45 +411,11 @@ public class ActivityExplorerStartup extends ListActivity {
 		// objMyTextView.IndicateOrientationChanged();
 	}
 
-	public void ExecuteNotesSync() {
-		if (objMessaging.IsNetworkAvailable(this) == false) {
-			Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
-			return;
-		}
-		if (objMessaging.IsServerAlive() == false) {
-			Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
-			return;
-		}
-		clsUser  objRegisteredUser = objGroupMembers.GetRegisteredUser();
-		if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
-			// Not registered, cannot sync
-			Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
-			return;
-		}
-		URL urlFeed;
-		try {
-			urlFeed = new URL(objMessaging.GetServerUrl()
-					+ getResources().getString(R.string.url_note_sync));
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		} catch (NotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		}
-		clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
-		objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
-		objSyncCommandMsg.strRegistrationId = strRegistrationId;
-		objSyncCommandMsg.boolIsMergeNeeded = true;
-		objSyncCommandMsg.boolIsAutoSyncCommand = false;
-		objSyncCommandMsg.objSyncRepositoryCtrlDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
 
-		ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(this,
-				urlFeed, objSyncCommandMsg, objMessaging, true, objGroupMembers);
-		objSyncAsyncTask.execute("");		
-	}
+	
+	
+    
+
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -491,7 +462,6 @@ public class ActivityExplorerStartup extends ListActivity {
 		MenuItem mnuactionShareSyncAll = menu.findItem(R.id.actionShareSyncAll);
 		MenuItem mnuPublications = menu.findItem(R.id.actionPublications);
 		MenuItem mnuSubscriptions = menu.findItem(R.id.actionSubscriptions);
-		MenuItem mnuShareRestoreFromServer = menu.findItem(R.id.actionShareRestoreFromServer);
 
 		if (objGroupMembers.GetRegisteredUser().strUserUuid.isEmpty()) {
 			clsUtils.SetMenuItemEnabled(mnuShareManageGroups, false);
@@ -499,14 +469,12 @@ public class ActivityExplorerStartup extends ListActivity {
 			clsUtils.SetMenuItemEnabled(mnuactionShareSyncAll, false);
 			clsUtils.SetMenuItemEnabled(mnuPublications, false);
 			clsUtils.SetMenuItemEnabled(mnuSubscriptions, false);
-			clsUtils.SetMenuItemEnabled(mnuShareRestoreFromServer, false);
 		} else {
 			clsUtils.SetMenuItemEnabled(mnuShareManageGroups, true);
 			clsUtils.SetMenuItemEnabled(mnuShareSyncSelected, true);
 			clsUtils.SetMenuItemEnabled(mnuactionShareSyncAll, true);
 			clsUtils.SetMenuItemEnabled(mnuPublications, true);
 			clsUtils.SetMenuItemEnabled(mnuSubscriptions, true);
-			clsUtils.SetMenuItemEnabled(mnuShareRestoreFromServer, true);
 		}
 
 		// Set Webserver selection
@@ -999,7 +967,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			objGetNoteSharedUsersAsyncTask.execute(null, null, null);
 			return true;
 		case R.id.actionShareSyncAll:
-			ExecuteNotesSync();
+			ExecuteExplorerSync();
 			return true;
 		case R.id.actionPublications:
 			if (objMessaging.IsNetworkAvailable(this) == false) {
@@ -1043,69 +1011,7 @@ public class ActivityExplorerStartup extends ListActivity {
 					clsUtils.SerializeToString(objSubscriptionsIntentData));
 			startActivityForResult(intentSubscriptions, SHARE_SUBSCRIPTIONS);
 			return true;
-		case R.id.actionShareRestoreFromServer:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
-				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			if (objMessaging.IsServerAlive() == false) {
-				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			objRegisteredUser = objGroupMembers.GetRegisteredUser();
-			if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
-				// Not registered, cannot sync
-				Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			builder = new AlertDialog.Builder(this);
-			builder.setMessage("Are you sure you want to restore all from the server? All local content will be overwritten");
-			builder.setCancelable(true);
-			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int id) {
-					URL urlFeed;
-					try {
-						urlFeed = new URL(objMessaging.GetServerUrl()
-								+ getResources().getString(R.string.url_note_sync));
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						return;
-					} catch (NotFoundException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						return;
-					}
-					clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg(); // Empty
-																										// to
-																										// indicate
-																										// a
-																										// restore
-																										// all
-					objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository
-							.getStrRegisteredUserUuid();
-					objSyncCommandMsg.strRegistrationId = strRegistrationId;
-					objSyncCommandMsg.boolIsMergeNeeded = false;
-					objSyncCommandMsg.boolIsAutoSyncCommand = false;
-
-					// Clear local repository
-					objExplorerTreeview.ClearAll();
-
-					// Execute restore
-					ActivityExplorerStartupSyncAsyncTask objSyncAsyncTask = new ActivityExplorerStartupSyncAsyncTask(
-							objContext, urlFeed, objSyncCommandMsg, objMessaging, true, objGroupMembers);
-					objSyncAsyncTask.execute("");
-					return;
-				}
-			});
-			builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int id) {
-					return;
-				}
-			});
-			dialog = builder.create();
-			dialog.show();
-			return true;
+		
 		case R.id.actionSettings:
 
 			// Set initial values
@@ -1863,212 +1769,184 @@ public class ActivityExplorerStartup extends ListActivity {
 	}
 
 	// ------------------- Communications ------------------------------
-	public static class ActivityExplorerStartupSyncAsyncTask extends NoteSyncAsyncTask {
-
-		static boolean boolDisplayResults;
-		static clsGroupMembers objGroupMembers;
-		static clsMessaging objMessaging;
-		String strMessage = "";
-
-		public ActivityExplorerStartupSyncAsyncTask(Activity objActivity, URL urlFeed,
-				clsSyncNoteCommandMsg objSyncCommandMsg, clsMessaging objMessaging, boolean boolDisplayToasts,
-				clsGroupMembers objGroupMembers) {
-			super(objActivity, urlFeed, objSyncCommandMsg, objMessaging, boolDisplayToasts, true );
-			// TODO Auto-generated constructor stub
-			ActivityExplorerStartupSyncAsyncTask.boolDisplayResults = boolDisplayToasts;
-			ActivityExplorerStartupSyncAsyncTask.objGroupMembers = objGroupMembers;
-			ActivityExplorerStartupSyncAsyncTask.objMessaging = objMessaging;
-			((ActivityExplorerStartup) objContext).objExplorerTreeview.getRepository().objImageLoadDatas.clear();
-		}
-
-		@Override
-		protected void onPostExecute(clsSyncResult objResult) {
-			super.onPostExecute(objResult);
-			// Do what needs to be done with the result
-			if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
-   	        	clsNoteTreeview objNoteTreeview;
-   	        	clsRepository objRepositoryForImagesUpDownloadPurposes = null;
-   	        	boolean boolIsNeedToUpDownloadImages = false;
-   	        	objLocalImageLoadDatas = new ArrayList<clsImageLoadData>(); // Clear list
-				for (int i = 0; i < objResult.intServerInstructions.size(); i++) {
-					objNoteTreeview = null; // Will be an object if a local change took place
-					// Depending on server instructions
-					switch (objResult.intServerInstructions.get(i)) {
-					case clsMessaging.SERVER_INSTRUCT_KEEP_ORIGINAL:
-						clsTreeview.clsSyncRepository objSyncRepository = objResult.objSyncRepositories.get(i);
-						if (boolDisplayResults) {	
-							strMessage += "New note '" + objSyncRepository.strRepositoryName
-									+ "' has been created on server.\n";
-						}
-						// Setup for images updownload, needs to create a objRepository to pass on later
-						boolIsNeedToUpDownloadImages = true;
-						File fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
-						File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
-								objSyncRepository.strRepositoryUuid);
-						objRepositoryForImagesUpDownloadPurposes = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
-						break;
-					case clsMessaging.SERVER_INSTRUCTION_REMOVE:
-						String strToDeleteRepositoryUuid = objResult.objSyncRepositories.get(i).strRepositoryUuid;
-						clsTreeNode objDeleteTreeNode = ((ActivityExplorerStartup) objContext).objExplorerTreeview
-								.getTreeNodeFromUuid(UUID.fromString(strToDeleteRepositoryUuid));
-						((ActivityExplorerStartup) objContext).objExplorerTreeview.RemoveTreeNode(objDeleteTreeNode,
-								true);
-						if (boolDisplayResults) {
-							objSyncRepository = objResult.objSyncRepositories.get(i);
-							strMessage += "New note '" + objSyncRepository.strRepositoryName + "' has been deleted.\n";
-						}
-						boolIsNeedToUpDownloadImages = false;
-						break;
-					case clsMessaging.SERVER_INSTRUCT_REPLACE_ORIGINAL:
-						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
-						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
-						fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
-						objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
-								objNoteTreeview.getRepository().uuidRepository.toString());
-						objNoteTreeview.getRepository().SerializeToFile(objNoteFile);
-						if (boolDisplayResults) {
-							strMessage += "Note '" + objNoteTreeview.getRepository().getName()
-									+ "' has been replaced with an updated version.\n";
-						}
-						boolIsNeedToUpDownloadImages = true;
-						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
-						break;
-					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
-						clsExplorerTreeview objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
-						clsTreeNode objSharingFolderTreeNode = objExplorerTreeview.GetSharingFolder();
-						String strOwnerUserUuid = ((ActivityExplorerStartup) objContext).objGroupMembers
-								.GetRegisteredUser().strUserUuid;
-						if (objSharingFolderTreeNode == null) {
-							// Create a sharing folder as it does not exist yet
-							objSharingFolderTreeNode = objExplorerTreeview.new clsTreeNode("Shared notes",
-									enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.SHARED_FOLDER_RESOURCE, "",
-									strOwnerUserUuid, strOwnerUserUuid);
-							objExplorerTreeview.getRepository().objRootNodes.add(objSharingFolderTreeNode);
-						}
-						clsTreeNode objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Shared note",
-								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid,
-								strOwnerUserUuid);
-						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
-						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
-						objExplorerNoteTreeNode.setName(objNoteTreeview.getRepository().getName());
-						objExplorerNoteTreeNode.guidTreeNode = objNoteTreeview.getRepository().uuidRepository;
-						objSharingFolderTreeNode.objChildren.add(objExplorerNoteTreeNode);
-						fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
-						objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
-								objNoteTreeview.getRepository().uuidRepository.toString());
-						objNoteTreeview.getRepository().SerializeToFile(objNoteFile);
-						if (boolDisplayResults) {
-							strMessage += "New shared note '" + objNoteTreeview.getRepository().getName()
-									+ "' has been created locally.\n";
-						}
-						boolIsNeedToUpDownloadImages = true;
-						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
-						break;
-					case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
-						objExplorerTreeview = ((ActivityExplorerStartup) objContext).objExplorerTreeview;
-						clsTreeNode objPublishingFolderTreeNode = objExplorerTreeview.GetPublishingFolder();
-						strOwnerUserUuid = ((ActivityExplorerStartup) objContext).objGroupMembers.GetRegisteredUser().strUserUuid;
-						if (objPublishingFolderTreeNode == null) {
-							// Create a sharing folder as it does not exist yet
-							objPublishingFolderTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed notes",
-									enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.PUBLISHED_FOLDER_RESOURCE, "",
-									strOwnerUserUuid, strOwnerUserUuid);
-							objExplorerTreeview.getRepository().objRootNodes.add(objPublishingFolderTreeNode);
-						}
-						objExplorerNoteTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed note",
-								enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", strOwnerUserUuid,
-								strOwnerUserUuid);
-						objNoteTreeview = new clsNoteTreeview(objContext, objGroupMembers);
-						objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
-						objExplorerNoteTreeNode.setName(objNoteTreeview.getRepository().getName());
-						objExplorerNoteTreeNode.guidTreeNode = objNoteTreeview.getRepository().uuidRepository;
-						objPublishingFolderTreeNode.objChildren.add(objExplorerNoteTreeNode);
-						fileTreeNodesDir = new File(clsUtils.GetTreeNotesDirectoryName(objContext));
-						objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
-								objNoteTreeview.getRepository().uuidRepository.toString());
-						objNoteTreeview.getRepository().SerializeToFile(objNoteFile);
-						if (boolDisplayResults) {
-							strMessage += "New subscribed note '" + objNoteTreeview.getRepository().getName()
-									+ "' has been created locally.\n";
-						}
-						boolIsNeedToUpDownloadImages = true;
-						objRepositoryForImagesUpDownloadPurposes = objNoteTreeview.getRepository();
-						break;
-					case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
-						if (boolDisplayResults) {
-							strMessage += "Sync completed.\n";
-						}
-						boolIsNeedToUpDownloadImages = false;
-						break;
-					case clsMessaging.SERVER_INSTRUCT_PROBLEM:
-						if (boolDisplayResults) {
-							objSyncRepository = objResult.objSyncRepositories.get(i);
-							strMessage += "Note '" + objSyncRepository.strRepositoryName + "' had a sync problem. "
-									+ objResult.strServerMessages.get(i) + ".\n";
-						}
-						boolIsNeedToUpDownloadImages = false;
-						break;
-					}
-					
-					// Build list of images that needs upload and download
-	   	        	if (boolIsNeedToUpDownloadImages) {
-						clsUtils.UpdateImageLoadDatasForDownloads(((ActivityExplorerStartup) objContext).objMessaging,
-								((ActivityExplorerStartup) objContext).objGroupMembers, objRepositoryForImagesUpDownloadPurposes,
-								ActivityExplorerStartup.fileTreeNodesDir, objResult.objImageLoadDatas,
-								objLocalImageLoadDatas);
-						clsUtils.UpdateImageLoadDatasForUploads(((ActivityExplorerStartup) objContext).objMessaging,
-								objResult.objImageLoadDatas, objLocalImageLoadDatas);
-					}
-					
-				}
-			} else {
-				if (boolDisplayResults) {
-					strMessage += objResult.strErrorMessage + ".\n";
-				}
-				return;
-			}
-			
-//			if (objMessaging.IsImageLoadDatasEmpty(objLocalImageLoadDatas)) {
-//				// No images need to be synced, all is done
-//				clsUtils.MessageBox(objContext, strMessage, true);
-//				return;
-//			}
-			
-			// Start background image syncing
-			objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((ActivityExplorerStartup) objContext, ((ActivityExplorerStartup) objContext).objMessaging, 
-					true, objLocalImageLoadDatas, new OnImageUploadFinishedListener() {
-						
-						@Override
-						public void imageUploadFinished(boolean success, String errorMessage) {
-							
-							clsUtils.IndicateToServiceIntentSyncIsCompleted(objContext);
-															
-							if (!success) {
-								clsUtils.MessageBox(objContext, errorMessage, false);
-								return;
-							} else {
-								// Once successfully downloaded, update the ResourceUrl in the relevant treenode
-								for (clsImageLoadData clsLocalImageLoadData: objLocalImageLoadDatas ) {
-									String strNoteUuid = clsLocalImageLoadData.strNoteUuid;
-									File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, strNoteUuid);
-									clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
-									clsUtils.UpdateTreeviewResourcePaths((Activity) objContext, objNoteRepository, clsLocalImageLoadData);
-									objNoteRepository.SerializeToFile(objNoteFile);
-								}
-
-								clsUtils.MessageBox(objContext, strMessage, true);
-								((ActivityExplorerStartup) objContext).RefreshListView();
-							}
 	
-							
-							
-						}
-					}, null, false);
-			objImageUpDownloadAsyncTask.execute();
-			
+	// Define data structures for use by ExecuteExplorerSync
+    public static class clsSyncExplorerCommandNoteData {
+    	public String strNoteUuid;
+    	public boolean boolIsDeleted = false;
+    }
+    
+    public static class clsSyncExplorerResponseNoteData {
+    	public String strNoteUuid;
+    	public String strName;
+    	public String strOwnerUserUuid;
+    	public int intServerInstruction;
+    	public String strServerMessage;
+    }
+    public static class clsSyncExplorerCommandMsg extends clsWebServiceCommand {
+        public String strClientUserUuid = "";
+        public String strRegistrationId = "";
+		public ArrayList<clsSyncExplorerCommandNoteData> objSyncExplorerCommandNoteDatas = new ArrayList<clsSyncExplorerCommandNoteData>();
+    }
 
+    public static class clsSyncExplorerResponseMsg extends clsWebServiceResponse {
+    	public ArrayList<clsSyncExplorerResponseNoteData> objSyncExplorerResponseNoteDatas = new ArrayList<clsSyncExplorerResponseNoteData>();
+    }
+	
+	public void ExecuteExplorerSync() {
+
+	    
+		if (objMessaging.IsNetworkAvailable(this) == false) {
+			Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
+			return;
 		}
+		if (objMessaging.IsServerAlive() == false) {
+			Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		clsUser  objRegisteredUser = objGroupMembers.GetRegisteredUser();
+		if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
+			// Not registered, cannot sync
+			Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		URL urlFeed;
+		try {
+			urlFeed = new URL(objMessaging.GetServerUrl()
+					+ getResources().getString(R.string.url_explorer_sync));
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (NotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		
+		
+		
+		clsSyncExplorerCommandMsg objCommandMsg = new clsSyncExplorerCommandMsg();
+		objCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
+		objCommandMsg.strRegistrationId = strRegistrationId;
+		objCommandMsg.objSyncExplorerCommandNoteDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
+		
+		
+				
+		clsWebServiceCommsAsyncTask objAsyncTask = new clsWebServiceCommsAsyncTask(this, urlFeed, objCommandMsg);
+		objAsyncTask.SetOnCompleteListener(new OnCompleteListener() {
+			
+			@Override
+			public void onComplete(JSONObject objJsonResponse) {
+				clsSyncExplorerResponseMsg objResult = clsUtils.DeSerializeFromString(objJsonResponse.toString(), clsSyncExplorerResponseMsg.class);
+				String strMessage = "";
+				boolean boolDisplayResult = true;
+				// Do what needs to be done with the result
+				if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
+					for (clsSyncExplorerResponseNoteData objNoteData: objResult.objSyncExplorerResponseNoteDatas) {
+						// Depending on server instructions
+						switch (objNoteData.intServerInstruction) {
+						case clsMessaging.SERVER_INSTRUCT_KEEP_ORIGINAL:
+							// Do nothing
+							break;
+						case clsMessaging.SERVER_INSTRUCTION_REMOVE:
+							clsTreeNode objDeletedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(UUID.fromString(objNoteData.strNoteUuid));
+							if (boolDisplayResult) {
+								strMessage += "Note '" + objDeletedTreeNode.getName()
+										+ "' has been removed.\n";
+							}
+							if (objDeletedTreeNode != null) {
+								objExplorerTreeview.DeleteNoteAndAllImages(objNoteData.strNoteUuid);
+								objExplorerTreeview.RemoveTreeNode(objDeletedTreeNode);
+							}							
+							break;
+						case clsMessaging.SERVER_INSTRUCT_REPLACE_ORIGINAL:
+							// Do nothing
+							break;
+						case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:							
+							clsTreeNode objSharingFolderTreeNode = objExplorerTreeview.GetSharingFolder();
+							String strOwnerUserUuid = objGroupMembers.GetRegisteredUser().strUserUuid;
+							if (objSharingFolderTreeNode == null) {
+								// Create a sharing folder as it does not exist yet
+								objSharingFolderTreeNode = objExplorerTreeview.new clsTreeNode("Shared notes",
+										enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.SHARED_FOLDER_RESOURCE, "",
+										strOwnerUserUuid, strOwnerUserUuid);
+								objExplorerTreeview.getRepository().objRootNodes.add(objSharingFolderTreeNode);
+							}
+							clsTreeNode objNewNoteTreeNode = objExplorerTreeview.new clsTreeNode(objNoteData.strName,
+									enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", objNoteData.strOwnerUserUuid,
+									"");
+							objNewNoteTreeNode.guidTreeNode = UUID.fromString(objNoteData.strNoteUuid);
+							objNewNoteTreeNode.boolIsNew = true;
+							objSharingFolderTreeNode.objChildren.add(objNewNoteTreeNode);
+							if (boolDisplayResult) {
+								strMessage += "Shared note '" + objNewNoteTreeNode.getName()
+										+ "' has been added.\n";
+							}
+							break;
+						case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_PUBLISHED:
+							clsTreeNode objPublishingFolderTreeNode = objExplorerTreeview.GetPublishingFolder();
+							strOwnerUserUuid = ((ActivityExplorerStartup) objContext).objGroupMembers.GetRegisteredUser().strUserUuid;
+							if (objPublishingFolderTreeNode == null) {
+								// Create a subscription folder as it does not exist yet
+								objPublishingFolderTreeNode = objExplorerTreeview.new clsTreeNode("Subscribed notes",
+										enumItemType.FOLDER_EXPANDED, false, "", clsTreeview.PUBLISHED_FOLDER_RESOURCE, "",
+										strOwnerUserUuid, strOwnerUserUuid);
+								objExplorerTreeview.getRepository().objRootNodes.add(objPublishingFolderTreeNode);
+							}
+							objNewNoteTreeNode = objExplorerTreeview.new clsTreeNode(objNoteData.strName,
+									enumItemType.OTHER, false, "", clsTreeview.TEXT_RESOURCE, "", objNoteData.strOwnerUserUuid,
+									"");
+							objNewNoteTreeNode.guidTreeNode = UUID.fromString(objNoteData.strNoteUuid);
+							objNewNoteTreeNode.boolIsNew = true;
+							objPublishingFolderTreeNode.objChildren.add(objNewNoteTreeNode);
+							if (boolDisplayResult) {
+								strMessage += "Subscribed note '" + objNewNoteTreeNode.getName()
+										+ "' has been added.\n";
+							}
+							break;
+						case clsMessaging.SERVER_INSTRUCT_PROBLEM:
+							if (boolDisplayResult) {
+								strMessage += "Note '" + objNoteData.strName + "' had a sync problem. "
+										+ objNoteData.strServerMessage + ".\n";
+							}
+							break;
+						case clsMessaging.SERVER_INSTRUCTION_SERVER_ITEM_REMOVED:
+							objDeletedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(UUID.fromString(objNoteData.strNoteUuid));
+							if (boolDisplayResult) {
+								strMessage += "Note '" + objDeletedTreeNode.getName()
+										+ "' has been removed.\n";
+							}
+							if (objDeletedTreeNode != null) {
+								objExplorerTreeview.DeleteNoteAndAllImages(objNoteData.strNoteUuid);
+								objExplorerTreeview.RemoveTreeNode(objDeletedTreeNode);
+							}		
+							break;
+						case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
+							if (boolDisplayResult) {
+								strMessage += "Sync completed.\n";
+							}
+							break;
+						}												
+					}
+				} else {
+					if (boolDisplayResult) {
+						strMessage += objResult.strErrorMessage + ".\n";
+					}
+				}
+				// Display results
+				if (boolDisplayResult) {
+					clsUtils.MessageBox(objContext, strMessage, false);
+				}
+				// Refresh UI
+				((ActivityExplorerStartup)objContext).RefreshListView();
+			}
+		});
+
+		objAsyncTask.execute(null, null, null);		
 	}
+	
+	
 
 	public static class ActivityExplorerSyncMembersAsyncTask extends AsyncTask<String, Void, clsSyncMembersResponseMsg> {
 
@@ -2194,7 +2072,7 @@ public class ActivityExplorerStartup extends ListActivity {
 	}
 
 	// ------------------------------ In App Billing
-	// ------------------------------
+
 	public void SetupInAppBilling() {
 
 		/*

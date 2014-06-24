@@ -77,7 +77,7 @@ import android.widget.Toast;
 
 public class clsMessaging {
 	
-	private static final int NET_CONNECT_TIMEOUT_MILLIS = 15000;  // 15 seconds
+	private static final int NET_CONNECT_TIMEOUT_MILLIS = 10000;  // 10000 10 seconds
     private static final int NET_READ_TIMEOUT_MILLIS = 15000;  // 15 seconds
     
     public static String SERVER_URL_AZURE = "http://treenotes.azurewebsites.net";
@@ -92,6 +92,7 @@ public class clsMessaging {
     public static final int SERVER_INSTRUCT_NO_PROBLEM = 5;
     public static final int SERVER_INSTRUCTION_REMOVE = 6;
     public static final int SERVER_INSTRUCT_CREATE_NEW_PUBLISHED = 7;
+    public static final int SERVER_INSTRUCTION_SERVER_ITEM_REMOVED = 8;
 	
 
     //Client instructions
@@ -679,8 +680,8 @@ public class clsMessaging {
 						callbackProgress.imageUploadProgress(++countUploads, objImageLoadData.objImageToBeUploadedDatas.size());
 					}
 					
-					publishProgress("Uploading (" + 
-							objImageLoadData.objImageToBeUploadedDatas.indexOf(objImageToBeUploadedData) +
+					publishProgress("Uploading image (" + 
+							(objImageLoadData.objImageToBeUploadedDatas.indexOf(objImageToBeUploadedData) + 1) +
 							" of " + objImageLoadData.objImageToBeUploadedDatas.size() + ")");
 
 					
@@ -727,8 +728,8 @@ public class clsMessaging {
 				File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir, objImageLoadData.strNoteUuid);
 				clsExplorerTreeview.clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
 				for(clsImageToBeDownLoadedData objImageToBeDownLoadedData: objImageLoadData.objImageToBeDownLoadedDatas) {
-					publishProgress("Downloading (" + 
-							objImageLoadData.objImageToBeDownLoadedDatas.indexOf(objImageToBeDownLoadedData) +
+					publishProgress("Downloading image (" + 
+							(objImageLoadData.objImageToBeDownLoadedDatas.indexOf(objImageToBeDownLoadedData) + 1) +
 							" of " + objImageLoadData.objImageToBeDownLoadedDatas.size() + ")");
 
 					// Thumbnail image
@@ -926,8 +927,6 @@ public class clsMessaging {
     	public ArrayList<Integer> intServerInstructions = new ArrayList<Integer>();
     	public ArrayList<String> strServerMessages = new ArrayList<String>();
     	public ArrayList<clsImageLoadData> objImageLoadDatas = new ArrayList<clsImageLoadData>();
-    	
-
     }
     
     
