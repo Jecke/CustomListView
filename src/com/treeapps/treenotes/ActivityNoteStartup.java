@@ -47,6 +47,8 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncRepositoryCtrlData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCompleteListener;
+import com.treeapps.treenotes.sharing.clsWorkerIfServerAlive;
+import com.treeapps.treenotes.sharing.clsWorkerIfServerAlive.OnAliveCheckIncompleteListener;
 
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -220,9 +222,24 @@ public class ActivityNoteStartup extends ListActivity {
 	        if (savedInstanceState == null) {
 	        	SaveTemp();
 	        	// Sync immediately if conditions satisfied
-		        if (IsPossibleToSync()) {
-		        	ExecuteNoteSync(true, true, null);	// AutoSync setting because no need to notify sharers
-		        }
+	        	clsWorkerIfServerAlive objWorkerIfServerAlive = new clsWorkerIfServerAlive(this, objMessaging, objGroupMembers,	"Syncing... please wait");
+				objWorkerIfServerAlive.SetOnAliveCheckIncompleteListener(new OnAliveCheckIncompleteListener() {
+	
+					@Override
+					public void onAliveCheckIncomplete(int intReason, String strMessage) {
+						clsMessaging.ToastSyncingIsUnavailable(objActivity, strMessage);
+					}
+				});
+				objWorkerIfServerAlive.SetOnAliveCheckCompleteListener(new clsWorkerIfServerAlive.OnAliveCheckCompleteListener() {
+	
+					@Override
+					public void onAliveCheckComplete(JSONObject objJsonResponse) {
+						// Do work here, the actual syncing
+						ExecuteNoteSync(true, true, null);	// AutoSync setting because no need to notify sharers										
+					}
+				});
+				objWorkerIfServerAlive.Execute();
+
 	        } else {
 	        	LoadTemp();
 	        }
@@ -231,17 +248,7 @@ public class ActivityNoteStartup extends ListActivity {
          
 	    }
 	    
-	    private boolean IsPossibleToSync() {
-	    	if (objMessaging.IsNetworkAvailable(this)) {
-	        	if (objMessaging.IsServerAlive()) {
-	        		clsUser objRegisteredUser = objGroupMembers.GetRegisteredUser();
-	    			if (!objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
-	    				return true;
-	    			}
-				}
-			}
-	    	return false;
-	    }
+	    
 
 
 	    // Broadcast receiver for receiving status updates from the IntentService
@@ -940,8 +947,6 @@ public class ActivityNoteStartup extends ListActivity {
         	 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
         	 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
         	 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy(this);
-        	 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
-        	 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
         	 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
         	 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
         	 objSyncCommandMsg.strRegistrationId = strRegistrationId;
@@ -1025,8 +1030,6 @@ public class ActivityNoteStartup extends ListActivity {
 		 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
 		 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
 		 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy(this);
-		 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
-		 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
 		 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
 		 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
 		 objSyncCommandMsg.strRegistrationId = strRegistrationId;
@@ -1478,44 +1481,30 @@ public class ActivityNoteStartup extends ListActivity {
 				// Save data first
 				SaveFile();
 				// Return to caller
-				if (IsPossibleToSync()) {
-		        	ExecuteNoteSync(false, true,
-		        			new ActivityNoteStartup.ActivityNoteStartupSyncAsyncTask.OnCompleteListener() {
-
-								@Override
-								public void onComplete() {
-									Intent objIntent = getIntent();
-									String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
-									objIntent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS, strImageLoadDatas);
-									if (boolIsShortcut) {
-										objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, true);
-									} else {
-										objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, false);
-									}
-									setResult(RESULT_OK, objIntent);    	
-							    	ActivityNoteStartup.this.finish();
-							    	ActivityNoteStartup.super.onBackPressed();							
-								}
-		        		
-		        	});
-		        } else {
-		        	Intent objIntent = getIntent();
-					String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
-					objIntent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS, strImageLoadDatas);
-					if (boolIsShortcut) {
-						objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, true);
-					} else {
-						objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, false);
+				clsWorkerIfServerAlive objWorkerIfServerAlive = new clsWorkerIfServerAlive(objActivity, objMessaging, objGroupMembers,	"Syncing... please wait");
+				objWorkerIfServerAlive.SetOnAliveCheckIncompleteListener(new OnAliveCheckIncompleteListener() {
+					// Server not alive, get out without syncing
+					@Override
+					public void onAliveCheckIncomplete(int intReason, String strMessage) {
+						FireIntentToReturnToExplorer();
 					}
-		        	setResult(RESULT_OK, objIntent);    	
-			    	ActivityNoteStartup.this.finish();
-			    	ActivityNoteStartup.super.onBackPressed();
-		        }
-				
-				
-				
-				
-				
+				});
+				objWorkerIfServerAlive.SetOnAliveCheckCompleteListener(new clsWorkerIfServerAlive.OnAliveCheckCompleteListener() {
+					// Server alive, sync first
+					@Override
+					public void onAliveCheckComplete(JSONObject objJsonResponse) {
+						ExecuteNoteSync(false, true, new ActivityNoteStartup.ActivityNoteStartupSyncAsyncTask.OnCompleteListener() {
+
+							@Override
+							public void onComplete() {
+								FireIntentToReturnToExplorer();							
+							}
+			        		
+			        	});
+						 				
+					}
+				});
+				objWorkerIfServerAlive.Execute();	
 			}
 		});
     	builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -1532,6 +1521,20 @@ public class ActivityNoteStartup extends ListActivity {
 		});
     	builder.show();
 		
+	}
+	
+	private void FireIntentToReturnToExplorer() {
+		Intent objIntent = getIntent();
+		String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
+		objIntent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS, strImageLoadDatas);
+		if (boolIsShortcut) {
+			objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, true);
+		} else {
+			objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, false);
+		}
+    	setResult(RESULT_OK, objIntent);    	
+    	ActivityNoteStartup.this.finish();
+    	ActivityNoteStartup.super.onBackPressed();
 	}
 	
 	// -------------------------- Communications ----------------------------------

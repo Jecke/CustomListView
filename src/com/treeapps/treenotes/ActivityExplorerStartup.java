@@ -66,10 +66,14 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsSyncRepositoryCtrlData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsUploadImageFileResponseMsg;
+import com.treeapps.treenotes.sharing.clsWebServiceComms;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCancelListener;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCompleteListener;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
+import com.treeapps.treenotes.sharing.clsWorkerIfServerAlive;
+import com.treeapps.treenotes.sharing.clsWorkerIfServerAlive.OnAliveCheckIncompleteListener;
 import com.treeapps.treenotes.sharing.subscriptions.ActivityPublications;
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions;
 import com.treeapps.treenotes.sharing.subscriptions.ActivityPublications.clsPublicationsIntentData;
@@ -245,7 +249,6 @@ public class ActivityExplorerStartup extends ListActivity {
 
 		// Messaging
 		objMessaging.LoadFile(this);
-		objMessaging.UpdateIsServerAlive(this);
 
 		// Get Treeview listItems
 		objExplorerTreeview = new clsExplorerTreeview(this, objGroupMembers);
@@ -372,6 +375,41 @@ public class ActivityExplorerStartup extends ListActivity {
 		clsUtils.CustomLog("ActivityExplorerStartup onCreate");
 		if (savedInstanceState == null) {
 			SaveFile();
+
+			// Sync immediately if conditions satisfied
+			clsWorkerIfServerAlive objWorkerIfServerAlive = new clsWorkerIfServerAlive(this, objMessaging, objGroupMembers,	"Syncing... please wait");
+			objWorkerIfServerAlive.SetOnAliveCheckIncompleteListener(new OnAliveCheckIncompleteListener() {
+
+				@Override
+				public void onAliveCheckIncomplete(int intReason, String strMessage) {
+					clsMessaging.ToastSyncingIsUnavailable(objContext, strMessage);
+				}
+			});
+			objWorkerIfServerAlive.SetOnAliveCheckCompleteListener(new clsWorkerIfServerAlive.OnAliveCheckCompleteListener() {
+
+				@Override
+				public void onAliveCheckComplete(JSONObject objJsonResponse) {
+					// Do work here, the actual syncing
+					ExecuteExplorerSync(true, new clsWorkerIfServerAlive.OnAliveCheckFinishedListener() {
+						
+						@Override
+						public void onAliveCheckFinished(boolean success, String strMessage) {
+							if (success) {
+								if (strMessage.isEmpty()) {
+									clsMessaging.ToastSyncingIsAvailable(objContext);
+								} else {
+									clsUtils.MessageBox(objContext, strMessage, false);
+								}
+								
+							} else {
+								clsUtils.MessageBox(objContext, strMessage, false);
+							}							
+						}
+					}); // AutoSync setting because no need to notify sharers					
+				}
+			});
+			objWorkerIfServerAlive.Execute();
+
 		} else {
 			LoadFile();
 		}
@@ -390,7 +428,7 @@ public class ActivityExplorerStartup extends ListActivity {
 			builder.setCancelable(true);
 			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
-					ExecuteExplorerSync();
+					ExecuteExplorerSync(true, null);
 				}
 			});
 			builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -838,42 +876,58 @@ public class ActivityExplorerStartup extends ListActivity {
 
 			EditNoteHeading(objSelectedTreeNodes.get(0).getName(), guidSelectedTreeNode);
 			return true;
-		case R.id.actionShareRegister:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
-				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			if (objMessaging.IsServerAlive() == false) {
-				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			Intent intentRegister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
-			intentRegister.putExtra(ActivityRegister.USERNAME,
-					objGroupMembers.objMembersRepository.getStrRegisteredUserName());
-			intentRegister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
-			startActivityForResult(intentRegister, SHARE_REGISTER);
+		case R.id.actionShareRegister:		
+			clsWorkerIfServerAlive objWorkerIfServerAlive = new clsWorkerIfServerAlive(this, objMessaging, objGroupMembers,	"Registering... please wait");
+			objWorkerIfServerAlive.SetOnAliveCheckIncompleteListener(new OnAliveCheckIncompleteListener() {
+
+				@Override
+				public void onAliveCheckIncomplete(int intReason, String strMessage) {
+					clsUtils.MessageBox(objContext, strMessage, false);
+				}
+			});
+			objWorkerIfServerAlive.SetOnAliveCheckCompleteListener(new clsWorkerIfServerAlive.OnAliveCheckCompleteListener() {
+
+				@Override
+				public void onAliveCheckComplete(JSONObject objJsonResponse) {
+					// Do work here
+					Intent intentRegister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
+					intentRegister.putExtra(ActivityRegister.USERNAME,
+							objGroupMembers.objMembersRepository.getStrRegisteredUserName());
+					intentRegister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
+					startActivityForResult(intentRegister, SHARE_REGISTER);					 				
+				}
+			});
+			objWorkerIfServerAlive.Execute();			
 			return true;
 		case R.id.actionShareReregister:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
-				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			if (objMessaging.IsServerAlive() == false) {
-				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
-				return true;
-			}
-			Intent intentReregister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
-			intentReregister.putExtra(ActivityRegister.USERNAME,
-					objGroupMembers.objMembersRepository.getStrRegisteredUserName());
-			intentReregister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
-			startActivityForResult(intentReregister, SHARE_REGISTER);
+			objWorkerIfServerAlive = new clsWorkerIfServerAlive(objContext, objMessaging, objGroupMembers,	"Reregistering... please wait");
+			objWorkerIfServerAlive.SetOnAliveCheckIncompleteListener(new OnAliveCheckIncompleteListener() {
+
+				@Override
+				public void onAliveCheckIncomplete(int intReason, String strMessage) {
+					clsUtils.MessageBox(objContext, strMessage, false);
+				}
+			});
+			objWorkerIfServerAlive.SetOnAliveCheckCompleteListener(new clsWorkerIfServerAlive.OnAliveCheckCompleteListener() {
+
+				@Override
+				public void onAliveCheckComplete(JSONObject objJsonResponse) {
+					// Do work here
+					Intent intentReregister = new Intent(ActivityExplorerStartup.this, ActivityRegister.class);
+					intentReregister.putExtra(ActivityRegister.USERNAME,
+							objGroupMembers.objMembersRepository.getStrRegisteredUserName());
+					intentReregister.putExtra(ActivityRegister.WEBSERVER_URL, objMessaging.GetServerUrl());
+					startActivityForResult(intentReregister, SHARE_REGISTER);					 				
+				}
+			});
+			objWorkerIfServerAlive.Execute();
 			return true;
 		case R.id.actionShareManageGroups:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
+			if (clsMessaging.IsNetworkAvailable(this) == false) {
 				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
 				return true;
 			}
-			if (objMessaging.IsServerAlive() == false) {
+			if (clsMessaging.IsServerAlive(this) == false) {
 				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
 				return true;
 			}
@@ -967,14 +1021,14 @@ public class ActivityExplorerStartup extends ListActivity {
 			objGetNoteSharedUsersAsyncTask.execute(null, null, null);
 			return true;
 		case R.id.actionShareSyncAll:
-			ExecuteExplorerSync();
+			ExecuteExplorerSync(false, null);
 			return true;
 		case R.id.actionPublications:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
+			if (clsMessaging.IsNetworkAvailable(this) == false) {
 				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
 				return true;
 			}
-			if (objMessaging.IsServerAlive() == false) {
+			if (clsMessaging.IsServerAlive(this) == false) {
 				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
 				return true;
 			}
@@ -995,11 +1049,11 @@ public class ActivityExplorerStartup extends ListActivity {
 			startActivityForResult(intentPublications, SHARE_SUBSCRIPTIONS);
 			return true;
 		case R.id.actionSubscriptions:
-			if (objMessaging.IsNetworkAvailable(this) == false) {
+			if (clsMessaging.IsNetworkAvailable(this) == false) {
 				Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
 				return true;
 			}
-			if (objMessaging.IsServerAlive() == false) {
+			if (clsMessaging.IsServerAlive(this) == false) {
 				Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
 				return true;
 			}
@@ -1654,7 +1708,7 @@ public class ActivityExplorerStartup extends ListActivity {
 					File objNoteFile = clsUtils.BuildNoteFilename(fileTreeNodesDir,
 							objEditedTreeNode.guidTreeNode.toString());
 					if (objNoteFile.exists()) {
-						clsRepository objNoteRepository = objExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
+						clsRepository objNoteRepository = clsExplorerTreeview.DeserializeNoteFromFile(objNoteFile);
 						if (objNoteRepository != null) {
 							objNoteRepository.setName(strEditMessagebox);
 							objExplorerTreeview.SerializeNoteToFile(objNoteRepository, objNoteFile);
@@ -1787,60 +1841,42 @@ public class ActivityExplorerStartup extends ListActivity {
         public String strClientUserUuid = "";
         public String strRegistrationId = "";
 		public ArrayList<clsSyncExplorerCommandNoteData> objSyncExplorerCommandNoteDatas = new ArrayList<clsSyncExplorerCommandNoteData>();
+		public boolean boolIsAutoSyncCommand;
     }
 
     public static class clsSyncExplorerResponseMsg extends clsWebServiceResponse {
     	public ArrayList<clsSyncExplorerResponseNoteData> objSyncExplorerResponseNoteDatas = new ArrayList<clsSyncExplorerResponseNoteData>();
     }
-	
-	public void ExecuteExplorerSync() {
 
-	    
-		if (objMessaging.IsNetworkAvailable(this) == false) {
-			Toast.makeText(this, "Network is unavailable", Toast.LENGTH_SHORT).show();
-			return;
-		}
-		if (objMessaging.IsServerAlive() == false) {
-			Toast.makeText(this, "WebService is unavailable", Toast.LENGTH_SHORT).show();
-			return;
-		}
+	public void ExecuteExplorerSync(boolean boolIsAutoSyncCommand, clsWorkerIfServerAlive.OnAliveCheckFinishedListener OnFinishedListener) {
+		
+		final clsWorkerIfServerAlive.OnAliveCheckFinishedListener objOnFinishedListener = OnFinishedListener;
+		
 		clsUser  objRegisteredUser = objGroupMembers.GetRegisteredUser();
 		if (objRegisteredUser.strUserName.equals(getResources().getString(R.string.unregistered_username))) {
 			// Not registered, cannot sync
 			Toast.makeText(this, "You need to register first before you can sync", Toast.LENGTH_SHORT).show();
 			return;
 		}
-		URL urlFeed;
-		try {
-			urlFeed = new URL(objMessaging.GetServerUrl()
-					+ getResources().getString(R.string.url_explorer_sync));
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		} catch (NotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		}
-		
-		
-		
+		String strUrl = objMessaging.GetServerUrl()	+ getResources().getString(R.string.url_explorer_sync);
+			
 		clsSyncExplorerCommandMsg objCommandMsg = new clsSyncExplorerCommandMsg();
 		objCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
 		objCommandMsg.strRegistrationId = strRegistrationId;
 		objCommandMsg.objSyncExplorerCommandNoteDatas = objExplorerTreeview.GetAllSyncNotes(objMessaging);
+		objCommandMsg.boolIsAutoSyncCommand = boolIsAutoSyncCommand;
 		
 		
 				
-		clsWebServiceCommsAsyncTask objAsyncTask = new clsWebServiceCommsAsyncTask(this, urlFeed, objCommandMsg);
+		clsWebServiceCommsAsyncTask objAsyncTask = new clsWebServiceCommsAsyncTask(this, strUrl, objCommandMsg, "Syncing... please wait");
 		objAsyncTask.SetOnCompleteListener(new OnCompleteListener() {
 			
 			@Override
 			public void onComplete(JSONObject objJsonResponse) {
 				clsSyncExplorerResponseMsg objResult = clsUtils.DeSerializeFromString(objJsonResponse.toString(), clsSyncExplorerResponseMsg.class);
 				String strMessage = "";
-				boolean boolDisplayResult = true;
+				boolean boolDisplayResult = false;
+				boolean boolIsProblemEncountered = false;
 				// Do what needs to be done with the result
 				if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
 					for (clsSyncExplorerResponseNoteData objNoteData: objResult.objSyncExplorerResponseNoteDatas) {
@@ -1910,6 +1946,7 @@ public class ActivityExplorerStartup extends ListActivity {
 								strMessage += "Note '" + objNoteData.strName + "' had a sync problem. "
 										+ objNoteData.strServerMessage + ".\n";
 							}
+							boolIsProblemEncountered = true;
 							break;
 						case clsMessaging.SERVER_INSTRUCTION_SERVER_ITEM_REMOVED:
 							objDeletedTreeNode = objExplorerTreeview.getTreeNodeFromUuid(UUID.fromString(objNoteData.strNoteUuid));
@@ -1933,16 +1970,43 @@ public class ActivityExplorerStartup extends ListActivity {
 					if (boolDisplayResult) {
 						strMessage += objResult.strErrorMessage + ".\n";
 					}
+					boolIsProblemEncountered = true;
 				}
 				// Display results
-				if (boolDisplayResult) {
-					clsUtils.MessageBox(objContext, strMessage, false);
+				if (boolDisplayResult) {				
+					if(objOnFinishedListener != null) {
+						objOnFinishedListener.onAliveCheckFinished(true, "");
+					} else {
+						clsUtils.MessageBox(objContext, strMessage, false);
+					}
+				} else if (boolIsProblemEncountered) {					
+					if(objOnFinishedListener != null) {
+						objOnFinishedListener.onAliveCheckFinished(false, strMessage);
+					} else {
+						clsUtils.MessageBox(objContext, strMessage, false);
+					}
 				}
+
 				// Refresh UI
 				((ActivityExplorerStartup)objContext).RefreshListView();
+				
+				clsUtils.IndicateToServiceIntentSyncIsCompleted(objContext);
 			}
 		});
-
+		
+		objAsyncTask.SetOnCancelListener(new OnCancelListener() {
+			
+			@Override
+			public void onCancel() {
+				if(objOnFinishedListener != null) {
+					objOnFinishedListener.onAliveCheckFinished(true, "Cancelled");
+				} else {
+					clsUtils.MessageBox(objContext, "Cancelled", true);
+				}
+				clsUtils.IndicateToServiceIntentSyncIsCompleted(objContext);			
+			}
+		});
+				
 		objAsyncTask.execute(null, null, null);		
 	}
 	
@@ -1998,8 +2062,8 @@ public class ActivityExplorerStartup extends ListActivity {
 
 				try {
 					Log.i("myCustom", "Streaming data from network: " + urlFeed);
-					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 					// Makes sure that the InputStream is closed after the app
 					// is
 					// finished using it.
@@ -2387,20 +2451,20 @@ public class ActivityExplorerStartup extends ListActivity {
 					String strJsonCommand = gson.toJson(objCommand);
 					try {
 						Log.i("myCustom", "Sending GCM Reg ID to server: " + urlFeed);
-						stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-						objJsonResult = clsMessaging.updateLocalFeedData(stream);
+						stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+						objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 						// Makes sure that the InputStream is closed after the
 						// app is
 						// finished using it.
 					} catch (IOException e) {
 						Log.e("myCustom", "Error reading from network: " + e.toString());
-						objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+						objResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
 						objResponse.strErrorMessage = "Error reading from network: " + e.toString();
 						return objResponse;
 					} catch (JSONException e) {
 						// TODO Auto-generated catch block
 						Log.wtf("myCustom", "JSON exception", e);
-						objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+						objResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
 						objResponse.strErrorMessage = "JSON exception: " + e.toString();
 						return objResponse;
 					} finally {
@@ -2410,12 +2474,12 @@ public class ActivityExplorerStartup extends ListActivity {
 					}
 				} catch (MalformedURLException e) {
 					Log.wtf("myCustom", "Feed URL is malformed", e);
-					objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+					objResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
 					objResponse.strErrorMessage = "Feed URL is malformed: " + e.toString();
 					return objResponse;
 				} catch (IOException e) {
 					Log.e("myCustom", "Error reading from network: " + e.toString());
-					objResponse.intErrorCode = objMessaging.ERROR_NETWORK;
+					objResponse.intErrorCode = clsMessaging.ERROR_NETWORK;
 					objResponse.strErrorMessage = "Error reading from network: " + e.toString();
 					return objResponse;
 				}
@@ -2493,8 +2557,8 @@ public class ActivityExplorerStartup extends ListActivity {
 				String strJsonCommand = gson.toJson(objCommand);
 
 				try {
-					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 					// Makes sure that the InputStream is closed after finished
 					// using it.
 				} catch (JSONException e) {
@@ -2597,8 +2661,8 @@ public class ActivityExplorerStartup extends ListActivity {
 					String strJsonCommand = gson.toJson(objCommand);
 
 					try {
-						stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-						objJsonResult = clsMessaging.updateLocalFeedData(stream);
+						stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+						objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 						// Makes sure that the InputStream is closed after finished
 						// using it.
 					} catch (JSONException e) {

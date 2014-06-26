@@ -363,8 +363,8 @@ public class ActivityPublications extends ListActivity {
 
 				try {
 					Log.i("myCustom", "Streaming data from network: " + urlFeed);
-					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 					// Makes sure that the InputStream is closed after the app is
 					// finished using it.
 				} catch (JSONException e) {
@@ -477,8 +477,8 @@ public class ActivityPublications extends ListActivity {
 
 				try {
 					Log.i("myCustom", "Streaming data from network: " + urlFeed);
-					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 					// Makes sure that the InputStream is closed after the app is
 					// finished using it.
 				} catch (JSONException e) {
@@ -606,8 +606,8 @@ public class ActivityPublications extends ListActivity {
 
 					try {
 						Log.i("myCustom", "Streaming data from network: " + urlFeed);
-						stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-						objJsonResult = clsMessaging.updateLocalFeedData(stream);
+						stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+						objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 						// Makes sure that the InputStream is closed after the app is
 						// finished using it.
 					} catch (JSONException e) {

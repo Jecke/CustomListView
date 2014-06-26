@@ -219,8 +219,8 @@ public class ActivityRegister extends Activity {
         	JSONObject objJsonResult;
             try {
             	URL urlFeed = new URL(strWebserverUrl + getResources().getString(R.string.url_register_user));
-                stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-                objJsonResult = clsMessaging.updateLocalFeedData(stream);
+                stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+                objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
                 // Makes sure that the InputStream is closed after the app is
                 // finished using it.
 			} catch (JSONException e) {

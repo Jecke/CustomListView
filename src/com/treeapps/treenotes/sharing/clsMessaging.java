@@ -36,6 +36,10 @@ import org.json.JSONTokener;
 
 
 
+
+
+
+
 import com.google.gson.Gson;
 import com.treeapps.treenotes.R;
 import com.treeapps.treenotes.clsExplorerTreeview;
@@ -48,11 +52,15 @@ import com.treeapps.treenotes.ActivityNoteAddNew.RadioGroupOnCheckedChangeListen
 import com.treeapps.treenotes.clsTreeview.clsSyncRepository;
 import com.treeapps.treenotes.export.clsExportNoteAsWebPage;
 import com.treeapps.treenotes.sharing.clsGroupMembers.clsSyncMembersRepository;
+import com.treeapps.treenotes.sharing.clsGroupMembers.clsUser;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeDownLoadedData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageLoadData.clsImageToBeUploadedConfigData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsImageUpDownloadResult.clsError;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCancelListener;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCompleteListener;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions.ActivitySubscriptionsAddAsyncTask;
 import com.treeapps.treenotes.sharing.subscriptions.ActivitySubscriptions.clsSubscriptionsAddCommandMsg;
@@ -78,7 +86,7 @@ import android.widget.Toast;
 public class clsMessaging {
 	
 	private static final int NET_CONNECT_TIMEOUT_MILLIS = 10000;  // 10000 10 seconds
-    private static final int NET_READ_TIMEOUT_MILLIS = 15000;  // 15 seconds
+    private static final int NET_READ_TIMEOUT_MILLIS = 300000;  // 15 seconds
     
     public static String SERVER_URL_AZURE = "http://treenotes.azurewebsites.net";
     public static String SERVER_URL_IIS_EXPRESS = "http://10.0.0.14";
@@ -127,8 +135,7 @@ public class clsMessaging {
 
 	// Persistent items
 	public class clsRepository {
-		public boolean boolIsServerIisExpress = true;
-		public boolean boolIsServerAlive = false;	
+		public boolean boolIsServerIisExpress = true;	
 	}
 	public clsRepository objRepository = new clsRepository();
 	// End of persistence items
@@ -191,9 +198,8 @@ public class clsMessaging {
 		objRepository.boolIsServerIisExpress = boolIsServerIisExpress;
 	}
 	
-	public boolean IsServerAlive() {
-    	return objRepository.boolIsServerAlive;
-	}
+
+	
 	
 	public void ClearWebServiceRepository (Activity objContext) {
 		URL urlFeed = null;
@@ -227,7 +233,6 @@ public class clsMessaging {
 		    {
 		        super.onPostExecute(result);
 		        if (result == null)  {
-		        	objRepository.boolIsServerAlive = false;
 		        	clsUtils.CustomLog("WebService is unavailable");
 		        	Toast.makeText(objContext, "WebService is unavailable", Toast.LENGTH_SHORT).show();
 		        	return;
@@ -237,7 +242,6 @@ public class clsMessaging {
 		        	clsUtils.CustomLog("WebService repository has been successfully cleared");
 		        	Toast.makeText(objContext, "WebService repository has been successfully cleared", Toast.LENGTH_SHORT).show();
 		        } else {
-		        	objRepository.boolIsServerAlive = false;
 		        	clsUtils.CustomLog("Unable to clear. " + objResponseMsg.strErrorMessage);
 		        	Toast.makeText(objContext, "Unable to clear. " + objResponseMsg.strErrorMessage, Toast.LENGTH_SHORT).show();
 		        } 			        
@@ -250,68 +254,23 @@ public class clsMessaging {
 
 	}
 	
-	 public void UpdateIsServerAlive(Activity objContext) {
-		// Ping server to check
-		URL urlFeed = null;
-		String strServerUrl;
-		try {
-			if(objRepository.boolIsServerIisExpress) {
-				strServerUrl =  clsMessaging.SERVER_URL_IIS_EXPRESS;
-			}
-			else {
-				strServerUrl =  clsMessaging.SERVER_URL_AZURE;
-			}
-			urlFeed = new URL(strServerUrl + objContext.getResources().getString(R.string.url_is_server_alive));
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		class clsMyAsyncTask  extends WebServiceAsyncTask {
+	
+	
+	 public static void SetServerAlive(Activity objActivity, boolean boolIsServerAlive) {		 
+		 clsUtils.SerializeToSharedPreferences("clsWorkerIfServerAlive", "IsServerAlive", objActivity, boolIsServerAlive);
+	 }
+	
+	 public static boolean IsServerAlive(Activity objActivity) {
+		 
+		 boolean boolIsServerAlive = clsUtils.DeSerializeFromSharedPreferences("clsWorkerIfServerAlive", "IsServerAlive", objActivity, boolean.class);
+		 return boolIsServerAlive;
+	}
+	 
+	 public boolean IsPossibleToSync(Activity objActivity, clsGroupMembers objGroupMembers) {
+		 return true;
+	 }
+	
 
-			private Activity objContext;
-			public clsMyAsyncTask(Activity objContext, URL urlFeed, String strJsonCommand) {
-				super(objContext, false, urlFeed, strJsonCommand);
-				this.objContext = objContext;
-			}
-			
-			@Override
-		    protected void onPostExecute(JSONObject result)
-		    {
-		        super.onPostExecute(result);
-		        if (result == null)  {
-		        	objRepository.boolIsServerAlive = false;
-		        	clsUtils.CustomLog("WebService is unavailable");
-		        	SpannableString text = new SpannableString("Syncing is unavailable");
-					text.setSpan(new ForegroundColorSpan(Color.RED), 11, 22, 0);
-					Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
-		        	return;
-		        }
-		        clsIsServerAliveResponseMsg objResponseMsg = clsUtils.DeSerializeFromString(result.toString(), clsIsServerAliveResponseMsg.class);
-		        if (objResponseMsg.intErrorCode == ERROR_NONE) {
-		        	objRepository.boolIsServerAlive = true;
-		        	clsUtils.CustomLog("WebService is available");
-		        	SpannableString text = new SpannableString("Syncing is available");
-					text.setSpan(new ForegroundColorSpan(Color.GREEN), 11, 20, 0);
-					Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
-		        } else {
-		        	objRepository.boolIsServerAlive = false;
-		        	clsUtils.CustomLog("WebService is unavailable");
-		        	SpannableString text = new SpannableString("Syncing is unavailable");
-					text.setSpan(new ForegroundColorSpan(Color.RED), 11, 22, 0);
-					Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
-		        } 			        
-		    }
-		}
-		clsIsServerAliveCommandMsg objCommandMsg = new clsIsServerAliveCommandMsg();
-		String strJsonCommand = clsUtils.SerializeToString(objCommandMsg);
-		clsMyAsyncTask objAsyncTask = new clsMyAsyncTask(objContext, urlFeed, strJsonCommand);
-		objAsyncTask.execute("");	    		
-
-	    }
 	
 	// ------------ Client Server Contract
     
@@ -500,8 +459,8 @@ public class clsMessaging {
 
 	            try {
 	                Log.i("myCustom", "Streaming data from network: " + urlFeed);
-	                stream = downloadUrl(urlFeed, strJsonCommand);
-	                object = updateLocalFeedData(stream);
+	                stream = DownloadUrl(urlFeed, strJsonCommand);
+	                object = UpdateLocalFeedData(stream);
 	                // Makes sure that the InputStream is closed after the app is
 	                // finished using it.
 	            } catch (IOException e) {
@@ -918,8 +877,6 @@ public class clsMessaging {
     
     public class clsSyncRepositoryCtrlData {
     	public clsSyncRepository objSyncRepository;
-    	public boolean boolNeedsOnlyChangeNotification;
-    	public boolean boolNeedsAutoSyncWithNotification;
     }
     
     public class clsSyncNoteResponseMsg extends clsMsg {
@@ -989,8 +946,8 @@ public class clsMessaging {
 
    	            try {
    	                Log.i("myCustom", "Streaming data from network: " + urlFeed);
-   	                stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-   	                objJsonResult = clsMessaging.updateLocalFeedData(stream);
+   	                stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+   	                objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
    	                // Makes sure that the InputStream is closed after the app is
    	                // finished using it.
    				} catch (JSONException e) {
@@ -1055,7 +1012,7 @@ public class clsMessaging {
     
     // -------------- Utilities ------------------------------
     
-    public static InputStream downloadUrl(final URL url, String strJsonCommand) throws IOException {
+    public static InputStream DownloadUrl(final URL url, String strJsonCommand) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setReadTimeout(NET_READ_TIMEOUT_MILLIS /* milliseconds */);
         conn.setConnectTimeout(NET_CONNECT_TIMEOUT_MILLIS /* milliseconds */); 
@@ -1229,8 +1186,8 @@ public class clsMessaging {
 			String strJsonCommand = gson.toJson(objInstructUploadCompleteCommand);
 
 			try {
-				stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-				objJsonResult = clsMessaging.updateLocalFeedData(stream);
+				stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+				objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 				// Makes sure that the InputStream is closed after the app is
 				// finished using it.
 			} catch (JSONException e) {
@@ -1256,7 +1213,7 @@ public class clsMessaging {
 		return objInstructUploadCompleteResponse;
 	}
 
-	public static JSONObject updateLocalFeedData(InputStream inStream)	throws IOException, JSONException {
+	public static JSONObject UpdateLocalFeedData(InputStream inStream)	throws IOException, JSONException {
 
 		JSONObject object = null;
 		try {
@@ -1276,7 +1233,7 @@ public class clsMessaging {
 
 	}
     
-    public boolean IsNetworkAvailable(Context objContext) {
+    public static boolean IsNetworkAvailable(Context objContext) {
     	boolean boolIsNetworkAvailable = false;
         ConnectivityManager connectivityManager 
               = (ConnectivityManager) objContext.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -1284,6 +1241,22 @@ public class clsMessaging {
         boolIsNetworkAvailable = activeNetworkInfo != null &&
         		activeNetworkInfo.isConnectedOrConnecting();
         return boolIsNetworkAvailable;
+    }
+    
+    
+    
+    public static void ToastSyncingIsAvailable (Context objContext) {
+    	clsUtils.CustomLog("WebService is available");
+    	SpannableString text = new SpannableString("Syncing is available");
+		text.setSpan(new ForegroundColorSpan(Color.GREEN), 11, 20, 0);
+		Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
+    }
+    
+    public static void ToastSyncingIsUnavailable (Context objContext, String strReason) {
+    	clsUtils.CustomLog("WebService is unavailable");
+    	SpannableString text = new SpannableString("Syncing is unavailable" + ((strReason.isEmpty() == false)? "\n" + strReason:""));
+		text.setSpan(new ForegroundColorSpan(Color.RED), 11, 22, 0);
+		Toast.makeText(objContext, text, Toast.LENGTH_SHORT).show();
     }
     
     public String GetServerUrl(){

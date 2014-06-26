@@ -156,8 +156,8 @@ public class ActivitySearchUsersForGroups extends ListActivity {
     	JSONObject objJsonResult;
         try {
         	URL urlFeed = new URL(strWebserverUrl + "/api/TreeManager/GetUsers");
-            stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-            objJsonResult = clsMessaging.updateLocalFeedData(stream);
+            stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+            objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
             // Makes sure that the InputStream is closed after the app is
             // finished using it.
 		} catch (JSONException e) {
