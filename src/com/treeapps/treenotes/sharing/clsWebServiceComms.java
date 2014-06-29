@@ -18,6 +18,7 @@ import android.app.ProgressDialog;
 import android.os.AsyncTask;
 
 import com.google.gson.Gson;
+import com.treeapps.treenotes.clsUtils;
 
 public class clsWebServiceComms {
 	
@@ -35,37 +36,56 @@ public class clsWebServiceComms {
 			public String strErrorMessage = "";
 		}
 
-		public static class clsWebServiceCommsAsyncTask extends AsyncTask<Void, Void, JSONObject> {
+		public static class clsWebServiceCommsAsyncTask extends AsyncTask<Void, String, JSONObject> {
 			static clsWebServiceCommand objCommand;
-			static URL urlFeed;
+			static String strUrl;
 			ProgressDialog objProgressDialog;
-			public OnWebPagePostedListener objOnWebPagePostedListener;
+			public OnCompleteListener objOnCompleteListener;
+			public OnCancelListener objOnCancelListener;
+			public static String strProgressMessage;
 
-			public clsWebServiceCommsAsyncTask(Activity objActivity, URL urlFeed, clsWebServiceCommand objCommand) {
-				clsWebServiceCommsAsyncTask.urlFeed = urlFeed;
+			public clsWebServiceCommsAsyncTask(Activity objActivity, String strUrl, clsWebServiceCommand objCommand, String strInitialProgressMessage) {
+				clsWebServiceCommsAsyncTask.strUrl = strUrl;
 				clsWebServiceCommsAsyncTask.objCommand = objCommand;
 				objProgressDialog = new ProgressDialog(objActivity);
+				clsWebServiceCommsAsyncTask.strProgressMessage = strInitialProgressMessage;
 			}
 
-			public void SetOnWebPagePostedListener(OnWebPagePostedListener objOnWebPagePostedListener) {
-				this.objOnWebPagePostedListener = objOnWebPagePostedListener;
+			public void SetOnCompleteListener(OnCompleteListener objOnCompleteListener) {
+				this.objOnCompleteListener = objOnCompleteListener;
+			}
+			
+			public void SetOnCancelListener(OnCancelListener objOnCancelListener) {
+				this.objOnCancelListener = objOnCancelListener;
 			}
 
 			@Override
 			protected void onPreExecute() {
 				super.onPreExecute();
-				objProgressDialog.setMessage("Processing..., please wait.");
-				objProgressDialog.show();
+				objProgressDialog.setMessage(strProgressMessage);
+				if (!objProgressDialog.isShowing()) {
+   	   		        objProgressDialog.show();
+   	        	}
 			}
+			
+			@Override
+	    	protected void onProgressUpdate(String... values) {
+   	        	if (objProgressDialog.isShowing()) {
+   	   		        objProgressDialog.setMessage(values[0]);
+   	        	}
+	    	}
 
 			@Override
 			protected JSONObject doInBackground(Void... arg0) {
 				clsWebServiceResponse objResponse = new clsWebServiceResponse();
 				Gson gson = new Gson();
 				JSONObject objJsonResult = null;
+				
+				publishProgress(strProgressMessage);
 
 				try {
 					try {
+						URL urlFeed = new URL(strUrl);						
 						InputStream stream = null;
 						String strJsonCommand = gson.toJson(objCommand);
 
@@ -103,11 +123,17 @@ public class clsWebServiceComms {
 				if (objProgressDialog.isShowing()) {
 					objProgressDialog.dismiss();
 				}
-				objOnWebPagePostedListener.onPosted(objJsonResponse);
+				if (objOnCompleteListener != null) {
+					objOnCompleteListener.onComplete(objJsonResponse);
+				}
 			}
 
-			public interface OnWebPagePostedListener {
-				public void onPosted(JSONObject objJsonResponse);
+			public interface OnCompleteListener {
+				public void onComplete(JSONObject objJsonResponse);
+			}
+			
+			public interface OnCancelListener {
+				public void onCancel();
 			}
 
 			@Override
@@ -117,6 +143,10 @@ public class clsWebServiceComms {
 				if (objProgressDialog.isShowing()) {
 					objProgressDialog.dismiss();
 				}
+				
+				if (objOnCancelListener != null) {
+					objOnCancelListener.onCancel();
+				}				
 			}
 
 		}

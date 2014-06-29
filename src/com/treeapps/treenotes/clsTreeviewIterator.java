@@ -8,9 +8,7 @@ public abstract class clsTreeviewIterator {
 	private clsRepository objRepository;
 	
 	public clsTreeviewIterator (clsRepository objRepository) {
-		this.objRepository = objRepository;
-		
-		
+		this.objRepository = objRepository;	
 	}
 	
 	public void Execute() {

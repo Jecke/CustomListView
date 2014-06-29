@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.json.JSONObject;
+
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.gson.reflect.TypeToken;
@@ -44,6 +46,9 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsSyncMembersCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncNoteCommandMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncRepositoryCtrlData;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCompleteListener;
+import com.treeapps.treenotes.sharing.clsWorkerIfServerAlive;
+import com.treeapps.treenotes.sharing.clsWorkerIfServerAlive.OnAliveCheckIncompleteListener;
 
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -216,11 +221,34 @@ public class ActivityNoteStartup extends ListActivity {
 	        clsUtils.CustomLog("ActivityNoteStartup onCreate");
 	        if (savedInstanceState == null) {
 	        	SaveTemp();
+	        	// Sync immediately if conditions satisfied
+	        	clsWorkerIfServerAlive objWorkerIfServerAlive = new clsWorkerIfServerAlive(this, objMessaging, objGroupMembers,	"Syncing... please wait");
+				objWorkerIfServerAlive.SetOnAliveCheckIncompleteListener(new OnAliveCheckIncompleteListener() {
+	
+					@Override
+					public void onAliveCheckIncomplete(int intReason, String strMessage) {
+						clsMessaging.ToastSyncingIsUnavailable(objActivity, strMessage);
+					}
+				});
+				objWorkerIfServerAlive.SetOnAliveCheckCompleteListener(new clsWorkerIfServerAlive.OnAliveCheckCompleteListener() {
+	
+					@Override
+					public void onAliveCheckComplete(JSONObject objJsonResponse) {
+						// Do work here, the actual syncing
+						ExecuteNoteSync(true, true, null);	// AutoSync setting because no need to notify sharers										
+					}
+				});
+				objWorkerIfServerAlive.Execute();
+
 	        } else {
 	        	LoadTemp();
 	        }
-	              
+	        
+	        
+         
 	    }
+	    
+	    
 
 
 	    // Broadcast receiver for receiving status updates from the IntentService
@@ -234,7 +262,7 @@ public class ActivityNoteStartup extends ListActivity {
 	        	String strNoteUuid = extras.getString(BROADCAST_DATA_NOTE_UUID);
 	        	if (objNoteTreeview.getRepository().uuidRepository.toString().equals(strNoteUuid)) {
 	        		// Will only auto-sync an open and same repository, otherwise ignore
-		        	ExecuteNoteSync(true, false);
+		        	ExecuteNoteSync(true, false, null);
 	        	}
 	        }
 	    }
@@ -881,7 +909,7 @@ public class ActivityNoteStartup extends ListActivity {
 						objNoteTreeview.SetAllIsDirty(false);
 						SaveFile();
 						// Now sync
-						ExecuteNoteSync(false, true);
+						ExecuteNoteSync(false, true, null);
 						return;
 					}
 				});
@@ -894,7 +922,7 @@ public class ActivityNoteStartup extends ListActivity {
 				dialog.show();
 			} else {
 				// Sync immediately
-				ExecuteNoteSync(false, true);
+				ExecuteNoteSync(false, true, null);
 			}
 			return true;
          case R.id.actionShareRestoreFromServer: 
@@ -919,8 +947,6 @@ public class ActivityNoteStartup extends ListActivity {
         	 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
         	 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
         	 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy(this);
-        	 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
-        	 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
         	 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
         	 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
         	 objSyncCommandMsg.strRegistrationId = strRegistrationId;
@@ -986,7 +1012,8 @@ public class ActivityNoteStartup extends ListActivity {
     }
 
 
-	private void ExecuteNoteSync(boolean boolIsAutoSyncCommand, boolean boolDisplayProgress) {
+	private void ExecuteNoteSync(boolean boolIsAutoSyncCommand, boolean boolDisplayProgress,
+			ActivityNoteStartup.ActivityNoteStartupSyncAsyncTask.OnCompleteListener objOnCompleteListener) {
 		SaveTemp();
 		 URL urlFeed;
 		 try {
@@ -1003,8 +1030,6 @@ public class ActivityNoteStartup extends ListActivity {
 		 clsSyncNoteCommandMsg objSyncCommandMsg = objMessaging.new clsSyncNoteCommandMsg();
 		 clsSyncRepositoryCtrlData objRepositoryCtrlData = objMessaging.new clsSyncRepositoryCtrlData();
 		 objRepositoryCtrlData.objSyncRepository = objNoteTreeview.getRepository().getCopy(this);
-		 objRepositoryCtrlData.boolNeedsAutoSyncWithNotification = true;
-		 objRepositoryCtrlData.boolNeedsOnlyChangeNotification = false;
 		 objSyncCommandMsg.objSyncRepositoryCtrlDatas.add(objRepositoryCtrlData);
 		 objSyncCommandMsg.strClientUserUuid = objGroupMembers.objMembersRepository.getStrRegisteredUserUuid();
 		 objSyncCommandMsg.strRegistrationId = strRegistrationId;
@@ -1012,6 +1037,7 @@ public class ActivityNoteStartup extends ListActivity {
 		 objSyncCommandMsg.boolIsAutoSyncCommand = boolIsAutoSyncCommand;
 		 ActivityNoteStartupSyncAsyncTask objSyncAsyncTask = new ActivityNoteStartupSyncAsyncTask(this, objNoteTreeview, urlFeed,
 				 objSyncCommandMsg,objMessaging, true, boolDisplayProgress);
+		 objSyncAsyncTask.SetOnCompleteListener(objOnCompleteListener);
 		 objSyncAsyncTask.execute("");
 	}
 	
@@ -1455,17 +1481,30 @@ public class ActivityNoteStartup extends ListActivity {
 				// Save data first
 				SaveFile();
 				// Return to caller
-				Intent objIntent = getIntent();
-				String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
-				objIntent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS, strImageLoadDatas);
-				if (boolIsShortcut) {
-					objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, true);
-				} else {
-					objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, false);
-				}
-				setResult(RESULT_OK, objIntent);    	
-		    	ActivityNoteStartup.this.finish();
-		    	ActivityNoteStartup.super.onBackPressed();
+				clsWorkerIfServerAlive objWorkerIfServerAlive = new clsWorkerIfServerAlive(objActivity, objMessaging, objGroupMembers,	"Syncing... please wait");
+				objWorkerIfServerAlive.SetOnAliveCheckIncompleteListener(new OnAliveCheckIncompleteListener() {
+					// Server not alive, get out without syncing
+					@Override
+					public void onAliveCheckIncomplete(int intReason, String strMessage) {
+						FireIntentToReturnToExplorer();
+					}
+				});
+				objWorkerIfServerAlive.SetOnAliveCheckCompleteListener(new clsWorkerIfServerAlive.OnAliveCheckCompleteListener() {
+					// Server alive, sync first
+					@Override
+					public void onAliveCheckComplete(JSONObject objJsonResponse) {
+						ExecuteNoteSync(false, true, new ActivityNoteStartup.ActivityNoteStartupSyncAsyncTask.OnCompleteListener() {
+
+							@Override
+							public void onComplete() {
+								FireIntentToReturnToExplorer();							
+							}
+			        		
+			        	});
+						 				
+					}
+				});
+				objWorkerIfServerAlive.Execute();	
 			}
 		});
     	builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -1484,6 +1523,20 @@ public class ActivityNoteStartup extends ListActivity {
 		
 	}
 	
+	private void FireIntentToReturnToExplorer() {
+		Intent objIntent = getIntent();
+		String strImageLoadDatas = clsUtils.SerializeToString(objLocalImageLoadDatas);
+		objIntent.putExtra(ActivityExplorerStartup.IMAGE_LOAD_DATAS, strImageLoadDatas);
+		if (boolIsShortcut) {
+			objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, true);
+		} else {
+			objIntent.putExtra(ActivityExplorerStartup.IS_SHORTCUT, false);
+		}
+    	setResult(RESULT_OK, objIntent);    	
+    	ActivityNoteStartup.this.finish();
+    	ActivityNoteStartup.super.onBackPressed();
+	}
+	
 	// -------------------------- Communications ----------------------------------
 	
 	// ---------- Synch -----------------------------------------------------------
@@ -1499,6 +1552,8 @@ public class ActivityNoteStartup extends ListActivity {
 		clsSyncNoteCommandMsg objSyncCommand;
 		String strMessage = "";
 		
+		public OnCompleteListener objOnCompleteListener;
+		
 		public ActivityNoteStartupSyncAsyncTask(Activity objActivity, clsTreeview objTreeview, URL urlFeed, clsSyncNoteCommandMsg objSyncCommand,
 				clsMessaging objMessaging, boolean boolDisplayToasts, boolean boolDisplayProgress) {
 			super(objActivity, urlFeed, objSyncCommand, objMessaging, boolDisplayToasts, boolDisplayProgress);
@@ -1507,10 +1562,16 @@ public class ActivityNoteStartup extends ListActivity {
 			this.objTreeview = objTreeview;
 			this.objSyncCommand = objSyncCommand;
 		}
+		
+		public void SetOnCompleteListener(OnCompleteListener objOnCompleteListener) {
+			this.objOnCompleteListener = objOnCompleteListener;
+		}
+		
 		@Override
    	    protected void onPostExecute(clsSyncResult objResult){
 
 	   	        super.onPostExecute(objResult);
+	   	        boolean boolIsAnyError = false;
 	   	        // Do what needs to be done with the result
 	   	        if (objResult.intErrorCode == clsSyncResult.ERROR_NONE) {
 	   	        	
@@ -1519,16 +1580,15 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   	   	        switch (objResult.intServerInstructions.get(i)) {
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_KEEP_ORIGINAL:
 			   	   	   	   if (boolDisplayToasts) {
-			   	   	   		   strMessage += "A new note has been created on server";
+			   	   	   		   strMessage += "New note created on server";
 				 	        }
 	   	   	   	        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_REPLACE_ORIGINAL:
-	   	   	   	        	objNoteTreeview.getRepository().objRootNodes = objResult.objSyncRepositories.get(i).getRepositoryRootNodesCopy();
+	   	   	   	        	objNoteTreeview.setRepository(objResult.objSyncRepositories.get(i).getCopy());
 	   			   	   	    if (boolDisplayToasts) {
-	   			   	   	    	strMessage += "This note has been replaced with an updated version";
+	   			   	   	    	strMessage += "Note merged with server";
 	   			   	   	    }
-	   			   	   	    objNoteTreeview.UpdateItemTypes();
-	   	   	   	        	((ActivityNoteStartup) objActivity).RefreshListView();
+	   			   	   	    objNoteTreeview.UpdateItemTypes();	   			   	   	    
 	   	   	   	        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_CREATE_NEW_SHARED:
 	   	   	   	        	break;
@@ -1536,6 +1596,12 @@ public class ActivityNoteStartup extends ListActivity {
 	   	   		        	break;
 	   	   	   	        case clsMessaging.SERVER_INSTRUCT_NO_MORE_NOTES:
 	   	   	   	        	break;
+	   	   	   	        case clsMessaging.SERVER_INSTRUCT_PROBLEM:
+			   	   	   	   if (boolDisplayToasts) {
+			   	   	   		   strMessage += objResult.strServerMessages.get(i);
+				 	        }
+			   	   	   	   boolIsAnyError = true;
+			   	   	   	   break;
 	   	   	   	    	}
 	   	        	}
 	   	        	((ActivityNoteStartup)objActivity).SaveFile();
@@ -1547,10 +1613,20 @@ public class ActivityNoteStartup extends ListActivity {
 	   	        		
 	   	        } else {
 	   	        	if (boolDisplayToasts) {
-	   	        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, true);
+	   	        		strMessage +=  objResult.strErrorMessage;
 	   	        	} 
-	   	        	return;
+	   	        	boolIsAnyError = true;
 	   	        }
+	   	        
+	   	        // If any error in text syncing, no need to carry on
+	   	        if (boolIsAnyError) {
+		   	        if (boolDisplayToasts) {
+		        		clsUtils.MessageBox(objActivity, objResult.strErrorMessage, true);
+		        	} 
+		   	        return;
+	   	        }
+
+	   	        
 	   	        // Start background image syncing
 				objImageUpDownloadAsyncTask = new clsImageUpDownloadAsyncTask((Activity) objActivity, ((ActivityNoteStartup)objActivity).objMessaging, 
 						true, objLocalImageLoadDatas, new OnImageUploadFinishedListener() {
@@ -1564,7 +1640,8 @@ public class ActivityNoteStartup extends ListActivity {
 									clsUtils.MessageBox(objActivity, errorMessage, false);
 									return;
 								} else {
-									clsUtils.MessageBox(objActivity, strMessage, true);
+									// Do not display toast if successful completion
+									clsUtils.MessageBox(objActivity, strMessage, true);	// In for now while debugging
 									// Once successfully downloaded, update the ResourceUrl in the relevant treenode
 									for (clsImageLoadData objImageLoadData: objLocalImageLoadDatas ) {
 										if (objImageLoadData.strNoteUuid.equals(objTreeview.getRepository().uuidRepository.toString())) {
@@ -1573,10 +1650,13 @@ public class ActivityNoteStartup extends ListActivity {
 										}
 									}
 								}
+								if (objOnCompleteListener != null) {
+									objOnCompleteListener.onComplete();
+								} else {
+									// Refresh
+									((ActivityNoteStartup)objActivity).RefreshListView();
+								}
 									
-								// Refresh
-								((ActivityNoteStartup)objActivity).RefreshListView();
-								
 							}
 						}, null, !objSyncCommand.boolIsAutoSyncCommand);
 				objImageUpDownloadAsyncTask.execute();
@@ -1588,6 +1668,10 @@ public class ActivityNoteStartup extends ListActivity {
 			// TODO Auto-generated method stub
 			super.onCancelled();
 			clsUtils.IndicateToServiceIntentSyncIsCompleted(objActivity);
+		}
+		
+		public interface OnCompleteListener {
+			public void onComplete();
 		}
 	}
         

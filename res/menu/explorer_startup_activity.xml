@@ -138,24 +138,21 @@
                   android:title="Reregister"/>
             <item android:id="@+id/actionShareManageGroups"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Manage groups"/>
+                  android:title="Manage users and groups"/>
             <item android:id="@+id/actionShareSelect"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Select sharers"/>
+                  android:title="Share note with users"/>
             <item android:id="@+id/actionPublications"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Publications">
+                  android:title="Manage publications">
             </item>
             <item android:id="@+id/actionSubscriptions"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Subscriptions">
+                  android:title="Manage subscriptions">
             </item>
             <item android:id="@+id/actionShareSyncAll"
                   android:icon="@drawable/ic_action_share"
-                  android:title="Send/Refresh"/>
-            <item android:id="@+id/actionShareRestoreFromServer"
-                  android:icon="@drawable/ic_action_share"
-                  android:title="Restore all from server"/>
+                  android:title="Sync notes"/>
         </menu>
     </item>
     

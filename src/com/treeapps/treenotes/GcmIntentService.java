@@ -59,7 +59,7 @@ public class GcmIntentService extends IntentService {
 					String strMessage = extras.getString("message");
 					// Send message to Activity
 					enumNotificationType objNotificationType = enumNotificationType.getValue(strNotificationType);
-					if (objNotificationType == enumNotificationType.NOTIFY_AND_SYNC) {
+					if (objNotificationType == enumNotificationType.AUTO_SYNC_EDITOR) {
 						if (!boolIsBusySyncing) {
 							// Not busy syncing yet
 							if (isActivityRunningAndTop(ActivityNoteStartup.class)) {
@@ -82,9 +82,21 @@ public class GcmIntentService extends IntentService {
 								sendNotification("Received: " + strMessage);
 							}
 						}
-					} else if (objNotificationType == enumNotificationType.NOTIFY_ONLY) {
+					} else if (objNotificationType == enumNotificationType.AUTO_SYNC_EXPLORER) {
 						// Post notification of received message.
 						sendNotification("Received: " + strMessage);
+						
+						if (!boolIsBusySyncing) {
+							if (isActivityRunningAndTop(ActivityExplorerStartup.class)) {
+								boolIsBusySyncing = true;
+								Intent localIntent = new Intent(ActivityExplorerStartup.BROADCAST_ACTION);
+								// Broadcasts the Intent to receivers in this app.
+								LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+								clsUtils.CustomLog("GcmIntentService fired");
+							} else {
+								// Post it to preferences so it can be accessed later when app is open
+							}
+						}
 					}
 					Log.i(TAG_GCM, "Received: " + strMessage);
 				}
@@ -118,17 +130,6 @@ public class GcmIntentService extends IntentService {
 		mBuilder.setContentIntent(contentIntent);
 		mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
 		
-		if (!boolIsBusySyncing) {
-			if (isActivityRunningAndTop(ActivityExplorerStartup.class)) {
-				boolIsBusySyncing = true;
-				Intent localIntent = new Intent(ActivityExplorerStartup.BROADCAST_ACTION);
-				// Broadcasts the Intent to receivers in this app.
-				LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
-				clsUtils.CustomLog("GcmIntentService fired");
-			} else {
-				// Post it to preferences so it can be accessed later when app is open
-			}
-		}
 	}
 	
 	protected Boolean isActivityRunningAndTop(Class<?> activityClass)
@@ -145,7 +146,7 @@ public class GcmIntentService extends IntentService {
 	}
 	
 	public enum enumNotificationType {
-		NONE(0), NOTIFY_ONLY(1), NOTIFY_AND_SYNC(2);
+		NONE(0), AUTO_SYNC_EXPLORER(1), AUTO_SYNC_EDITOR(2);
 
 		final int numTab;
 

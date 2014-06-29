@@ -414,5 +414,13 @@ public class clsGroupMembers {
 		this.objMembersRepository.strRegisteredUserName = "";
 		this.objMembersRepository.strRegisteredUserUuid = "";
 		SaveFile();
-	}	
+	}
+	
+	public boolean IsUserRegistered() {
+		if (objMembersRepository.getStrRegisteredUserUuid().isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+
 }

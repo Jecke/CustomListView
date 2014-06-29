@@ -173,6 +173,7 @@
     <!-- Messaging URLs -->
     <string name="url_register_user">"/api/TreeManager/LoginUser"</string>
     <string name="url_note_sync">"/api/TreeManager/SyncNote"</string>
+    <string name="url_explorer_sync">"/api/TreeManager/SyncExplorer"</string>
     <string name="url_members_sync">"/api/TreeManager/SyncMembers"</string>
     <string name="url_publications_search">"/api/TreeManager/PublicationsSearch"</string>
     <string name="url_publications_by_author_search">"/api/TreeManager/PublicationsByAuthorSearch"</string>

@@ -35,7 +35,7 @@ import com.treeapps.treenotes.sharing.clsMessaging.clsMsg;
 import com.treeapps.treenotes.sharing.clsMessaging.clsSyncResult;
 import com.treeapps.treenotes.sharing.clsWebServiceComms;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommand;
-import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnWebPagePostedListener;
+import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask.OnCompleteListener;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceResponse;
 import com.treeapps.treenotes.sharing.clsWebServiceComms.clsWebServiceCommsAsyncTask;
 
@@ -158,19 +158,7 @@ public class ActivitySubscriptions extends ListActivity {
 			builder.setCancelable(true);
 			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
-					final URL urlFeed;
-					try {
-						urlFeed = new URL(objMessaging.GetServerUrl()
-								+ getResources().getString(R.string.url_subscriptions_remove));
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						return;
-					} catch (NotFoundException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						return;
-					}
+					String strUrl = objMessaging.GetServerUrl() + getResources().getString(R.string.url_subscriptions_remove);
 					objSubscriptionsRemoveCommand = new clsSubscriptionsRemoveCommandMsg();
 					objSubscriptionsRemoveCommand.strRegisteredUserUuid = objSubcriptionsIntentData.strRegisteredUserUuid;
 					for (clsListViewState objListViewState:  objListViewStates) {
@@ -179,11 +167,11 @@ public class ActivitySubscriptions extends ListActivity {
 						}
 					}
 					clsWebServiceCommsAsyncTask objMyAsyncTask = new clsWebServiceCommsAsyncTask(objContext, 
-							urlFeed, objSubscriptionsRemoveCommand);
-					objMyAsyncTask.SetOnWebPagePostedListener(new OnWebPagePostedListener() {
+							strUrl, objSubscriptionsRemoveCommand, "XXXX");
+					objMyAsyncTask.SetOnCompleteListener(new OnCompleteListener() {
 						
 						@Override
-						public void onPosted(JSONObject objJsonResponse) {
+						public void onComplete(JSONObject objJsonResponse) {
 							// TODO Auto-generated method stub
 							clsWebServiceResponse objResponse = clsUtils.DeSerializeFromString(objJsonResponse.toString(),
 									clsWebServiceResponse.class);
@@ -461,8 +449,8 @@ public class ActivitySubscriptions extends ListActivity {
 
 				try {
 					Log.i("myCustom", "Streaming data from network: " + urlFeed);
-					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 					// Makes sure that the InputStream is closed after the app is
 					// finished using it.
 				} catch (JSONException e) {
@@ -592,8 +580,8 @@ public class ActivitySubscriptions extends ListActivity {
 
 				try {
 					Log.i("myCustom", "Streaming data from network: " + urlFeed);
-					stream = clsMessaging.downloadUrl(urlFeed, strJsonCommand);
-					objJsonResult = clsMessaging.updateLocalFeedData(stream);
+					stream = clsMessaging.DownloadUrl(urlFeed, strJsonCommand);
+					objJsonResult = clsMessaging.UpdateLocalFeedData(stream);
 					// Makes sure that the InputStream is closed after the app is
 					// finished using it.
 				} catch (JSONException e) {
