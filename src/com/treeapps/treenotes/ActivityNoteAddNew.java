@@ -232,8 +232,8 @@ public class ActivityNoteAddNew extends Activity implements clsResourceLoader.Ta
 			objListView = (ListView)findViewById(R.id.listviewNumberedArrows);
 			objListView.setAdapter(objArrayAdapter);
 			if (objAnnotationData != null) {
-				for(clsAnnotationData.clsAnnotationItem objAnnotationItem : objAnnotationData.items) {
-					int intArrowNum = 1;
+				int intArrowNum = 1;
+				for(clsAnnotationData.clsAnnotationItem objAnnotationItem : objAnnotationData.items) {					
 					if (objAnnotationItem.getType() == Shape.NUMBERED_ARROW) {
 						clsArrowsListViewState objListViewState = new clsArrowsListViewState();
 						objListViewState.strArrowDescription = objAnnotationItem.getAnnotationText();
