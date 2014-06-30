@@ -1235,9 +1235,25 @@ public class clsTreeview {
 			clsTreeNodeRemoveData objTreeNodeRemoveData = arrTreeNodesToBeRemoved.get(i);
 			// If there is a thumbnail, delete that first
 			if (objTreeNodeRemoveData.objTreeNode.resourcePath != "" && boolDeleteThumbnail) {
-				String strDelFilename = objTreeNodeRemoveData.objTreeNode.guidTreeNode.toString() + ".jpg";
-				File objFileDelete = new File(ActivityExplorerStartup.fileTreeNodesDir, strDelFilename);
+				
+				String strTreeNodeUuid = objTreeNodeRemoveData.objTreeNode.guidTreeNode.toString();
+				
+				// Fixed issue 15
+				// Delete thumbnail
+				File objFileDelete = new File(clsUtils.GetThumbnailImageFileName(objActivity, strTreeNodeUuid));
 				ActivityNoteStartup.DeleteRecursive(objFileDelete);
+				
+				// Delete full image
+				File objFileFullDelete = new File(clsUtils.GetFullImageFileName(objActivity, strTreeNodeUuid));
+				ActivityNoteStartup.DeleteRecursive(objFileFullDelete);
+				
+				// Delete annotated full image
+				File objFileAnnDelete = new File(clsUtils.GetAnnotatedImageFileName(objActivity, strTreeNodeUuid));
+				ActivityNoteStartup.DeleteRecursive(objFileAnnDelete);
+				
+				// Remove image backups
+				clsUtils.RemoveBackupImagesOfNode(objActivity, strTreeNodeUuid);
+
 			}
 			// Delete node
 			objTreeNodeRemoveData.objParentChildren.remove(objTreeNodeRemoveData.objTreeNode);
