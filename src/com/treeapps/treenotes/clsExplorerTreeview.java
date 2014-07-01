@@ -291,6 +291,9 @@ public class clsExplorerTreeview extends clsTreeview {
 							if (fileAnnotated.exists()) {
 								fileAnnotated.delete();
 							}
+							
+							// Remove image backups
+							clsUtils.RemoveBackupImagesOfNode(objActivity, strNodeUuid);
 						}					
 					}
 				};	
